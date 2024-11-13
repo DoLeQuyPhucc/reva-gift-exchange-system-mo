@@ -36,12 +36,21 @@ const tabBarProps: TabBarProps[] = [
     },
   },
   {
-    route: 'Blogs',
+    route: 'Favorites',
     component: PostScreen,
-    tabBarLabel: 'Blogs',
+    tabBarLabel: 'Favorites',
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'newspaper',
+      iconName: 'favorite',
+    },
+  },
+  {
+    route: 'Notifications',
+    component: ProfileScreen,
+    tabBarLabel: 'Notifications',
+    tabBarIconProps: {
+      iconType: Ionicons,
+      iconName: 'notifications',
     },
   },
   {

@@ -44,6 +44,7 @@ export type BottomTabParamList = {
   Home: undefined;
   Orders: undefined;
   Profile: undefined;
+  Favorites: undefined;
   Notifications: undefined;
   Blogs: undefined;
   Products: undefined;
