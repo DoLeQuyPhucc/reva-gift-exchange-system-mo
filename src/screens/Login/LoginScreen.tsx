@@ -21,7 +21,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import axiosInstance from "@/src/api/axiosInstance";
 
 const LoginScreen: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
@@ -39,15 +39,15 @@ const LoginScreen: React.FC = () => {
   );
 
   const handleLogin = async () => {
-    // if (!email || !password) {
-    //   Alert.alert("Error", "Please fill in both Email and password");
+    // if (!phoneNumber || !password) {
+    //   Alert.alert("Error", "Please fill in both phoneNumber and password");
     //   return;
     // }
 
     // setLoading(true);
     // try {
     //   const response = await axiosInstance.post('/auth/login', {
-    //     email: email,
+    //     phoneNumber: phoneNumber,
     //     password,
     //   });
     
@@ -63,7 +63,7 @@ const LoginScreen: React.FC = () => {
         screen: "Home"
       });
     
-    //   setEmail('');
+    //   setPhoneNumber('');
     //   setPassword('');
     // } catch (error: any) {
     //   Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
@@ -81,9 +81,9 @@ const LoginScreen: React.FC = () => {
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
           <AppTextInput 
-            placeholder="Email" 
-            value={email}
-            onChangeText={setEmail}
+            placeholder="Phone number" 
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
             autoCapitalize="none"
           />
           <AppTextInput 
@@ -133,7 +133,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.xLarge,
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     fontFamily: Font["poppins-bold"],
     marginVertical: Spacing * 3,
   },
@@ -146,15 +146,15 @@ const styles = StyleSheet.create({
   forgotPassword: {
     fontFamily: Font["poppins-semiBold"],
     fontSize: FontSize.small,
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     alignSelf: "flex-end",
   },
   signInButton: {
     padding: Spacing * 2,
-    backgroundColor: Colors.warmOrange,
+    backgroundColor: Colors.orange600,
     marginVertical: Spacing * 3,
     borderRadius: Spacing,
-    shadowColor: Colors.warmOrange,
+    shadowColor: Colors.orange600,
     shadowOffset: { width: 0, height: Spacing },
     shadowOpacity: 0.3,
     shadowRadius: Spacing,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   orContinueText: {
     fontFamily: Font["poppins-semiBold"],
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     textAlign: "center",
     fontSize: FontSize.small,
   },

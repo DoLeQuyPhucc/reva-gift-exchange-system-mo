@@ -2,6 +2,7 @@ import { createMaterialBottomTabNavigator } from '@react-navigation/material-bot
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import React from 'react';
 import { BottomTabParamList } from '@/src/layouts/types/navigationTypes';
+import Colors from '../constants/Colors';
 
 const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
 
@@ -20,7 +21,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
     <Tab.Navigator
       initialRouteName={tabs[0].route}
       shifting={true}
-      activeColor="black"
+      activeColor= {Colors.orange600}
       inactiveColor="gray"
       barStyle={{
         borderRadius: 20,

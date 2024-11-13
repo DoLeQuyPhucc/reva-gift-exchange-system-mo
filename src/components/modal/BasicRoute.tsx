@@ -285,13 +285,13 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: 16,
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     lineHeight: 24,
   },
   resultLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     marginBottom: 5,
   },
   colorsContainer: {
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   },
   colorText: {
     fontSize: 14,
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
   },
 });
 

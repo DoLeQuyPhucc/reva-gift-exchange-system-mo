@@ -40,12 +40,12 @@ const WelcomeScreen: React.FC = () => {
           <Text
             style={{
               fontSize: FontSize.xxLarge,
-              color: Colors.warmOrange,
+              color: Colors.orange600,
               fontFamily: Font["poppins-bold"],
               textAlign: "center",
             }}
           >
-            Fresh Milk Delivered to Your Doorstep
+            Easy and convenient exchange
           </Text>
 
           <Text
@@ -57,7 +57,7 @@ const WelcomeScreen: React.FC = () => {
               marginTop: Spacing * 2,
             }}
           >
-            Get the best milk delivery experience with us
+            Get the best experience with our app
           </Text>
         </View>
         <View
@@ -70,12 +70,12 @@ const WelcomeScreen: React.FC = () => {
           <TouchableOpacity
             onPress={() => navigation.navigate("LoginScreen")}
             style={{
-              backgroundColor: Colors.warmOrange,
+              backgroundColor: Colors.orange600,
               paddingVertical: Spacing * 1.5,
               paddingHorizontal: Spacing * 2,
               width: "48%",
               borderRadius: Spacing,
-              shadowColor: Colors.warmOrange,
+              shadowColor: Colors.orange600,
               shadowOffset: {
                 width: 0,
                 height: Spacing,

@@ -11,16 +11,15 @@ const dark = "#626262";
 const blue = "#1F41BB";
 const gray = "#ECECEC";
 
-
-const lightBlue = "#f1f4ff";
-const commonBlue = "#47CEFF";
-const darkBlue = "#0a7ea4";
-const warmOrange = "#f39c12";
-const darkBlueText = "#133048";
+const orange50 = "#fff7ed";
+const orange100 = "#ffedd5";
+const orange200 = "#fed7aa";
+const orange300 = "#fdba74";
+const orange500 = "#f97316";
+const orange600 = "#ea580c";
+const orange700 = "#c2410c";
 const lightGreen = "#1ABC9C";
 const pink = "#FF69B4";
-
-
 
 export const Colors = {
   light: {
@@ -49,12 +48,15 @@ export default {
   onPrimary: white,
   active: blue,
   borderWithOpacity: "#1f41bb",
-  lightPrimary: lightBlue,
+  lightPrimary: "#f5f5f5",
   gray: gray,
-  warmOrange: warmOrange,
-  commonBlue: commonBlue,
-  darkBlueText: darkBlueText,
+  orange50: orange50,
+  orange100: orange100,
+  orange200: orange200,
+  orange500: orange500,
+  orange600: orange600,
+  orange300: orange300,
+  orange700: orange700,
   lightGreen: lightGreen,
   pink: pink,
-  darkBlue: darkBlue
 };
