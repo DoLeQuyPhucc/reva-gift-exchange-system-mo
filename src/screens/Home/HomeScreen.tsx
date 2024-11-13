@@ -10,8 +10,8 @@ import {
   ScrollView,
   Dimensions,
   TextInput,
+  Modal,
 } from 'react-native';
-import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axiosInstance from '@/src/api/axiosInstance';
@@ -19,7 +19,16 @@ import Colors from '@/src/constants/Colors';
 // import { Product } from '../types/types';
 // import { useUser } from '../hooks/useUser';
 // import { useSearchStore } from '../store/SearchStore';
+interface SortOption {
+  value: 'createdAt' | 'name' | 'condition';
+  label: string;
+}
 
+const sortOptions: SortOption[] = [
+  { value: 'createdAt', label: 'Mới nhất' },
+  { value: 'name', label: 'Tên' },
+  { value: 'condition', label: 'Tình trạng' },
+];
 export interface Product {
   id: string;
   name: string;
@@ -53,13 +62,13 @@ export default function ProductsList() {
   const navigation = useNavigation();
   // const userId = useUser().userId;
   const userId = "1";
-  // const searchQuery = useSearchStore((state) => state.searchQuery);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'name' | 'condition'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'condition' | 'createdAt'>('createdAt');
+  const [showSortModal, setShowSortModal] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -97,10 +106,16 @@ export default function ProductsList() {
     )
     .filter((product) => (selectedCategory ? product.category === selectedCategory : true))
     .sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.name.localeCompare(b.name);
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'condition':
+          return a.condition.localeCompare(b.condition);
+        case 'createdAt':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // Sắp xếp mới nhất lên đầu
+        default:
+          return 0;
       }
-      return a.condition.localeCompare(b.condition);
     });
 
   const renderProductCard = ({ item: product }: { item: Product }) => (
@@ -141,6 +156,46 @@ export default function ProductsList() {
     </TouchableOpacity>
   );
 
+  
+  const renderSortModal = () => (
+    <Modal
+      visible={showSortModal}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowSortModal(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowSortModal(false)}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Sắp xếp theo</Text>
+          {sortOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={styles.sortOption}
+              onPress={() => {
+                setSortBy(option.value);
+                setShowSortModal(false);
+              }}
+            >
+              <Text style={[
+                styles.sortOptionText,
+                sortBy === option.value && styles.sortOptionTextSelected
+              ]}>
+                {option.label}
+              </Text>
+              {sortBy === option.value && (
+                <Icon name="check" size={20} color="#000" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   const renderHeader = () => (
     <View style={styles.header}>
       <TextInput
@@ -151,22 +206,22 @@ export default function ProductsList() {
       />
       <View style={styles.filterHeader}>
         <View style={styles.filterTitleContainer}>
-        <Icon
-                name="filter-alt"
-                size={20}
-              />
+          <Icon name="filter-alt" size={20} />
           <Text style={styles.filterTitle}>Bộ lọc</Text>
         </View>
         <TouchableOpacity
           style={styles.sortButton}
-          onPress={() => setSortBy(sortBy === 'name' ? 'condition' : 'name')}
+          onPress={() => setShowSortModal(true)}
         >
-          <Text>
-            Sắp xếp theo: {sortBy === 'name' ? 'Tên' : 'Tình trạng'}
-          </Text>
+          <View style={styles.sortButtonContent}>
+            <Icon name="sort" size={20} />
+            <Text style={styles.sortButtonText}>
+              {sortOptions.find(option => option.value === sortBy)?.label}
+            </Text>
+            <Icon name="arrow-drop-down" size={20} />
+          </View>
         </TouchableOpacity>
       </View>
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -224,6 +279,7 @@ export default function ProductsList() {
   }
 
   return (
+    <>
     <FlatList
       data={filteredProducts}
       renderItem={renderProductCard}
@@ -234,6 +290,8 @@ export default function ProductsList() {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     />
+    {renderSortModal()}
+  </>
   );
 }
 
@@ -274,12 +332,6 @@ const styles = StyleSheet.create({
   filterTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  sortButton: {
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
   },
   categoryScroll: {
     marginBottom: 16,
@@ -382,5 +434,55 @@ const styles = StyleSheet.create({
   outlineBadgeText: {
     fontSize: 12,
     color: '#666',
+  },
+  sortButton: {
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#fff',
+  },
+  sortButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sortButtonText: {
+    color: '#000',
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    paddingBottom: 32, // Thêm padding bottom để tránh safe area
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  sortOptionText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  sortOptionTextSelected: {
+    fontWeight: '600',
   },
 });
