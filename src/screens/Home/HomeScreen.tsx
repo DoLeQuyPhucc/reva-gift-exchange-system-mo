@@ -12,11 +12,12 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axiosInstance from '@/src/api/axiosInstance';
 import Colors from '@/src/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@/src/hooks/useNavigation';
+import { Product } from '@/src/shared/type';
 // import { Product } from '../types/types';
 // import { useUser } from '../hooks/useUser';
 // import { useSearchStore } from '../store/SearchStore';
@@ -30,35 +31,11 @@ const sortOptions: SortOption[] = [
   { value: 'name', label: 'Tên' },
   { value: 'condition', label: 'Tình trạng' },
 ];
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  condition: string;
-  owner_id: string;
-  email: string;
-  profilePicture: string;
-  images: string[];
-  available: boolean;
-  createdAt: string;
-  updatedAt: string;
-  itemAttributeValues: ProductAttribute[];
-  quantity: number;
-}
-
-export interface ProductAttribute {
-  id: string;
-  productId: string;
-  attributeId: string;
-  value: string;
-}
-
-
 
 const { width } = Dimensions.get('window');
 
-export default function ProductsList() {
+
+const HomeScreen: React.FC = () => {
 
   const navigation = useNavigation();
   const [userId, setUserId] = useState('');
@@ -123,7 +100,7 @@ export default function ProductsList() {
   const renderProductCard = ({ item: product }: { item: Product }) => (
     <TouchableOpacity
       style={styles.card}
-      // onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+      onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
     >
       <View style={styles.imageContainer}>
         <Image
@@ -488,3 +465,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export default HomeScreen;
