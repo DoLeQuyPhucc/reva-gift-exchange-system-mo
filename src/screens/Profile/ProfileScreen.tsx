@@ -6,10 +6,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/hooks/useNavigation';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Colors from '@/src/constants/Colors';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const ProfileScreen = () => {
   interface User {
-    name: string;
+    username: string;
     email: string;
   }
 
@@ -33,10 +34,11 @@ const ProfileScreen = () => {
         setLoading(true);
         // const response = await axiosInstance.get('/auth/me');
         // setUserData(response.data.user);
-        setUserData({
-          name: 'John Doe',
-          email: 'john.doe@example.com'
-        });
+        const user = await AsyncStorage.getItem('user');
+        if (user) {
+          setUserData(JSON.parse(user));
+          console.log('User data:', userData);
+        }
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
@@ -111,7 +113,7 @@ const ProfileScreen = () => {
               <Icon name="camera" size={20} color={Colors.orange700} />
             </View>
           </View>
-          <Title style={styles.userName}>{userData?.name}</Title>
+          <Title style={styles.userName}>{userData?.username}</Title>
           <Text style={styles.userEmail}>{userData?.email}</Text>
         </View>
 
@@ -123,12 +125,12 @@ const ProfileScreen = () => {
                 <View style={styles.infoItem}>
                   <Icon name="person-outline" size={24} color={Colors.orange500} />
                   <Text style={styles.infoLabel}>First Name</Text>
-                  <Text style={styles.infoValue}>{userData?.name.split(' ')[0]}</Text>
+                  <Text style={styles.infoValue}>{userData?.username.split(' ')[0]}</Text>
                 </View>
                 <View style={styles.infoItem}>
                   <Icon name="person" size={24} color={Colors.orange500} />
                   <Text style={styles.infoLabel}>Last Name</Text>
-                  <Text style={styles.infoValue}>{userData?.name.split(' ')[1]}</Text>
+                  <Text style={styles.infoValue}>{userData?.username.split(' ')[1]}</Text>
                 </View>
               </View>
             </Card.Content>
