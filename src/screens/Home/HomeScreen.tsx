@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axiosInstance from '@/src/api/axiosInstance';
 import Colors from '@/src/constants/Colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { Product } from '../types/types';
 // import { useUser } from '../hooks/useUser';
 // import { useSearchStore } from '../store/SearchStore';
@@ -60,8 +61,7 @@ const { width } = Dimensions.get('window');
 export default function ProductsList() {
 
   const navigation = useNavigation();
-  // const userId = useUser().userId;
-  const userId = "1";
+  const [userId, setUserId] = useState('');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +73,8 @@ export default function ProductsList() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        const userId = await AsyncStorage.getItem('userId');
+        setUserId(userId || '');
         const response = await axiosInstance.get('/items');
         const productsData = response.data.data.map((item: any) => ({
           id: item.id,
@@ -99,7 +101,7 @@ export default function ProductsList() {
   const categories = [...new Set(products.map((product) => product.category))];
 
   const filteredProducts = products
-    .filter((product) => product.owner_id !== userId)
+    .filter((product) => product.owner_id.toLowerCase().trim() !== userId.toLowerCase().trim())
     .filter((product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -112,7 +114,7 @@ export default function ProductsList() {
         case 'condition':
           return a.condition.localeCompare(b.condition);
         case 'createdAt':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // Sắp xếp mới nhất lên đầu
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default:
           return 0;
       }

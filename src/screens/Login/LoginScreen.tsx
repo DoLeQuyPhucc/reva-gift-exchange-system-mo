@@ -22,6 +22,7 @@ import axiosInstance from "@/src/api/axiosInstance";
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
@@ -39,37 +40,57 @@ const LoginScreen: React.FC = () => {
   );
 
   const handleLogin = async () => {
-    // if (!phoneNumber || !password) {
-    //   Alert.alert("Error", "Please fill in both phoneNumber and password");
+    // if (!phoneNumber || !password || !email) {
+    //   Alert.alert("Error", "Please fill in both Phone Number and password");
     //   return;
     // }
+    if (!password || !email) {
+      Alert.alert("Error", "Please fill in both Email and password");
+      return;
+    }
 
-    // setLoading(true);
-    // try {
-    //   const response = await axiosInstance.post('/auth/login', {
-    //     phoneNumber: phoneNumber,
-    //     password,
-    //   });
+    setLoading(true);
+    try {
+      // const response = await axiosInstance.post('/authentication/login', {
+      //   phoneNumber: phoneNumber,
+      //   password,
+      // });
+      const response = await axiosInstance.post('/authentication/login', {
+        email: email,
+        password,
+      });
     
-    //   const { accessToken, refreshToken, user } = response.data;
+      const { token, refreshToken, userId, username, role } = response.data.data;
+      console.log(response.data.data);
     
-    //   // Store tokens and user ID in AsyncStorage
-    //   await AsyncStorage.setItem('accessToken', accessToken);
-    //   await AsyncStorage.setItem('refreshToken', refreshToken);
-    //   await AsyncStorage.setItem('userId', user.id);
+      const user = {
+        id: userId,
+        username,
+        role,
+        email
+      };
+
+      console.log('user',user);
+      // Store tokens and user ID in AsyncStorage
+      await AsyncStorage.setItem('accessToken', token);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+      await AsyncStorage.setItem('userId', userId);
+      await AsyncStorage.setItem('userRole', role);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
     
       // Navigate to the main screen
       navigation.navigate("Main", {
         screen: "Home"
       });
-    
-    //   setPhoneNumber('');
-    //   setPassword('');
-    // } catch (error: any) {
-    //   Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
-    // } finally {
-    //   setLoading(false);
-    // }
+      
+      setEmail('');
+      setPhoneNumber('');
+      setPassword('');
+    } catch (error: any) {
+      Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,10 +101,16 @@ const LoginScreen: React.FC = () => {
           <Text style={styles.subtitle}>Welcome back you've been missed!</Text>
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
-          <AppTextInput 
+          {/* <AppTextInput 
             placeholder="Phone number" 
             value={phoneNumber}
             onChangeText={setPhoneNumber}
+            autoCapitalize="none"
+          /> */}
+          <AppTextInput 
+            placeholder="Email" 
+            value={email}
+            onChangeText={setEmail}
             autoCapitalize="none"
           />
           <AppTextInput 

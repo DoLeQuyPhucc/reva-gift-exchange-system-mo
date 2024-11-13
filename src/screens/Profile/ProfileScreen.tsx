@@ -52,10 +52,13 @@ const ProfileScreen = () => {
   const handleLogout = async () => {
     try {
       await clearAuthTokens();
+
       await AsyncStorage.removeItem('accessToken');
       await AsyncStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('userId');
       await AsyncStorage.removeItem('userRole');
+      await AsyncStorage.removeItem('user');
+
       navigation.navigate('WelcomeScreen');
     } catch (error) {
       console.error('Error clearing session:', error);
