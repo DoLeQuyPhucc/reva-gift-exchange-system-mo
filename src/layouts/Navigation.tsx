@@ -20,6 +20,8 @@ import RegisterScreen from '@/screens/Register/RegisterScreen';
 import HomeScreen from '@/screens/Home/HomeScreen';
 import PostScreen from '@/screens/Post/PostScreen';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
+import NotificationsScreen from '../screens/Notifications/Notifications';
+import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -37,7 +39,7 @@ const tabBarProps: TabBarProps[] = [
   },
   {
     route: 'Favorites',
-    component: PostScreen,
+    component: FavoritesScreen,
     tabBarLabel: 'Favorites',
     tabBarIconProps: {
       iconType: Ionicons,
@@ -46,7 +48,7 @@ const tabBarProps: TabBarProps[] = [
   },
   {
     route: 'Notifications',
-    component: ProfileScreen,
+    component: NotificationsScreen,
     tabBarLabel: 'Notifications',
     tabBarIconProps: {
       iconType: Ionicons,

@@ -15,7 +15,6 @@ export interface TabBarProps {
     iconName: string;
   };
 }
-
 const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
   return (
     <Tab.Navigator
