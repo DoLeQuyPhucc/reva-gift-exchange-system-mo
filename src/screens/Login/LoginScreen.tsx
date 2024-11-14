@@ -91,18 +91,20 @@ const LoginScreen: React.FC = () => {
     <SafeAreaView>
       <View style={{ padding: Spacing * 2 }}>
         <View style={{ alignItems: "center" }}>
-          <Text style={styles.title}>Login here</Text>
-          <Text style={styles.subtitle}>Welcome back you've been missed!</Text>
+          <Text style={styles.title}>Đăng nhập</Text>
+          <Text style={styles.subtitle}>
+            Chào mừng bạn trở lại, hãy nhập thông tin để tiếp tục
+          </Text>
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
           <AppTextInput 
-            placeholder="Phone number" 
+            placeholder="Số điện thoại" 
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             autoCapitalize="none"
           />
           <AppTextInput 
-            placeholder="Password" 
+            placeholder="Mật khẩu" 
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -110,7 +112,7 @@ const LoginScreen: React.FC = () => {
           />
         </View>
         <View>
-          <Text style={styles.forgotPassword}>Forgot your password?</Text>
+          <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
         </View>
         <TouchableOpacity
           style={styles.signInButton}
@@ -120,14 +122,14 @@ const LoginScreen: React.FC = () => {
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.signInText}>Sign in</Text>
+            <Text style={styles.signInText}>Đăng nhập</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")} style={{ padding: Spacing }}>
-          <Text style={styles.createAccountText}>Create new account</Text>
+          <Text style={styles.createAccountText}>Tạo tài khoản mới</Text>
         </TouchableOpacity>
         <View style={{ marginVertical: Spacing * 3 }}>
-          <Text style={styles.orContinueText}>Or continue with</Text>
+          <Text style={styles.orContinueText}>Bạn có thể bắt đầu với</Text>
           <View style={styles.socialIconsContainer}>
             <TouchableOpacity style={styles.socialIcon}>
               <Ionicons name="logo-google" color={Colors.text} size={Spacing * 2} />
