@@ -2,14 +2,25 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+
 interface MediaUploadSectionProps {
+
   images: string[];
+
   video: string;
+
+  selectedImage: string | null;
+
   onPickImage: () => void;
+
   onPickVideo: () => void;
+
   onRemoveImage: (index: number) => void;
+
   onRemoveVideo: () => void;
+
 }
+
 
 const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({ 
   images, 

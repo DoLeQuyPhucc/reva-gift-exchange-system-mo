@@ -5,20 +5,11 @@ import { View, Modal, TouchableOpacity, Text, StyleSheet, Animated, Dimensions }
 import { BottomTabParamList } from '@/src/layouts/types/navigationTypes';
 import Colors from '@/constants/Colors';
 import { useNavigation } from '@/hooks/useNavigation';
+import { Category } from '@/shared/type';
+import useCategories from '@/hooks/useCategories';
 
 const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-const categories: Category[] = [
-  { id: '1', name: 'Điện thoại' },
-  { id: '2', name: 'Máy tính' },
-  { id: '3', name: 'Đồ gia dụng' }, 
-];
 
 export interface TabBarProps {
   route: keyof BottomTabParamList;
@@ -31,6 +22,7 @@ export interface TabBarProps {
 }
 
 const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
+  const { categories, isLoading } = useCategories();
   const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const navigation = useNavigation();
@@ -57,7 +49,10 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
 
   const handleCategorySelect = (category: Category) => {
     hideModal();
-    navigation.navigate('CreatePost', { category });
+    navigation.navigate('CreatePost', { 
+      category,
+      categoryId: category.id 
+    });
   };
 
   const CategoryModal = () => (
