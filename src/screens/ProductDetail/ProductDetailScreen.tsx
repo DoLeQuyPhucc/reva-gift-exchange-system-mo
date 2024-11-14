@@ -14,12 +14,13 @@ import {
 import { RouteProp, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Product, ProductAttribute } from "@/src/shared/type";
+import { Product } from "@/src/shared/type";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Button } from "react-native";
 import { formatDate } from "@/src/shared/formatDate";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/src/constants/Colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type TimeSlot = {
   id: string;
@@ -70,6 +71,7 @@ export default function ProductDetailScreen() {
 
         if (response.data.isSuccess && response.data.data) {
           setProduct(response.data.data);
+          console.log("Product:", response.data.data);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
         }
@@ -133,9 +135,9 @@ export default function ProductDetailScreen() {
   const fetchUserItems = async () => {
     setLoadingUserItems(true);
     try {
-      const response = await axiosInstance.get("/items/current-user");
+      const response = await axiosInstance.get(`/items/current-user`);
       if (response.data.isSuccess) {
-        setUserItems(response.data.data);
+        setUserItems(response.data.data["Approved Items"]);
       }
     } catch (error) {
       console.error("Error fetching user items:", error);
@@ -184,19 +186,6 @@ export default function ProductDetailScreen() {
     setRequestMessage("");
   };
 
-  const renderAttributes = () => {
-    if (product?.itemAttributeValues.length === 0) {
-      return (
-        <Text style={styles.attributeText}>Không có thông số kỹ thuật</Text>
-      );
-    }
-    return product?.itemAttributeValues.map((attr: ProductAttribute) => (
-      <View key={attr.id} style={styles.attributeContainer}>
-        <Text style={styles.attributeText}>- {attr.value}</Text>
-      </View>
-    ));
-  };
-
   const handleNavigateToUserProducts = () => {
     // if (product) {
     //   navigation.navigate('UserProductsScreen', { owner: product.owner });
@@ -220,24 +209,30 @@ export default function ProductDetailScreen() {
 
     return (
       <ScrollView horizontal style={styles.userItemsScroll}>
-        {userItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={[
-              styles.userItemCard,
-              selectedUserItem?.id === item.id && styles.selectedUserItemCard,
-            ]}
-            onPress={() => setSelectedUserItem(item)}
-          >
-            <Image
-              source={{ uri: item.images[0] }}
-              style={styles.userItemImage}
-            />
-            <Text style={styles.userItemName} numberOfLines={2}>
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {userItems
+          .filter((item) => !item.isGift)
+          .map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.userItemCard,
+                selectedUserItem?.id === item.id && styles.selectedUserItemCard,
+              ]}
+              onPress={() => setSelectedUserItem(item)}
+            >
+              <Image
+                source={{ uri: item.images[0] }}
+                style={styles.userItemImage}
+              />
+              <Text style={styles.userItemName} numberOfLines={1}>
+                {item.name}
+              </Text>
+
+              <Text style={styles.userItemName} numberOfLines={1}>
+                {item.point}P
+              </Text>
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     );
   };
@@ -294,6 +289,9 @@ export default function ProductDetailScreen() {
             </View>
           )}
         </View>
+        {!product.isGift && (
+          <Text style={styles.pointText}>{product.point}P</Text>
+        )}
 
         <Text style={styles.description}>{product.description}</Text>
 
@@ -314,11 +312,14 @@ export default function ProductDetailScreen() {
               Tình trạng: {product.condition}
             </Text>
           </View>
-        </View>
-
-        <View style={styles.attributesContainer}>
-          <Text style={styles.attributesTitle}>Thông số kỹ thuật:</Text>
-          {renderAttributes()}
+          {product.isGift && (
+            <View style={styles.detailItem}>
+              <Icon name="card-giftcard" size={20} color={Colors.orange500} />
+              <Text style={[styles.detailText, styles.giftText]}>
+                Sản phẩm này là quà tặng
+              </Text>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity
@@ -327,14 +328,12 @@ export default function ProductDetailScreen() {
         >
           <Image
             source={{
-              uri: "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436178.jpg?t=st=1731558441~exp=1731562041~hmac=eb803dd276fc45525a2a6d074db707e75e082034a85f1b489db6f93addd08d28&w=740",
+              uri: product.profilePicture,
             }}
             style={styles.avatar}
           />
-          {/* <Image source={{ uri: product.profilePicture }} style={styles.avatar} /> */}
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{product.email}</Text>
-            <Text style={styles.userEmail}>{product.email}</Text>
+            <Text style={styles.userName}>{product.owner_Name}</Text>
           </View>
         </TouchableOpacity>
 
@@ -344,7 +343,11 @@ export default function ProductDetailScreen() {
               style={[styles.button, styles.requestButton]}
               onPress={handleRequest}
             >
-              <Text style={styles.buttonText}>Đăng ký nhận</Text>
+              {product.isGift ? (
+                <Text style={styles.buttonText}>Đăng ký nhận</Text>
+              ) : (
+                <Text style={styles.buttonText}>Yêu cầu trao đổi</Text>
+              )}
             </TouchableOpacity>
           </View>
         ) : (
@@ -365,9 +368,10 @@ export default function ProductDetailScreen() {
               style={styles.modalScrollView}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.modalTitle}>Tạo yêu cầu trao đổi</Text>
-
-              {/* Current Product Section */}
+              {product.isGift ? (
+                <>
+                  <Text style={styles.modalTitle}>Tạo yêu cầu nhận hàng</Text>
+                  {/* Current Product Section */}
               <View style={styles.currentProductSection}>
                 <Image
                   source={{ uri: product?.images[0] }}
@@ -375,109 +379,142 @@ export default function ProductDetailScreen() {
                 />
                 <View style={styles.currentProductInfo}>
                   <Text style={styles.currentProductName}>{product?.name}</Text>
-                  <Text style={styles.currentProductPrice}>$150</Text>
                 </View>
               </View>
-
-              <View style={styles.exchangeArrowContainer}>
-                <Icon name="swap-vert" size={24} color={Colors.orange500} />
-                <Text style={styles.exchangeText}>
-                  Chọn sản phẩm để trao đổi
-                </Text>
-              </View>
-
-              {/* User Items Section */}
-              <View style={styles.userItemsSection}>{renderUserItems()}</View>
-
-              {selectedUserItem && (
-                <View style={styles.selectedItemInfo}>
-                  <Text style={styles.selectedItemText}>
-                    Sản phẩm đã chọn: {selectedUserItem.name}
-                  </Text>
-                </View>
-              )}
-
-              <Text style={styles.modalDescription}>
-                Nhập lời nhắn của bạn:
-              </Text>
-              <TextInput
-                style={styles.requestInput}
-                placeholder="Nhập tin nhắn..."
-                value={requestMessage}
-                onChangeText={setRequestMessage}
-                multiline
-              />
-              {requestMessage.length > 99 && (
-                <Text style={styles.textErrorMessage}>
-                  Lời nhắn của bạn không được vượt quá 100 ký tự.
-                </Text>
-              )}
-
-              <Text style={styles.modalDescription}>
-                Vui lòng chọn khung thời gian bạn đến nhận hàng
-              </Text>
-              <Text style={styles.modalDescriptionSub}>
-                Thời gian này sẽ được gửi đến {product.email}, nếu phù hợp sẽ
-                tiếp hành trao đổi. Bạn có thể chọn tối đa 3 khung giờ.
-              </Text>
-
-              {/* Selected Time Slots Display */}
-              <View style={styles.selectedSlotsContainer}>
-                {selectedTimeSlots.map((slot) => (
-                  <View key={slot.id} style={styles.timeSlotBadge}>
-                    <Text style={styles.timeSlotText}>{slot.displayText}</Text>
-                    <TouchableOpacity onPress={() => removeTimeSlot(slot.id)}>
-                      <Icon name="close" size={20} color={Colors.orange500} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-
-              {countTimeSlots < 3 && (
-                <TouchableOpacity
-                  style={styles.datePickerButton}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Text style={styles.datePickerButtonText}>
-                    Chọn ngày: {selectedDate.toLocaleDateString()}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {showDatePicker && (
-                <DateTimePicker
-                  value={selectedDate}
-                  mode="date"
-                  display="default"
-                  onChange={handleDateChange}
-                  minimumDate={new Date()}
+                </>
+              ) : (
+                <>
+                <Text style={styles.modalTitle}>Tạo yêu cầu trao đổi</Text>
+                  {/* Current Product Section */}
+              <View style={styles.currentProductSection}>
+                <Image
+                  source={{ uri: product?.images[0] }}
+                  style={styles.currentProductImage}
                 />
+                <View style={styles.currentProductInfo}>
+                  <Text style={styles.currentProductName}>{product?.name}</Text>
+                  <Text style={styles.currentProductPrice}>
+                    {product.point}P
+                  </Text>
+                </View>
+              </View>
+                </>
               )}
+              
+              {!product.isGift && (
+                <>
+                  <View style={styles.exchangeArrowContainer}>
+                    <Icon name="swap-vert" size={24} color={Colors.orange500} />
+                    <Text style={styles.exchangeText}>
+                      Chọn sản phẩm để trao đổi
+                    </Text>
+                  </View>
 
-              {/* Time Slots Grid */}
-              {!showDatePicker && countTimeSlots < 3 && (
-                <View style={styles.timeGrid}>
-                  {timeSlots.map(({ hour, label }) => (
+                  <View style={styles.userItemsSection}>
+                    {renderUserItems()}
+                  </View>
+                  {selectedUserItem && (
+                    <View style={styles.selectedItemInfo}>
+                      <Text style={styles.selectedItemText}>
+                        Sản phẩm đã chọn: {selectedUserItem.name}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+              {(product.isGift || userItems.length > 0) && (
+                <>
+                  <Text style={styles.modalDescription}>
+                    Nhập lời nhắn của bạn:
+                  </Text>
+                  <TextInput
+                    style={styles.requestInput}
+                    placeholder="Nhập tin nhắn..."
+                    value={requestMessage}
+                    onChangeText={setRequestMessage}
+                    multiline
+                  />
+                  {requestMessage.length > 99 && (
+                    <Text style={styles.textErrorMessage}>
+                      Lời nhắn của bạn không được vượt quá 100 ký tự.
+                    </Text>
+                  )}
+
+                  <Text style={styles.modalDescription}>
+                    Vui lòng chọn khung thời gian bạn đến nhận hàng
+                  </Text>
+                  <Text style={styles.modalDescriptionSub}>
+                    Thời gian này sẽ được gửi đến {product.owner_Name}, nếu phù
+                    hợp sẽ tiếp hành trao đổi. Bạn có thể chọn tối đa 3 khung
+                    giờ.
+                  </Text>
+
+                  <View style={styles.selectedSlotsContainer}>
+                    {selectedTimeSlots.map((slot) => (
+                      <View key={slot.id} style={styles.timeSlotBadge}>
+                        <Text style={styles.timeSlotText}>
+                          {slot.displayText}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => removeTimeSlot(slot.id)}
+                        >
+                          <Icon
+                            name="close"
+                            size={20}
+                            color={Colors.orange500}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+
+                  {countTimeSlots < 3 && (
                     <TouchableOpacity
-                      key={hour}
-                      style={[
-                        styles.timeSlot,
-                        selectedHour === hour && styles.selectedTimeSlot,
-                      ]}
-                      onPress={() => handleTimeSelect(hour)}
-                      disabled={selectedTimeSlots.length >= 3}
+                      style={styles.datePickerButton}
+                      onPress={() => setShowDatePicker(true)}
                     >
-                      <Text
-                        style={[
-                          styles.timeSlotLabel,
-                          selectedHour === hour && styles.selectedTimeSlotLabel,
-                        ]}
-                      >
-                        {label}
+                      <Text style={styles.datePickerButtonText}>
+                        Chọn ngày: {selectedDate.toLocaleDateString()}
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
+                  )}
+
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={selectedDate}
+                      mode="date"
+                      display="default"
+                      onChange={handleDateChange}
+                      minimumDate={new Date()}
+                    />
+                  )}
+
+                  {!showDatePicker && countTimeSlots < 3 && (
+                    <View style={styles.timeGrid}>
+                      {timeSlots.map(({ hour, label }) => (
+                        <TouchableOpacity
+                          key={hour}
+                          style={[
+                            styles.timeSlot,
+                            selectedHour === hour && styles.selectedTimeSlot,
+                          ]}
+                          onPress={() => handleTimeSelect(hour)}
+                          disabled={selectedTimeSlots.length >= 3}
+                        >
+                          <Text
+                            style={[
+                              styles.timeSlotLabel,
+                              selectedHour === hour &&
+                                styles.selectedTimeSlotLabel,
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </ScrollView>
 
@@ -549,6 +586,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
   },
+  pointText: {
+    fontSize: 32,
+    color: Colors.orange500,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
   description: {
     fontSize: 16,
     color: "#666",
@@ -566,6 +609,10 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 16,
     color: "#666",
+  },
+  giftText: {
+    color: Colors.orange500,
+    fontWeight: "bold",
   },
   attributesContainer: {
     marginBottom: 16,
@@ -631,6 +678,7 @@ const styles = StyleSheet.create({
   },
   modalDescription: {
     fontSize: 16,
+    marginTop: 12,
     marginBottom: 16,
     fontWeight: "bold",
     textAlign: "left",
@@ -819,8 +867,9 @@ const styles = StyleSheet.create({
   },
   noItemsText: {
     textAlign: "center",
-    color: "#666",
+    color: Colors.orange500,
     padding: 16,
+    fontWeight: "bold",
   },
   disabledButton: {
     opacity: 0.5,
