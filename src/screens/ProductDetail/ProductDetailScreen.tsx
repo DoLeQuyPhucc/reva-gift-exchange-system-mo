@@ -160,17 +160,30 @@ export default function ProductDetailScreen() {
     setShowRequestDialog(false);
 
     if (!selectedUserItem) {
-      console.error("Selected user item not found");
+      const data = {
+        itemId: product?.id,
+        message: requestMessage,
+        appointmentDate: selectedTimeSlots.map(slot => slot.dateTime),
+        requesterItemId: null,
+      };
+      const response = await axiosInstance.post("/request/create", data);
+
+      if (response.data.isSuccess) {
+        setShowRequestDialog(false);
+        setSelectedTimeSlots([]);
+        setRequestMessage("");
+      }
       return;
     }
 
     const data = {
       itemId: product?.id,
-      // userItemId: selectedUserItem.id,
-      quantity: product?.quantity,
-      // message: requestMessage,
-      // timeSlots: selectedTimeSlots.map(slot => slot.dateTime)
+      message: requestMessage,
+      appointmentDate: selectedTimeSlots.map(slot => slot.dateTime),
+      requesterItemId: selectedUserItem.id,
     };
+
+    console.log("Request data:", data);
 
     const response = await axiosInstance.post("/request/create", data);
 
@@ -184,6 +197,8 @@ export default function ProductDetailScreen() {
   const handleCancelRequest = () => {
     setShowRequestDialog(false);
     setRequestMessage("");
+    setCountTimeSlots(0);
+    setSelectedUserItem(null);
   };
 
   const handleNavigateToUserProducts = () => {
@@ -530,10 +545,10 @@ export default function ProductDetailScreen() {
                 style={[
                   styles.button,
                   styles.confirmButton,
-                  !selectedUserItem && styles.disabledButton,
+                  (product.isGift ? selectedTimeSlots.length === 0 : (!selectedUserItem || selectedTimeSlots.length === 0)) && styles.disabledButton,
                 ]}
                 onPress={handleConfirmRequest}
-                disabled={!selectedUserItem}
+                disabled={product.isGift ? selectedTimeSlots.length === 0 : (!selectedUserItem || selectedTimeSlots.length === 0)}
               >
                 <Text style={styles.buttonText}>Xác nhận</Text>
               </Pressable>

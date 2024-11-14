@@ -26,7 +26,9 @@ export type RootStackParamList = {
   ListFavoriteBlogScreen: undefined;
   CreatePost: { category: { id: string; name: string } };
   ProductDetail: { productId: string };
-  MyProduct: undefined;
+  MyProducts: undefined;
+  MyRequests: undefined;
+  MyTransactions: undefined;
   ChatScreen: undefined;
   PackageScreen: undefined;
   MyPackageScreen: undefined;

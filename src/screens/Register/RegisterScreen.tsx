@@ -214,24 +214,24 @@ const RegisterScreen = () => {
       phone: phoneNumber,
       firstName,
       lastName,
-      dob: selectedDate,
+      dob: formatDateOnlyDate(selectedDate.toDateString()),
       gender,
       password,
       confirmedPassword: confirmPassword,
-      address: `${address} - ${selectedWard.name} -  ${selectedDistrict.name} - ${selectedProvince.name}`,
-      latitude: 0,
-      longitude: 0,
+      address: `${address}, ${selectedWard.name},  ${selectedDistrict.name}, ${selectedProvince.name}`,
+      latitude: "0",
+      longitude: "0",
     };
 
     console.log(data);
 
     try {
-      // const response = await axiosInstance.post('/auth/register', data);
-      // if (response.status === 200) {
-      //   Alert.alert('Success', 'Account created successfully');
-      //   resetForm();
-      //   navigation.navigate('LoginScreen');
-      // }
+      const response = await axiosInstance.post('user/register', data);
+      if (response.data.isSuccess === true) {
+        Alert.alert('Success', 'Account created successfully');
+        resetForm();
+        navigation.navigate('LoginScreen');
+      }
     } catch (error) {
       Alert.alert("Error", "Failed to create account");
     } finally {
@@ -346,7 +346,6 @@ const RegisterScreen = () => {
                 mode="date"
                 display="default"
                 onChange={handleDateChange}
-                minimumDate={new Date()}
               />
             )}
             {/* Address Selection */}
