@@ -4,20 +4,28 @@ export interface Product {
   description: string;
   category: string;
   condition: string;
+  isGift: boolean;
+  point: number;
+  owner_Name: string;
   owner_id: string;
-  email: string;
   profilePicture: string;
-  images: string[];
   available: boolean;
   createdAt: string;
+  expiresAt: string;
   updatedAt: string;
-  itemAttributeValues: ProductAttribute[];
+  images: string[];
   quantity: number;
+  dateRemaining: number;
+  status?: string;
 }
 
-export interface ProductAttribute {
+export interface User {
   id: string;
-  productId: string;
-  attributeId: string;
-  value: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: string;
+  profileURL: string;
+  // products: Product[];
 }

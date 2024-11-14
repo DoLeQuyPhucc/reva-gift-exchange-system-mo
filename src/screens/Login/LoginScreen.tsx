@@ -19,10 +19,10 @@ import AppTextInput from "@/src/components/AppTextInput";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { useFocusEffect } from "@react-navigation/native";
 import axiosInstance from "@/src/api/axiosInstance";
+import { User } from "@/src/shared/type";
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
@@ -40,34 +40,29 @@ const LoginScreen: React.FC = () => {
   );
 
   const handleLogin = async () => {
-    // if (!phoneNumber || !password || !email) {
-    //   Alert.alert("Error", "Please fill in both Phone Number and password");
-    //   return;
-    // }
-    if (!password || !email) {
-      Alert.alert("Error", "Please fill in both Email and password");
+    if (!phoneNumber || !password) {
+      Alert.alert("Error", "Please fill in both Phone Number and password");
       return;
     }
 
     setLoading(true);
     try {
-      // const response = await axiosInstance.post('/authentication/login', {
-      //   phoneNumber: phoneNumber,
-      //   password,
-      // });
       const response = await axiosInstance.post('/authentication/login', {
-        email: email,
+        phone: phoneNumber,
         password,
       });
     
-      const { token, refreshToken, userId, username, role } = response.data.data;
+      const { token, refreshToken, userId, username, role, firstName, lastName, profileURL  } = response.data.data;
       console.log(response.data.data);
     
-      const user = {
+      const user: User = {
         id: userId,
         username,
         role,
-        email
+        phone: phoneNumber,
+        firstName,
+        lastName,
+        profileURL
       };
 
       console.log('user',user);
@@ -83,7 +78,6 @@ const LoginScreen: React.FC = () => {
         screen: "Home"
       });
       
-      setEmail('');
       setPhoneNumber('');
       setPassword('');
     } catch (error: any) {
@@ -101,16 +95,10 @@ const LoginScreen: React.FC = () => {
           <Text style={styles.subtitle}>Welcome back you've been missed!</Text>
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
-          {/* <AppTextInput 
+          <AppTextInput 
             placeholder="Phone number" 
             value={phoneNumber}
             onChangeText={setPhoneNumber}
-            autoCapitalize="none"
-          /> */}
-          <AppTextInput 
-            placeholder="Email" 
-            value={email}
-            onChangeText={setEmail}
             autoCapitalize="none"
           />
           <AppTextInput 

@@ -18,9 +18,7 @@ import Colors from '@/src/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/src/hooks/useNavigation';
 import { Product } from '@/src/shared/type';
-// import { Product } from '../types/types';
-// import { useUser } from '../hooks/useUser';
-// import { useSearchStore } from '../store/SearchStore';
+
 interface SortOption {
   value: 'createdAt' | 'name' | 'condition';
   label: string;
