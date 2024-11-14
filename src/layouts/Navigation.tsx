@@ -20,6 +20,9 @@ import RegisterScreen from '@/screens/Register/RegisterScreen';
 import HomeScreen from '@/screens/Home/HomeScreen';
 import PostScreen from '@/screens/Post/PostScreen';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
+import NotificationsScreen from '../screens/Notifications/Notifications';
+import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
+import ProductDetailScreen from '../screens/ProductDetail/ProductDetailScreen';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -36,12 +39,21 @@ const tabBarProps: TabBarProps[] = [
     },
   },
   {
-    route: 'Blogs',
-    component: PostScreen,
-    tabBarLabel: 'Blogs',
+    route: 'Favorites',
+    component: FavoritesScreen,
+    tabBarLabel: 'Favorites',
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'newspaper',
+      iconName: 'favorite',
+    },
+  },
+  {
+    route: 'Notifications',
+    component: NotificationsScreen,
+    tabBarLabel: 'Notifications',
+    tabBarIconProps: {
+      iconType: Ionicons,
+      iconName: 'notifications',
     },
   },
   {
@@ -103,6 +115,7 @@ export default function Navigation() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
         </Stack.Navigator>
     </NavigationContainer>
   );

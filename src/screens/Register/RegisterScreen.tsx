@@ -20,7 +20,7 @@ import axiosInstance from "@/src/api/axiosInstance";
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation();
 
-  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
@@ -29,7 +29,7 @@ const RegisterScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
-    setEmail('');
+    setPhoneNumber('');
     setPassword('');
     setConfirmPassword('');
     setName('');
@@ -48,7 +48,7 @@ const RegisterScreen: React.FC = () => {
     try {
       const response = await axiosInstance.post('/auth/register', {
         name,
-        email,
+        phoneNumber,
         password,
         birthYear,
         gender
@@ -73,12 +73,12 @@ const RegisterScreen: React.FC = () => {
           <View style={{ alignItems: "center" }}>
             <Text style={styles.header}>Create account</Text>
             <Text style={styles.subHeader}>
-              Create an account so you can explore all Fish Koi
+              Create an account so you can exchange every thing you want with other users
             </Text>
           </View>
           <View style={{ marginVertical: Spacing * 3 }}>
           <AppTextInput placeholder="Name" value={name} onChangeText={setName} />
-            <AppTextInput placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+            <AppTextInput placeholder="Phone Number" value={phoneNumber} onChangeText={setPhoneNumber} />
             <AppTextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
             <AppTextInput placeholder="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
             <AppTextInput placeholder="Birth Year" value={birthYear} onChangeText={setBirthYear} keyboardType="numeric" />
@@ -116,7 +116,7 @@ const RegisterScreen: React.FC = () => {
 const styles = StyleSheet.create({
   header: {
     fontSize: FontSize.xLarge,
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     fontFamily: Font["poppins-bold"],
     marginVertical: Spacing * 3,
   },
@@ -128,10 +128,10 @@ const styles = StyleSheet.create({
   },
   signUpButton: {
     padding: Spacing * 2,
-    backgroundColor: Colors.warmOrange,
+    backgroundColor: Colors.orange600,
     marginVertical: Spacing * 3,
     borderRadius: Spacing,
-    shadowColor: Colors.warmOrange,
+    shadowColor: Colors.orange600,
     shadowOffset: { width: 0, height: Spacing },
     shadowOpacity: 0.3,
     shadowRadius: Spacing,
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   orContinueText: {
     fontFamily: Font["poppins-semiBold"],
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     textAlign: "center",
     fontSize: FontSize.small,
   },

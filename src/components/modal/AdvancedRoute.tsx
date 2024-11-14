@@ -94,7 +94,7 @@ const AdvancedRouteModal: React.FC<AdvancedRouteModalProps> = ({
               {/* Số lượng cá */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <MaterialCommunityIcons name="fish" size={24} color={Colors.darkBlueText} />
+                  <MaterialCommunityIcons name="fish" size={24} color={Colors.orange700} />
                   <Text style={styles.sectionTitle}>Số lượng cá</Text>
                 </View>
                 {message.message_NumberOfFish_Error && (
@@ -114,7 +114,7 @@ const AdvancedRouteModal: React.FC<AdvancedRouteModalProps> = ({
               {/* Màu sắc */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <MaterialIcons name="color-lens" size={24} color={Colors.darkBlueText} />
+                  <MaterialIcons name="color-lens" size={24} color={Colors.orange700} />
                   <Text style={styles.sectionTitle}>Màu sắc</Text>
                 </View>
                 {message.message_Color_Error && (
@@ -143,7 +143,7 @@ const AdvancedRouteModal: React.FC<AdvancedRouteModalProps> = ({
               {(message.message_Direction_suggestion || message.message_Direction_suggestion_list) && (
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}>
-                    <MaterialCommunityIcons name="compass" size={24} color={Colors.darkBlueText} />
+                    <MaterialCommunityIcons name="compass" size={24} color={Colors.orange700} />
                     <Text style={styles.sectionTitle}>Hướng</Text>
                   </View>
                   {message.message_Direction_suggestion && (
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 10,
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
   },
   errorMessage: {
     flexDirection: 'row',
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   colorMeaning: {
     flex: 1,
     fontSize: 14,
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
   },
   directionDetails: {
     marginTop: 10,
@@ -342,12 +342,12 @@ const styles = StyleSheet.create({
   directionLabel: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     marginTop: 8,
   },
   directionText: {
     fontSize: 14,
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     marginBottom: 5,
   },
   noteMessage: {

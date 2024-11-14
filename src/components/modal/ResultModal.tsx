@@ -28,7 +28,7 @@ const fishTankImage = require("../../assets/images/fish_tank.png");
 
 const elementBackgroundImages: Record<ElementType, any> = {
   Fire: require("../../assets/images/lightred.png"),
-  Water: require("../../assets/images/lightblue.png"),
+  Water: require("../../assets/images/orange200.png"),
   Wood: require("../../assets/images/lightgreen.png"),
   Earth: require("../../assets/images/lightbrown.png"),
   Metal: require("../../assets/images/lightmetal.png"),
@@ -81,7 +81,7 @@ const ResultModal: React.FC<Props> = ({ date, onClose }) => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.overlay}>
           {loading ? (
-            <ActivityIndicator size="large" color={Colors.darkBlueText} />
+            <ActivityIndicator size="large" color={Colors.orange700} />
           ) : error ? (
             <Text style={styles.errorText}>{error}</Text>
           ) : (
@@ -207,11 +207,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     marginBottom: 20,
   },
   elementContainer: {
-    backgroundColor: Colors.darkBlueText,
+    backgroundColor: Colors.orange700,
     padding: 20,
     borderRadius: 10,
     shadowColor: "#000",
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   backButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: Colors.darkBlueText,
+    backgroundColor: Colors.orange700,
     borderRadius: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

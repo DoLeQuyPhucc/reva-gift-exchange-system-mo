@@ -89,7 +89,7 @@ const CustomTabView: React.FC<CustomTabViewProps> = ({
             style={[styles.sexButton, sex === 'male' ? styles.selectedSexButton : null]}
             onPress={() => handleSexChange('male')}
           >
-            <MaterialIcons name="male" size={24} color={sex === 'male' ? Colors.darkBlue : Colors.darkBlueText} />
+            <MaterialIcons name="male" size={24} color={sex === 'male' ? Colors.orange500 : Colors.orange700} />
             <Text style={[styles.sexButtonText, sex === 'male' ? styles.selectedSexButtonText : null]}>
               Male
             </Text>
@@ -98,7 +98,7 @@ const CustomTabView: React.FC<CustomTabViewProps> = ({
             style={[styles.sexButton, sex === 'female' ? styles.selectedSexButton : null]}
             onPress={() => handleSexChange('female')}
           >
-            <MaterialIcons name="female" size={24} color={sex === 'female' ? Colors.pink : Colors.darkBlueText} />
+            <MaterialIcons name="female" size={24} color={sex === 'female' ? Colors.pink : Colors.orange700} />
             <Text style={[styles.sexButtonText, sex === 'female' ? styles.selectedSexButtonText : null]}>
               Female
             </Text>
@@ -130,7 +130,7 @@ const CustomTabView: React.FC<CustomTabViewProps> = ({
             style={[styles.sexButton, sex === 'male' ? styles.selectedSexButton : null]}
             onPress={() => handleSexChange('male')}
           >
-            <MaterialIcons name="male" size={24} color={sex === 'male' ? Colors.darkBlue : Colors.darkBlueText} />
+            <MaterialIcons name="male" size={24} color={sex === 'male' ? Colors.orange500 : Colors.orange700} />
             <Text style={[styles.sexButtonText, sex === 'male' ? styles.selectedSexButtonText : null]}>
               Male
             </Text>
@@ -139,7 +139,7 @@ const CustomTabView: React.FC<CustomTabViewProps> = ({
             style={[styles.sexButton, sex === 'female' ? styles.selectedSexButton : null]}
             onPress={() => handleSexChange('female')}
           >
-            <MaterialIcons name="female" size={24} color={sex === 'female' ? Colors.pink : Colors.darkBlueText} />
+            <MaterialIcons name="female" size={24} color={sex === 'female' ? Colors.pink : Colors.orange700} />
             <Text style={[styles.sexButtonText, sex === 'female' ? styles.selectedSexButtonText : null]}>
               Female
             </Text>
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   tabLabel: {
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     fontWeight: 'bold',
   },
   tabIndicator: {
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
     marginBottom: 10,
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     fontWeight: 'bold',
   },
   dateButton: {
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGreen,
   },
   sexButtonText: {
-    color: Colors.darkBlueText,
+    color: Colors.orange700,
     fontSize: 16,
     marginLeft: 8,
   },

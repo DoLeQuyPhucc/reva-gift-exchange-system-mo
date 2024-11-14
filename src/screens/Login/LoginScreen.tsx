@@ -21,6 +21,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import axiosInstance from "@/src/api/axiosInstance";
 
 const LoginScreen: React.FC = () => {
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,37 +40,57 @@ const LoginScreen: React.FC = () => {
   );
 
   const handleLogin = async () => {
-    // if (!email || !password) {
-    //   Alert.alert("Error", "Please fill in both Email and password");
+    // if (!phoneNumber || !password || !email) {
+    //   Alert.alert("Error", "Please fill in both Phone Number and password");
     //   return;
     // }
+    if (!password || !email) {
+      Alert.alert("Error", "Please fill in both Email and password");
+      return;
+    }
 
-    // setLoading(true);
-    // try {
-    //   const response = await axiosInstance.post('/auth/login', {
-    //     email: email,
-    //     password,
-    //   });
+    setLoading(true);
+    try {
+      // const response = await axiosInstance.post('/authentication/login', {
+      //   phoneNumber: phoneNumber,
+      //   password,
+      // });
+      const response = await axiosInstance.post('/authentication/login', {
+        email: email,
+        password,
+      });
     
-    //   const { accessToken, refreshToken, user } = response.data;
+      const { token, refreshToken, userId, username, role } = response.data.data;
+      console.log(response.data.data);
     
-    //   // Store tokens and user ID in AsyncStorage
-    //   await AsyncStorage.setItem('accessToken', accessToken);
-    //   await AsyncStorage.setItem('refreshToken', refreshToken);
-    //   await AsyncStorage.setItem('userId', user.id);
+      const user = {
+        id: userId,
+        username,
+        role,
+        email
+      };
+
+      console.log('user',user);
+      // Store tokens and user ID in AsyncStorage
+      await AsyncStorage.setItem('accessToken', token);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+      await AsyncStorage.setItem('userId', userId);
+      await AsyncStorage.setItem('userRole', role);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
     
       // Navigate to the main screen
       navigation.navigate("Main", {
         screen: "Home"
       });
-    
-    //   setEmail('');
-    //   setPassword('');
-    // } catch (error: any) {
-    //   Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
-    // } finally {
-    //   setLoading(false);
-    // }
+      
+      setEmail('');
+      setPhoneNumber('');
+      setPassword('');
+    } catch (error: any) {
+      Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,6 +101,12 @@ const LoginScreen: React.FC = () => {
           <Text style={styles.subtitle}>Welcome back you've been missed!</Text>
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
+          {/* <AppTextInput 
+            placeholder="Phone number" 
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            autoCapitalize="none"
+          /> */}
           <AppTextInput 
             placeholder="Email" 
             value={email}
@@ -133,7 +160,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.xLarge,
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     fontFamily: Font["poppins-bold"],
     marginVertical: Spacing * 3,
   },
@@ -146,15 +173,15 @@ const styles = StyleSheet.create({
   forgotPassword: {
     fontFamily: Font["poppins-semiBold"],
     fontSize: FontSize.small,
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     alignSelf: "flex-end",
   },
   signInButton: {
     padding: Spacing * 2,
-    backgroundColor: Colors.warmOrange,
+    backgroundColor: Colors.orange600,
     marginVertical: Spacing * 3,
     borderRadius: Spacing,
-    shadowColor: Colors.warmOrange,
+    shadowColor: Colors.orange600,
     shadowOffset: { width: 0, height: Spacing },
     shadowOpacity: 0.3,
     shadowRadius: Spacing,
@@ -173,7 +200,7 @@ const styles = StyleSheet.create({
   },
   orContinueText: {
     fontFamily: Font["poppins-semiBold"],
-    color: Colors.warmOrange,
+    color: Colors.orange600,
     textAlign: "center",
     fontSize: FontSize.small,
   },

@@ -1,7 +1,4 @@
-import { CartItem } from "@/context/CartContext";
-import { Owner, Product } from "@/screens/Product/ProductsList";
-import { Blog } from "@/shared/Interface/Blog";
-import { Order } from "@/shared/Interface/Order";
+import { Product } from "@/src/shared/type";
 
 export type RootStackParamList = {
   Main: {
@@ -26,14 +23,9 @@ export type RootStackParamList = {
   FilterResults: { brandName: string };
   EditProfileScreen: undefined;
   ChangePasswordScreen: undefined;
-  CreatePostScreen: undefined | { blog: Blog };
-  BlogDetailScreen: { blog: Blog };
   ListFavoriteBlogScreen: undefined;
-  CheckoutScreen: { items: CartItem[] };
-  OrderConfirmationScreen: { order: Order };
   CreateProduct: { product: Product } | undefined;
   ProductDetail: { productId: string };
-  UserProductsScreen: { owner: Owner };
   MyProduct: undefined;
   ChatScreen: undefined;
   PackageScreen: undefined;
@@ -44,6 +36,7 @@ export type BottomTabParamList = {
   Home: undefined;
   Orders: undefined;
   Profile: undefined;
+  Favorites: undefined;
   Notifications: undefined;
   Blogs: undefined;
   Products: undefined;
