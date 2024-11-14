@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, Image, ScrollView, Text, TouchableOpacity, Modal, TextInput, Pressable } from "react-native";
+import { StyleSheet, View, Image, ScrollView, Text, TouchableOpacity, Modal, TextInput, Pressable, Platform } from "react-native";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Product, ProductAttribute } from "@/src/shared/type";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Button } from "react-native";
@@ -9,6 +10,11 @@ import { formatDate } from "@/src/shared/formatDate";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/src/constants/Colors";
 
+type TimeSlot = {
+  id: string;
+  dateTime: string;
+  displayText: string;
+};
 
 type ProductDetailScreenRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
 
@@ -21,7 +27,14 @@ export default function ProductDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
-
+  
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlot[]>([]);
+  const [countTimeSlots, setCountTimeSlots] = useState(0);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedHour, setSelectedHour] = useState<number | null>(null);
+  
   useEffect(() => {
     const fetchProduct = async () => {
       if (!itemId) {
@@ -36,6 +49,7 @@ export default function ProductDetailScreen() {
         
         if (response.data.isSuccess && response.data.data) {
           setProduct(response.data.data);
+          console.log("Product:", response.data.data);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
         }
@@ -49,6 +63,104 @@ export default function ProductDetailScreen() {
 
     fetchProduct();
   }, [itemId]);
+
+  // Generate time slots for the day (0-23)
+  const timeSlots = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    label: `${i}:00 - ${i + 1}:00`
+  }));
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setSelectedDate(selectedDate);
+    }
+  };
+
+  const handleTimeSelect = (hour: number) => {
+    if (selectedTimeSlots.length >= 3) {
+      console.log("Cannot select more than 3 time slots");
+      return;
+    }
+
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const timeStr = `${hour.toString().padStart(2, '0')}:00:00`;
+    const dateTimeStr = `${dateStr} ${timeStr}`;
+    
+    const newSlot: TimeSlot = {
+      id: Math.random().toString(),
+      dateTime: dateTimeStr,
+      displayText: `${hour}:00 - ${hour + 1}:00 ${selectedDate.toLocaleDateString()}`
+    };
+
+    setSelectedTimeSlots(prev => [...prev, newSlot]);
+    setCountTimeSlots(countTimeSlots + 1);
+    setShowTimePicker(false);
+    setSelectedHour(null);
+  };
+
+  const removeTimeSlot = (slotId: string) => {
+    setCountTimeSlots(countTimeSlots - 1);
+    setSelectedTimeSlots(prev => prev.filter(slot => slot.id !== slotId));
+  };
+  
+  const handleAddToCart = async () => {
+    console.log("Add to cart:", product);
+  };
+
+  
+  const handleRequest = async () => {
+    if (!product) {
+      console.error("Product not found");
+      return;
+    }
+    setCountTimeSlots(selectedTimeSlots.length);
+    setShowRequestDialog(true);
+  };
+
+  const handleConfirmRequest = async () => {
+    setShowRequestDialog(false);
+
+    const data = {
+      itemId: product?.id,
+      quantity: product?.quantity,
+      // message: requestMessage,
+      // timeSlots: selectedTimeSlots.map(slot => slot.dateTime)
+    };
+
+    console.log("message", requestMessage);
+    console.log("timeSlots", selectedTimeSlots);
+
+    const response = await axiosInstance.post("/request/create", data);
+    
+    if (response.data.isSuccess) {
+      setShowRequestDialog(false);
+      setSelectedTimeSlots([]);
+      setRequestMessage("");
+    }
+  };
+
+  const handleCancelRequest = () => {
+    setShowRequestDialog(false);
+    setRequestMessage("");
+  };
+
+  const renderAttributes = () => {
+    if(product?.itemAttributeValues.length === 0) {
+      return <Text style={styles.attributeText}>Không có thông số kỹ thuật</Text>;
+    }
+    return product?.itemAttributeValues.map((attr: ProductAttribute) => (
+      <View key={attr.id} style={styles.attributeContainer}>
+        <Text style={styles.attributeText}>- {attr.value}</Text>
+      </View>
+    ));
+  };
+  
+  const handleNavigateToUserProducts = () => {
+    // if (product) {
+    //   navigation.navigate('UserProductsScreen', { owner: product.owner });
+    // }
+  };
 
   if (error) {
     return (
@@ -76,51 +188,6 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const handleAddToCart = async () => {
-    console.log("Add to cart:", product);
-  };
-
-  
-  const handleRequest = async () => {
-    if (!product) {
-      console.error("Product not found");
-      return;
-    }
-
-    setShowRequestDialog(true);
-  };
-
-
-  const handleConfirmRequest = async () => {
-    setShowRequestDialog(false);
-
-    const data = {
-      itemId: product.id,
-      quantity: product.quantity,
-      // message: requestMessage,
-    };
-
-    const response = await axiosInstance.post("/request/create", data);
-
-    if (!response.data.isSuccess) {
-      console.log("Failed to create request:", response.data.message);
-      return;
-    } else {
-      console.log("Request created:", response.data.message);
-    }
-  };
-  const handleCancelRequest = () => {
-    setShowRequestDialog(false);
-    setRequestMessage("");
-  };
-
-  const renderAttributes = () => {
-    return product.itemAttributeValues.map((attr: ProductAttribute) => (
-      <View key={attr.id} style={styles.attributeContainer}>
-        <Text style={styles.attributeText}>- {attr.value}</Text>
-      </View>
-    ));
-  };
 
   return (
     <ScrollView style={styles.container}>
@@ -173,6 +240,15 @@ export default function ProductDetailScreen() {
           {renderAttributes()}
         </View>
 
+        <TouchableOpacity style={styles.userInfoContainer} onPress={handleNavigateToUserProducts}>
+            <Image source={{ uri: 'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436178.jpg?t=st=1731558441~exp=1731562041~hmac=eb803dd276fc45525a2a6d074db707e75e082034a85f1b489db6f93addd08d28&w=740' }} style={styles.avatar} />
+            {/* <Image source={{ uri: product.profilePicture }} style={styles.avatar} /> */}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{product.email}</Text>
+              <Text style={styles.userEmail}>{product.email}</Text>
+            </View>
+          </TouchableOpacity>
+
         {product.available ? (
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={[styles.button, styles.requestButton]} onPress={handleRequest}>
@@ -213,6 +289,59 @@ export default function ProductDetailScreen() {
             <Text style={styles.modalDescriptionSub}>
             Thời gian này sẽ được gửi đến Phúc Đỗ, nếu phù hợp sẽ tiếp hành trao đổi. Bạn có thể chọn tối đa 3 khung giờ.
             </Text>
+            {/* Selected Time Slots Display */}
+            <View style={styles.selectedSlotsContainer}>
+              {selectedTimeSlots.map(slot => (
+                <View key={slot.id} style={styles.timeSlotBadge}>
+                  <Text style={styles.timeSlotText}>{slot.displayText}</Text>
+                  <TouchableOpacity onPress={() => removeTimeSlot(slot.id)}>
+                    <Icon name="close" size={20} color={Colors.orange500} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            { countTimeSlots < 3 && ( 
+              <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.datePickerButtonText}>
+                  Chọn ngày: {selectedDate.toLocaleDateString()}
+                </Text>
+              </TouchableOpacity>
+              
+            )}
+            {showDatePicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+                minimumDate={new Date()}
+              />
+            )}
+              {/* Time Slots Grid */}
+              {(!showDatePicker && countTimeSlots < 3) && (
+              <ScrollView style={styles.timeSlotsContainer}>
+                <View style={styles.timeGrid}>
+                  {timeSlots.map(({ hour, label }) => (
+                    <TouchableOpacity
+                      key={hour}
+                      style={[
+                        styles.timeSlot,
+                        selectedHour === hour && styles.selectedTimeSlot
+                      ]}
+                      onPress={() => handleTimeSelect(hour)}
+                      disabled={selectedTimeSlots.length >= 3}
+                    >
+                      <Text style={styles.timeSlotLabel}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+
+
             <View style={styles.modalButtonContainer}>
               <Pressable
                 style={[styles.button, styles.cancelButton]}
@@ -355,7 +484,7 @@ const styles = StyleSheet.create({
   modalView: {
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
+    padding: 24,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -364,14 +493,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: "80%",
-    height: "70%",
+    width: "90%",
+    maxHeight: "80%",
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
+    color: Colors.orange600,
   },
   modalDescription: {
     fontSize: 16,
@@ -388,8 +518,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f2f2f2",
     borderRadius: 8,
     padding: 12,
+    marginBottom: 16,
     textAlignVertical: "top",
-    marginVertical: 16,
     width: "100%",
   },
   modalButtonContainer: {
@@ -404,5 +534,94 @@ const styles = StyleSheet.create({
   confirmButton: {
     width: "48%",
     backgroundColor: Colors.orange600,
+  },
+  selectedSlotsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 12,
+  },
+  timeSlotBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: Colors.orange500,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  timeSlotText: {
+    color: Colors.orange500,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  datePickerButton: {
+    backgroundColor: Colors.orange500,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  datePickerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  timeSlotsContainer: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  timeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  timeSlot: {
+    width: '31%',
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    marginBottom: 8,
+  },
+  selectedTimeSlot: {
+    backgroundColor: Colors.orange500,
+  },
+  timeSlotLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#333',
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    padding: 8,
+    backgroundColor: '#fff',
+    // borderRadius: 8,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666',
   },
 });
