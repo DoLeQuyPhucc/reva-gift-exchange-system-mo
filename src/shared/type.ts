@@ -29,3 +29,46 @@ export interface User {
   profileURL: string;
   // products: Product[];
 }
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface AddressCoordinates {
+  latitude: string;
+  longitude: string;
+}
+
+export interface AddressData {
+  address: string;
+  addressCoordinates: AddressCoordinates;
+}
+
+export interface AddressResponse {
+  isSuccess: boolean;
+  code: number;
+  data: AddressData;
+  message: string;
+}
+
+export interface CreatePostData {
+  name: string;
+  description: string;
+  categoryId: string;
+  isGift: boolean;
+  point: number;
+  quantity: number;
+  condition: string;
+  images: string[];
+}
+
+export enum ItemCondition {
+  NEW = "New",
+  USED = "Used",
+}
+
+export interface ConditionOption {
+  id: ItemCondition;
+  name: string;
+}

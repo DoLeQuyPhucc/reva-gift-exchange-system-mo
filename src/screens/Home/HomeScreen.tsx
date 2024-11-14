@@ -53,7 +53,7 @@ const HomeScreen: React.FC = () => {
         const response = await axiosInstance.get('/items');
         const productsData = response.data.data.map((item: any) => ({
           id: item.id,
-          name: item.name,
+          name: item.name || '',
           description: item.description,
           category: item.category,
           condition: item.condition,
