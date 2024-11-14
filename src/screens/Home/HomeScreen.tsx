@@ -18,6 +18,7 @@ import Colors from '@/src/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/src/hooks/useNavigation';
 import { Product } from '@/src/shared/type';
+import { useRefreshControl } from '@/src/hooks/useRefreshControl';
 
 interface SortOption {
   value: 'createdAt' | 'name' | 'condition';
@@ -45,33 +46,35 @@ const HomeScreen: React.FC = () => {
   const [sortBy, setSortBy] = useState<'name' | 'condition' | 'createdAt'>('createdAt');
   const [showSortModal, setShowSortModal] = useState(false);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        setUserId(userId || '');
-        const response = await axiosInstance.get('/items');
-        const productsData = response.data.data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          category: item.category,
-          condition: item.condition,
-          owner_id: item.owner_id,
-          images: item.images,
-          available: item.available,
-          createdAt: item.createdAt,
-        }));
-        setProducts(productsData);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchProducts = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      setUserId(userId || '');
+      const response = await axiosInstance.get('/items');
+      const productsData = response.data.data.map((item: any) => ({
+        id: item.id,
+        name: item.name || '',
+        description: item.description,
+        category: item.category,
+        condition: item.condition,
+        owner_id: item.owner_id,
+        images: item.images,
+        available: item.available,
+        createdAt: item.createdAt,
+      }));
+      setProducts(productsData);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProducts();
   }, [userId]);
+
+  const { refreshing, refreshControl } = useRefreshControl(fetchProducts);
 
   const categories = [...new Set(products.map((product) => product.category))];
 
@@ -266,6 +269,8 @@ const HomeScreen: React.FC = () => {
       columnWrapperStyle={styles.columnWrapper}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
+      refreshing={refreshing}
+      onRefresh={fetchProducts}
     />
     {renderSortModal()}
   </>

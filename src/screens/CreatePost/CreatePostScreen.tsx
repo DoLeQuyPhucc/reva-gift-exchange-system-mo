@@ -8,20 +8,24 @@ import {
   TextInput,
   Image,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Checkbox } from 'react-native-paper';
+import { ActivityIndicator, Checkbox } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
+import { uriToFile } from '@/src/utils/uriToFile';
 import { RouteProp, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import * as ImagePicker from 'expo-image-picker';
 import Video from 'react-native-video';
-import MediaUploadSection from '@/src/components/MediaUploadSection';
 
-interface Category {
-  id: string;
-  name: string;
-}
+
+import MediaUploadSection from '@/src/components/MediaUploadSection';
+import { Category, ConditionOption, ItemCondition } from '@/src/shared/type';
+
+import useCategories from '@/src/hooks/useCategories';
+import useCreatePost from '@/src/hooks/useCreatePost';
+import axiosInstance from '@/src/api/axiosInstance';
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, 'CreatePost'>;
@@ -30,32 +34,126 @@ interface CreatePostScreenProps {
 
 const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }) => {
   const initialCategory = route.params?.category;
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    initialCategory || null
-  );
+  const initialCategoryId = route.params?.categoryId;
+  const { categories } = useCategories();
+  const { addressData, loading, submitPost } = useCreatePost();  
+  
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(() => {
+    if (initialCategory) return initialCategory;
+    if (initialCategoryId) {
+      return categories.find(cat => cat.id === initialCategoryId) || null;
+    }
+    return null;
+  });
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
-  const [condition, setCondition] = useState<string>('');
+  const [condition, setCondition] = useState<ItemCondition | ''>('');
+  const [point, setPoint] = useState<string>('');
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [address, setAddress] = useState<string>('');
   const [showTitleHint, setShowTitleHint] = useState<boolean>(false);
   const [showDescriptionHint, setShowDescriptionHint] = useState<boolean>(false);
 
-  const categories: Category[] = [
-    { id: '1', name: 'Điện thoại' },
-    { id: '2', name: 'Máy tính' },
-    { id: '3', name: 'Đồ gia dụng' },
+  const conditions: ConditionOption[] = [
+    { id: ItemCondition.NEW, name: 'Mới' },
+    { id: ItemCondition.USED, name: 'Đã sử dụng' },
   ];
 
-  const conditions = [
-    { id: '1', name: 'Mới' },
-    { id: '2', name: 'Đã sử dụng (còn tốt)' },
-    { id: '3', name: 'Đã sử dụng (cũ)' },
-  ];
+  const validateForm = () => {
+    if (!title.trim()) {
+      Alert.alert('Error', 'Please enter a title');
+      return false;
+    }
+    if (!description.trim()) {
+      Alert.alert('Error', 'Please enter a description');
+      return false;
+    }
+    if (!selectedCategory) {
+      Alert.alert('Error', 'Please select a category');
+      return false;
+    }
+    if (!condition) {
+      Alert.alert('Error', 'Please select condition');
+      return false;
+    }
+    if (!isFreeGift && (!point || isNaN(Number(point)))) {
+      Alert.alert('Error', 'Please enter valid points');
+      return false;
+    }
+    if (images.length === 0) {
+      Alert.alert('Error', 'Please upload at least one image');
+      return false;
+    }
+    return true;
+  };
+  
+  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
+    try {
+      console.log('Starting upload process with URI:', uri);
+  
+      // Create file object
+      const filename = uri.split('/').pop() || 'photo.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+  
+      console.log('File details:', {
+        filename,
+        type
+      });
+  
+      const formData = new FormData();
+  
+      // Append file with proper structure
+      const fileData = {
+        uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+        name: filename,
+        type: type,
+      };
 
-  const pickImage = async () => {
+      const CLOUDINARY_UPLOAD_PRESET = 'gift_system';
+      const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dt4ianp80/image/upload';
+  
+      console.log('FormData file object:', fileData);
+      formData.append('file', fileData as any);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  
+      console.log('Cloudinary URL:', CLOUDINARY_URL);
+      console.log('Upload preset:', CLOUDINARY_UPLOAD_PRESET);
+  
+      const response = await fetch(CLOUDINARY_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      console.log('Response status:', response.status);
+      
+      // Get detailed error message if available
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+  
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status} - ${JSON.stringify(responseData)}`);
+      }
+  
+      return responseData.secure_url;
+    } catch (error: any) {
+      console.error('Detailed upload error:', {
+        message: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
+  };
+  
+  const handleImageUpload = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -65,10 +163,16 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       });
 
       if (!result.canceled) {
-        setImages([...images, result.assets[0].uri]);
+        const uri = result.assets[0].uri;
+        setSelectedImage(uri);
+
+        const imageUrl = await uploadImageToCloudinary(uri);
+        setImages(prev => [...prev, imageUrl]);
+        console.log('Image uploaded successfully:', imageUrl);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      console.error('Image upload error:', error);
+      Alert.alert('Upload Failed', 'Please try again');
     }
   };
 
@@ -96,6 +200,44 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 
   const removeVideo = () => {
     setVideo('');
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    console.log('Submitting post:');
+    
+  
+    try {
+      setIsLoading(true);
+  
+      const postData = {
+        name: title.trim(),
+        description: description.trim(),
+        categoryId: selectedCategory!.id,
+        isGift: isFreeGift,
+        point: isFreeGift ? 0 : parseInt(point),
+        quantity: 1,
+        condition: condition,
+        images
+      };
+
+      console.log("Form Data: ", postData);
+  
+      const result = await submitPost(postData);
+      
+      if (result) {
+        Alert.alert('Success', 'Post created successfully');
+      }
+
+      navigation.goBack();
+  
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create post');
+      console.error('Submit error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -140,7 +282,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           <MediaUploadSection
             images={images}
             video={video}
-            onPickImage={pickImage}
+            selectedImage={selectedImage}
+            onPickImage={handleImageUpload}
             onPickVideo={pickVideo}
             onRemoveImage={removeImage}
             onRemoveVideo={removeVideo}
@@ -149,9 +292,9 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={condition}
-              onValueChange={(value) => setCondition(value)}
+              onValueChange={(value: ItemCondition | '') => setCondition(value)}
             >
-              <Picker.Item label="Chọn tình trạng" value="" />
+              <Picker.Item label="Tình trạng" value="" />
               {conditions.map((item) => (
                 <Picker.Item
                   key={item.id}
@@ -199,22 +342,37 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             onFocus={() => setShowDescriptionHint(true)}
             onBlur={() => setShowDescriptionHint(false)}
           />
+
           {showDescriptionHint && (
             <Text style={styles.hint}>
               Không được phép ghi thông tin liên hệ trong mô tả
             </Text>
           )}
+
+          {!isFreeGift && (
+            <TextInput
+            style={styles.input}
+            placeholder="Points"
+            value={point}
+            onChangeText={setPoint}
+            keyboardType="numeric"
+            editable={!isFreeGift}
+          />
+          )}
         </View>
 
-        {/* Address */}
+        {/* Address Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>THÔNG TIN NGƯỜI BÁN</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Địa chỉ"
-            value={address}
-            onChangeText={setAddress}
-          />
+          <Text style={styles.sectionTitle}>ĐỊA CHỈ</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#0000ff" />
+          ) : (
+            <View style={styles.addressContainer}>
+              <Text style={styles.addressText}>
+                {addressData?.address}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -229,7 +387,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         
         <TouchableOpacity
           style={[styles.footerButton, styles.publishButton]}
-          onPress={() => {/* Handle publish */}}
+          onPress={handleSubmit}
         >
           <Text style={styles.buttonText}>Đăng bài</Text>
         </TouchableOpacity>
@@ -328,6 +486,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 12,
     fontStyle: 'italic',
+  },
+  addressContainer: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  addressText: {
+    fontSize: 16,
+    color: '#333',
   },
   footer: {
     flexDirection: 'row',

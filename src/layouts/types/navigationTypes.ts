@@ -1,4 +1,4 @@
-import { Product } from "@/src/shared/type";
+import { Category, Product } from "@/src/shared/type";
 
 export type RootStackParamList = {
   Main: {
@@ -24,7 +24,10 @@ export type RootStackParamList = {
   EditProfileScreen: undefined;
   ChangePasswordScreen: undefined;
   ListFavoriteBlogScreen: undefined;
-  CreatePost: { category: { id: string; name: string } };
+  CreatePost: {
+    category?: Category;
+    categoryId?: string;
+  };
   ProductDetail: { productId: string };
   MyProducts: undefined;
   MyRequests: undefined;
