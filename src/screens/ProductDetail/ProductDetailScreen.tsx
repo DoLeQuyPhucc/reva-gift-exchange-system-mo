@@ -70,7 +70,6 @@ export default function ProductDetailScreen() {
 
         if (response.data.isSuccess && response.data.data) {
           setProduct(response.data.data);
-          console.log("Product:", response.data.data);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
         }
@@ -170,9 +169,6 @@ export default function ProductDetailScreen() {
       // message: requestMessage,
       // timeSlots: selectedTimeSlots.map(slot => slot.dateTime)
     };
-
-    console.log("message", requestMessage);
-    console.log("timeSlots", selectedTimeSlots);
 
     const response = await axiosInstance.post("/request/create", data);
 
@@ -521,6 +517,8 @@ const styles = StyleSheet.create({
     height: 400,
     borderRadius: 16,
     overflow: "hidden",
+    margin: 16,
+    marginBottom: 0,
   },
   image: {
     width: "100%",

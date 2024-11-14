@@ -44,7 +44,6 @@ export default {
   darkText: dark,
   text: black,
   background: white,
-  primary: blue,
   onPrimary: white,
   active: blue,
   borderWithOpacity: "#1f41bb",
