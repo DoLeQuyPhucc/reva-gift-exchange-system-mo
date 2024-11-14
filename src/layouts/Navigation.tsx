@@ -20,9 +20,10 @@ import RegisterScreen from '@/screens/Register/RegisterScreen';
 import HomeScreen from '@/screens/Home/HomeScreen';
 import PostScreen from '@/screens/Post/PostScreen';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
-import NotificationsScreen from '../screens/Notifications/Notifications';
-import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
-import ProductDetailScreen from '../screens/ProductDetail/ProductDetailScreen';
+import NotificationsScreen from '@/screens/Notifications/Notifications';
+import FavoritesScreen from '@/screens/Favorites/FavoritesScreen';
+import ProductDetailScreen from '@/screens/ProductDetail/ProductDetailScreen';
+import CreatePostScreen from '@/screens/CreatePost/CreatePostScreen';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -115,6 +116,7 @@ export default function Navigation() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
         </Stack.Navigator>
     </NavigationContainer>
