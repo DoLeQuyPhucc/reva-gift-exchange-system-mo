@@ -34,6 +34,10 @@ export interface Category {
   id: string;
   name: string;
 }
+export interface CategoryContextType {
+  selectedCategory: Category | null;
+  setSelectedCategory: (category: Category | null) => void;
+}
 
 export interface AddressCoordinates {
   latitude: string;
