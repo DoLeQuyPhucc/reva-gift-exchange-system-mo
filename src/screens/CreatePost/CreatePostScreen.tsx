@@ -45,12 +45,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
     return null;
   });
+  
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
   const [condition, setCondition] = useState<ItemCondition | ''>('');
   const [point, setPoint] = useState<string>('');
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [title, setTitle] = useState<string>('');
@@ -155,17 +157,18 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   
   const handleImageUpload = async () => {
     try {
+      setIsUploadingImage(true);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
       });
-
+  
       if (!result.canceled) {
         const uri = result.assets[0].uri;
         setSelectedImage(uri);
-
+  
         const imageUrl = await uploadImageToCloudinary(uri);
         setImages(prev => [...prev, imageUrl]);
         console.log('Image uploaded successfully:', imageUrl);
@@ -173,6 +176,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     } catch (error) {
       console.error('Image upload error:', error);
       Alert.alert('Upload Failed', 'Please try again');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -283,6 +288,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             images={images}
             video={video}
             selectedImage={selectedImage}
+            isLoading={isUploadingImage}
             onPickImage={handleImageUpload}
             onPickVideo={pickVideo}
             onRemoveImage={removeImage}
