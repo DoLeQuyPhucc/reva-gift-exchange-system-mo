@@ -18,21 +18,57 @@ interface MediaUploadSectionProps {
   onPickVideo: () => void;
   onRemoveImage: (index: number) => void;
   onRemoveVideo: () => void;
-  isUploading?: boolean;
+  isLoading?: boolean;
 }
 
 const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
   images,
   video,
-  selectedImage,
   onPickImage,
   onPickVideo,
   onRemoveImage,
   onRemoveVideo,
-  isUploading = false
+  isLoading = false
 }) => {
   const screenWidth = Dimensions.get('window').width;
   const boxSize = (screenWidth - 48 - 32) / 5;
+
+  const renderUploadBox = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.uploadContent}>
+          <ActivityIndicator size="small" color="#f97314" style={styles.spinner} />
+          <Text style={[styles.uploadText, { marginTop: 8 }]}>Đang tải...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.uploadContent}>
+        <Icon name="add" size={32} color="#f97314" />
+        <Text style={styles.imageCount}>{images.length}/5</Text>
+      </View>
+    );
+  };
+
+  const renderFirstUploadBox = () => {
+    if (isLoading) {
+      return (
+        <>
+          <ActivityIndicator size="large" color="#f97314" />
+          <Text style={[styles.uploadText, { marginTop: 8 }]}>Đang tải...</Text>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Icon name="camera-alt" size={32} color="#f97314" />
+        <Text style={styles.uploadText}>Thêm hình ảnh</Text>
+        <Text style={styles.imageCount}>{images.length}/5</Text>
+      </>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -42,18 +78,10 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
             <TouchableOpacity 
               style={styles.originalUploadBox} 
               onPress={onPickImage}
-              disabled={isUploading}
+              disabled={isLoading}
             >
               <View style={styles.uploadContent}>
-                {isUploading ? (
-                  <ActivityIndicator size="large" color="#f97314" />
-                ) : (
-                  <>
-                    <Icon name="camera-alt" size={32} color="#f97314" />
-                    <Text style={styles.uploadText}>Thêm hình ảnh</Text>
-                    <Text style={styles.imageCount}>{images.length}/5</Text>
-                  </>
-                )}
+                {renderFirstUploadBox()}
               </View>
             </TouchableOpacity>
           ) : (
@@ -61,18 +89,9 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
               <TouchableOpacity 
                 style={[styles.uploadBox, { width: boxSize, height: boxSize }]} 
                 onPress={onPickImage}
-                disabled={images.length >= 5 || isUploading}
+                disabled={images.length >= 5 || isLoading}
               >
-                <View style={styles.uploadContent}>
-                  {isUploading ? (
-                    <ActivityIndicator size="small" color="#f97314" style={styles.spinner} />
-                  ) : (
-                    <>
-                      <Icon name="add" size={32} color="#f97314" />
-                      <Text style={styles.imageCount}>{images.length}/5</Text>
-                    </>
-                  )}
-                </View>
+                {renderUploadBox()}
               </TouchableOpacity>
 
               {images.map((uri, index) => (
@@ -81,7 +100,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => onRemoveImage(index)}
-                    disabled={isUploading}
+                    disabled={isLoading}
                   >
                     <Icon name="close" size={20} color="#fff" />
                   </TouchableOpacity>
@@ -96,7 +115,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
       <TouchableOpacity 
         style={styles.videoUploadBox} 
         onPress={onPickVideo}
-        disabled={video !== ''}
+        disabled={video !== '' || isLoading}
       >
         <Icon name="videocam" size={32} color="#f97314" />
         <Text style={styles.uploadText}>ĐĂNG TỐI ĐA 01 VIDEO</Text>
