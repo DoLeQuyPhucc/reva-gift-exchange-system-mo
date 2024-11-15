@@ -6,11 +6,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/hooks/useNavigation';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Colors from '@/src/constants/Colors';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const ProfileScreen = () => {
   interface User {
-    username: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    profilePicture: string;
+    address: string;
     email: string;
   }
 
@@ -32,13 +35,8 @@ const ProfileScreen = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        // const response = await axiosInstance.get('/auth/me');
-        // setUserData(response.data.user);
-        const user = await AsyncStorage.getItem('user');
-        if (user) {
-          setUserData(JSON.parse(user));
-          console.log('User data:', userData);
-        }
+        const response = await axiosInstance.get('/user/profile');
+        setUserData(response.data.data);
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
@@ -76,26 +74,36 @@ const ProfileScreen = () => {
   }
 
   const menuItems = [
-    {
-      title: 'Quản lý gói đăng bài',
-      icon: 'newspaper-outline',
-      onPress: () => navigation.navigate('MyPackageScreen')
-    },
+    // {
+    //   title: 'Quản lý gói đăng bài',
+    //   icon: 'newspaper-outline',
+    //   onPress: () => navigation.navigate('MyPackageScreen')
+    // },
     {
       title: 'Sản phẩm của tôi',
       icon: 'cube-outline',
-      onPress: () => navigation.navigate('MyProduct')
+      onPress: () => navigation.navigate('MyProducts')
     },
     {
-      title: 'Danh sách bài viết yêu thích',
-      icon: 'heart-outline',
-      onPress: () => navigation.navigate('ListFavoriteBlogScreen')
+      title: 'Quản lí các yêu cầu của tôi',
+      icon: 'cube-outline',
+      onPress: () => navigation.navigate('MyRequests')
     },
     {
-      title: 'Trung tâm tư vấn',
-      icon: 'chatbubbles-outline',
-      onPress: () => navigation.navigate('ChatScreen')
-    }
+      title: 'Quản lí các giao dịch của tôi',
+      icon: 'cube-outline',
+      onPress: () => navigation.navigate('MyTransactions')
+    },
+    // {
+    //   title: 'Danh sách bài viết yêu thích',
+    //   icon: 'heart-outline',
+    //   onPress: () => navigation.navigate('ListFavoriteBlogScreen')
+    // },
+    // {
+    //   title: 'Trung tâm tư vấn',
+    //   icon: 'chatbubbles-outline',
+    //   onPress: () => navigation.navigate('ChatScreen')
+    // }
   ];
 
   return (
@@ -106,7 +114,7 @@ const ProfileScreen = () => {
           <View style={styles.avatarContainer}>
             <Avatar.Image
               size={100}
-              source={{ uri: 'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436178.jpg?t=st=1731558441~exp=1731562041~hmac=eb803dd276fc45525a2a6d074db707e75e082034a85f1b489db6f93addd08d28&w=740' }}
+              source={{ uri: userData?.profilePicture }}
               style={styles.avatar}
             />
             <View style={styles.editAvatarButton}>
@@ -114,8 +122,8 @@ const ProfileScreen = () => {
             </View>
           </View>
           <View>
-            <Title style={styles.userName}>{userData?.username}</Title>
-            <Text style={styles.userEmail}>{userData?.email}</Text>
+            <Title style={styles.userName}>{userData?.firstName} {userData?.lastName}</Title>
+            <Text style={styles.userEmail}>{userData?.phone}</Text>
           </View>
         </View>
 
