@@ -57,6 +57,9 @@ export default function ProductDetailScreen() {
   );
   const [loadingUserItems, setLoadingUserItems] = useState(false);
 
+  const [wannaRequest, setWannaRequest] = useState(false);
+  const [isTrue, setIsTrue] = useState(true);
+
   useEffect(() => {
     const fetchProduct = async () => {
       if (!itemId) {
@@ -163,7 +166,7 @@ export default function ProductDetailScreen() {
       const data = {
         itemId: product?.id,
         message: requestMessage,
-        appointmentDate: selectedTimeSlots.map(slot => slot.dateTime),
+        appointmentDate: selectedTimeSlots.map((slot) => slot.dateTime),
         requesterItemId: null,
       };
       const response = await axiosInstance.post("/request/create", data);
@@ -179,7 +182,7 @@ export default function ProductDetailScreen() {
     const data = {
       itemId: product?.id,
       message: requestMessage,
-      appointmentDate: selectedTimeSlots.map(slot => slot.dateTime),
+      appointmentDate: selectedTimeSlots.map((slot) => slot.dateTime),
       requesterItemId: selectedUserItem.id,
     };
 
@@ -194,17 +197,22 @@ export default function ProductDetailScreen() {
     }
   };
 
+  const handleWannaRequest = () => {
+    setIsTrue(false);
+    setWannaRequest(true);
+  };
+
+  const handleWannaExchange = () => {
+    setIsTrue(true);
+    setWannaRequest(false);
+  };
+
   const handleCancelRequest = () => {
     setShowRequestDialog(false);
     setRequestMessage("");
     setCountTimeSlots(0);
     setSelectedUserItem(null);
-  };
-
-  const handleNavigateToUserProducts = () => {
-    // if (product) {
-    //   navigation.navigate('UserProductsScreen', { owner: product.owner });
-    // }
+    setWannaRequest(false);
   };
 
   const renderUserItems = () => {
@@ -337,21 +345,6 @@ export default function ProductDetailScreen() {
           )}
         </View>
 
-        <TouchableOpacity
-          style={styles.userInfoContainer}
-          onPress={handleNavigateToUserProducts}
-        >
-          <Image
-            source={{
-              uri: product.profilePicture,
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{product.owner_Name}</Text>
-          </View>
-        </TouchableOpacity>
-
         {product.available ? (
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -387,36 +380,40 @@ export default function ProductDetailScreen() {
                 <>
                   <Text style={styles.modalTitle}>Tạo yêu cầu nhận hàng</Text>
                   {/* Current Product Section */}
-              <View style={styles.currentProductSection}>
-                <Image
-                  source={{ uri: product?.images[0] }}
-                  style={styles.currentProductImage}
-                />
-                <View style={styles.currentProductInfo}>
-                  <Text style={styles.currentProductName}>{product?.name}</Text>
-                </View>
-              </View>
+                  <View style={styles.currentProductSection}>
+                    <Image
+                      source={{ uri: product?.images[0] }}
+                      style={styles.currentProductImage}
+                    />
+                    <View style={styles.currentProductInfo}>
+                      <Text style={styles.currentProductName}>
+                        {product?.name}
+                      </Text>
+                    </View>
+                  </View>
                 </>
               ) : (
                 <>
-                <Text style={styles.modalTitle}>Tạo yêu cầu trao đổi</Text>
+                  <Text style={styles.modalTitle}>Tạo yêu cầu trao đổi</Text>
                   {/* Current Product Section */}
-              <View style={styles.currentProductSection}>
-                <Image
-                  source={{ uri: product?.images[0] }}
-                  style={styles.currentProductImage}
-                />
-                <View style={styles.currentProductInfo}>
-                  <Text style={styles.currentProductName}>{product?.name}</Text>
-                  <Text style={styles.currentProductPrice}>
-                    {product.point}P
-                  </Text>
-                </View>
-              </View>
+                  <View style={styles.currentProductSection}>
+                    <Image
+                      source={{ uri: product?.images[0] }}
+                      style={styles.currentProductImage}
+                    />
+                    <View style={styles.currentProductInfo}>
+                      <Text style={styles.currentProductName}>
+                        {product?.name}
+                      </Text>
+                      <Text style={styles.currentProductPrice}>
+                        {product.point}P
+                      </Text>
+                    </View>
+                  </View>
                 </>
               )}
-              
-              {!product.isGift && (
+
+              {!product.isGift && !wannaRequest && (
                 <>
                   <View style={styles.exchangeArrowContainer}>
                     <Icon name="swap-vert" size={24} color={Colors.orange500} />
@@ -435,7 +432,22 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   )}
+                  <TouchableOpacity onPress={() => handleWannaRequest()}>
+                    <Text style={styles.requestText}>
+                      Tôi muốn xin món đồ này.
+                    </Text>
+                  </TouchableOpacity>
                 </>
+              )}
+
+              {!isTrue ? (
+                <TouchableOpacity onPress={() => handleWannaExchange()}>
+                  <Text style={styles.requestText}>
+                    Tôi muốn trao đổi với đồ của tôi.
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <></>
               )}
               {(product.isGift || userItems.length > 0) && (
                 <>
@@ -449,17 +461,24 @@ export default function ProductDetailScreen() {
                     onChangeText={setRequestMessage}
                     multiline
                   />
-                  {requestMessage.length > 99 && (
+                  {requestMessage.length > 99 && !wannaRequest && (
                     <Text style={styles.textErrorMessage}>
                       Lời nhắn của bạn không được vượt quá 100 ký tự.
                     </Text>
                   )}
 
+                  {requestMessage.length < 300 && wannaRequest && (
+                    <Text style={styles.textErrorMessage}>
+                      Để yêu cầu xin sản phẩm, bạn phải tạo lời nhắn hơn 300 ký
+                      tự.
+                    </Text>
+                  )}
+
                   <Text style={styles.modalDescription}>
-                    Vui lòng chọn khung thời gian bạn đến nhận hàng
+                    Vui lòng chọn khung thời gian theo thời gian rãnh của chủ sản phẩm
                   </Text>
                   <Text style={styles.modalDescriptionSub}>
-                    Thời gian này sẽ được gửi đến {product.owner_Name}, nếu phù
+                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù
                     hợp sẽ tiếp hành trao đổi. Bạn có thể chọn tối đa 3 khung
                     giờ.
                   </Text>
@@ -545,10 +564,17 @@ export default function ProductDetailScreen() {
                 style={[
                   styles.button,
                   styles.confirmButton,
-                  (product.isGift ? selectedTimeSlots.length === 0 : (!selectedUserItem || selectedTimeSlots.length === 0)) && styles.disabledButton,
+                  (product.isGift
+                    ? selectedTimeSlots.length === 0
+                    : !selectedUserItem || selectedTimeSlots.length === 0) &&
+                    styles.disabledButton,
                 ]}
                 onPress={handleConfirmRequest}
-                disabled={product.isGift ? selectedTimeSlots.length === 0 : (!selectedUserItem || selectedTimeSlots.length === 0)}
+                disabled={
+                  product.isGift
+                    ? selectedTimeSlots.length === 0
+                    : !selectedUserItem || selectedTimeSlots.length === 0
+                }
               >
                 <Text style={styles.buttonText}>Xác nhận</Text>
               </Pressable>
@@ -874,6 +900,12 @@ const styles = StyleSheet.create({
   selectedItemText: {
     fontSize: 14,
     color: "#333",
+  },
+  requestText: {
+    color: Colors.orange500,
+    fontSize: 14,
+    marginVertical: 16,
+    textDecorationLine: "underline",
   },
   loadingText: {
     textAlign: "center",
