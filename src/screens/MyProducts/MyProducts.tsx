@@ -4,7 +4,19 @@ import axios from 'axios';
 import axiosInstance from '@/src/api/axiosInstance';
 import Colors from '@/src/constants/Colors';
 import { Product } from '@/src/shared/type';
-import FontSize from '@/src/constants/FontSize';
+import Icon from "react-native-vector-icons/MaterialIcons";
+
+const STATUS_COLORS: { [key: string]: string } = {
+  Pending: Colors.orange500,
+  Approved: Colors.lightGreen,
+  Rejected: "red",
+};
+
+const STATUS_LABELS = {
+  Pending: "Đang chờ",
+  Approved: "Đã duyệt",
+  Rejected: "Từ chối",
+};
 
 const MyProducts = () => {
   const [activeTab, setActiveTab] = useState('approved');
@@ -35,18 +47,62 @@ const MyProducts = () => {
       <View key={item.id} style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.name}</Text>
-          <View style={[styles.badge, item.status === 'Approved' ? styles.approvedBadge : styles.pendingBadge]}>
-            <Text style={styles.badgeText}>{item.status}</Text>
-          </View>
+          <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: `${STATUS_COLORS[item?.status]}15` },
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: STATUS_COLORS[item?.status] },
+            ]}
+          />
+          <Text
+            style={[
+              styles.statusText,
+              { color: STATUS_COLORS[item?.status] },
+            ]}
+          >
+            {STATUS_LABELS[item?.status as keyof typeof STATUS_LABELS]}
+          </Text>
+        </View>
         </View>
         <View style={styles.productInfo}>
           <Image source={{ uri: item.images[0] }} style={styles.image} />
           <View style={styles.productDetails}>
-            <Text>{item.description}</Text>
-            <Text>Category: {item.category}</Text>
-            <Text>Condition: {item.condition}</Text>
-            <Text>Points: {item.point}</Text>
-            <Text>Owner: {item.owner_Name}</Text>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailText}>{item.description}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Icon name="category" size={20} color={Colors.orange500} />
+              <Text style={styles.detailText}>Category: {item.category}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Icon name="now-widgets" size={20} color={Colors.orange500}/>
+              <Text style={styles.detailText}>Số lượng: {item.quantity}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Icon name="loop" size={20} color={Colors.orange500}/>
+              <Text style={styles.detailText}>Tình trạng: {item.condition}</Text>
+            </View>
+            {item.isGift ? (
+                <View style={styles.detailItem}>
+                  <Icon name="card-giftcard" size={20} color={Colors.orange500} />
+                  <Text style={[styles.detailText, styles.giftText]}>
+                    Sản phẩm này là quà tặng
+                  </Text>
+                </View>
+
+            ) : (
+              <View style={styles.detailItem}>
+                <Icon name="hotel-class" size={20} color={Colors.orange500} />
+                <Text style={[styles.detailText, styles.giftText]}>
+                  {item.point}P
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -158,6 +214,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginRight: 16,
+    borderRadius: 8, 
   },
   productDetails: {
     flex: 1,
@@ -170,6 +227,37 @@ const styles = StyleSheet.create({
   activeTab: {
     borderBottomWidth: 2,
     borderBottomColor: Colors.orange500,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  detailText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  giftText: {
+    color: Colors.orange500,
+    fontWeight: "bold",
   },
 });
 

@@ -51,6 +51,8 @@ const RegisterScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [otp, setOTP] = useState('');
+  const [showOTP, setShowOTP] = useState(false);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -196,6 +198,8 @@ const RegisterScreen = () => {
     setAddress("");
     setLatitude(0);
     setLongitude(0);
+    setOTP("");
+    setShowOTP(false);
   };
 
   const registerUser = async () => {
@@ -226,11 +230,15 @@ const RegisterScreen = () => {
     console.log(data);
 
     try {
+      setShowOTP(true);
+
+      if (otp.match('111111')) {
       const response = await axiosInstance.post('user/register', data);
       if (response.data.isSuccess === true) {
         Alert.alert('Success', 'Account created successfully');
         resetForm();
         navigation.navigate('LoginScreen');
+      }
       }
     } catch (error) {
       Alert.alert("Error", "Failed to create account");
@@ -393,6 +401,15 @@ const RegisterScreen = () => {
               value={address}
               onChangeText={setAddress}
             />
+            
+          {showOTP && (
+            <AppTextInput 
+              placeholder="OTP" 
+              value={otp}
+              onChangeText={setOTP}
+              autoCapitalize="none"
+            />
+          )}
 
             {loadingAddress && (
               <ActivityIndicator

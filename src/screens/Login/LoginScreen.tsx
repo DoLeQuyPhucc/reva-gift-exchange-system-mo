@@ -24,6 +24,8 @@ import { User } from "@/src/shared/type";
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOTP] = useState('');
+  const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
@@ -47,39 +49,45 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axiosInstance.post('/authentication/login', {
-        phone: phoneNumber,
-        password,
-      });
-    
-      const { token, refreshToken, userId, username, role, firstName, lastName, profileURL  } = response.data.data;
-      console.log(response.data.data);
-    
-      const user: User = {
-        id: userId,
-        username,
-        role,
-        phone: phoneNumber,
-        firstName,
-        lastName,
-        profileURL
-      };
+      setShowOTP(true);
 
-      console.log('user',user);
-      // Store tokens and user ID in AsyncStorage
-      await AsyncStorage.setItem('accessToken', token);
-      await AsyncStorage.setItem('refreshToken', refreshToken);
-      await AsyncStorage.setItem('userId', userId);
-      await AsyncStorage.setItem('userRole', role);
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-    
-      // Navigate to the main screen
-      navigation.navigate("Main", {
-        screen: "Home"
-      });
+      if (otp.match('111111')) {
+        const response = await axiosInstance.post('/authentication/login', {
+          phone: phoneNumber,
+          password,
+        });
       
-      setPhoneNumber('');
-      setPassword('');
+        const { token, refreshToken, userId, username, role, firstName, lastName, profileURL  } = response.data.data;
+        console.log(response.data.data);
+      
+        const user: User = {
+          id: userId,
+          username,
+          role,
+          phone: phoneNumber,
+          firstName,
+          lastName,
+          profileURL
+        };
+  
+        console.log('user',user);
+        // Store tokens and user ID in AsyncStorage
+        await AsyncStorage.setItem('accessToken', token);
+        await AsyncStorage.setItem('refreshToken', refreshToken);
+        await AsyncStorage.setItem('userId', userId);
+        await AsyncStorage.setItem('userRole', role);
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+      
+        // Navigate to the main screen
+        navigation.navigate("Main", {
+          screen: "Home"
+        });
+        
+        setPhoneNumber('');
+        setPassword('');
+        setOTP('');
+        setShowOTP(false);
+      }
     } catch (error: any) {
       Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
     } finally {
@@ -110,6 +118,14 @@ const LoginScreen: React.FC = () => {
             secureTextEntry
             autoCapitalize="none"
           />
+          {showOTP && (
+            <AppTextInput 
+              placeholder="OTP" 
+              value={otp}
+              onChangeText={setOTP}
+              autoCapitalize="none"
+            />
+          )}
         </View>
         <View>
           <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>

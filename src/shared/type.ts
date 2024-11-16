@@ -16,7 +16,7 @@ export interface Product {
   images: string[];
   quantity: number;
   dateRemaining: number;
-  status?: string;
+  status: string;
 }
 
 export interface User {

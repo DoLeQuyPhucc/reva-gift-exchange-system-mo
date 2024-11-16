@@ -18,6 +18,7 @@ const orange300 = "#fdba74";
 const orange500 = "#f97316";
 const orange600 = "#ea580c";
 const orange700 = "#c2410c";
+const lightRed = "#FF0000";
 const lightGreen = "#1ABC9C";
 const pink = "#FF69B4";
 
@@ -49,6 +50,7 @@ export default {
   borderWithOpacity: "#1f41bb",
   lightPrimary: "#f5f5f5",
   gray: gray,
+  lightRed: lightRed,
   orange50: orange50,
   orange100: orange100,
   orange200: orange200,
