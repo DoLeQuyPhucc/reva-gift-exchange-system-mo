@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
+  TextInput,
 } from "react-native";
 import axios from "axios";
 import axiosInstance from "@/src/api/axiosInstance";
@@ -18,19 +19,30 @@ interface Request {
   id: string;
   requesterImage: string;
   requesterName: string;
+  requesterMessage: string;
   status: "Pending" | "Approved" | "Rejected";
+  
+  requesterItemId: string | null;
   requesterItemImages: string[];
   requesterItemName: string;
+  requesterItemPoint: string;
+
+  recipientId: string;
+  recipientName: string;
+  recipientImage: string;
+  recipientRejectMessage: string;
+  
+  recipientItemId: string | null;
   recipientItemImages: string[];
   recipientItemName: string;
+  recipientItemPoint: string;
   appointmentDate: string[];
-  requesterItemId: string | null;
 }
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
   Approved: Colors.lightGreen,
-  Rejected: "red",
+  Rejected: Colors.lightRed,
 };
 
 const STATUS_LABELS = {
@@ -45,7 +57,9 @@ const MyRequests = () => {
   const [requestsForMe, setRequestsForMe] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [rejectMessage, setRejectMessage] = useState<string>("");
 
   useEffect(() => {
     fetchRequests();
@@ -131,10 +145,17 @@ const MyRequests = () => {
     }
   };
 
+  const handleOpenRejectModal = () => {
+    setShowRejectModal(true);
+  }
+
   const handleReject = async (requestId: string) => {
     try {
-      await axiosInstance.post(`request/reject/${requestId}`);
+      const data = rejectMessage;
+      await axiosInstance.post(`request/reject/${requestId}`, data);
       fetchRequests();
+      setShowRejectModal(false);
+      setRejectMessage("");
     } catch (error) {
       console.error("Error rejecting request:", error);
     }
@@ -185,6 +206,9 @@ const MyRequests = () => {
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.requesterItemName}
               </Text>
+              <Text style={styles.itemPoint} numberOfLines={1}>
+                {request.requesterItemPoint}P
+              </Text>
             </View>
 
             <View style={styles.exchangeIconContainer}>
@@ -199,6 +223,9 @@ const MyRequests = () => {
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.recipientItemName}
               </Text>
+              <Text style={styles.itemPoint} numberOfLines={1}>
+                {request.recipientItemPoint}P
+              </Text>
             </View>
           </>
         ) : (
@@ -211,9 +238,27 @@ const MyRequests = () => {
             <Text style={styles.itemName} numberOfLines={2}>
               {request.recipientItemName}
             </Text>
+              <Text style={styles.itemPoint} numberOfLines={1}>
+                {request.recipientItemPoint}P
+              </Text>
           </View>
         )}
       </View>
+
+      
+      {request.requesterMessage && (
+        <View style={styles.itemMessageContainer}>
+          <Text style={styles.timeMessage}>Lời nhắn: hkjhjujhkj</Text>
+          <Text>{request.requesterMessage}</Text>
+        </View>
+      )}
+
+
+      {request.recipientRejectMessage && (
+        <Text style={styles.rejectMessage}>
+          Lời nhắn của bạn đã từ chối: {request.recipientRejectMessage}
+        </Text>
+      )}
 
       <View style={styles.timeSection}>
         <Text style={styles.timeTitle}>Thời gian đề xuất:</Text>
@@ -230,7 +275,7 @@ const MyRequests = () => {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.button, styles.rejectButton]}
-            onPress={() => handleReject(request.id)}
+            onPress={() => handleOpenRejectModal()}
           >
             <Text style={styles.buttonText}>Từ chối</Text>
           </TouchableOpacity>
@@ -342,6 +387,50 @@ const MyRequests = () => {
                   selectedRequest?.id && handleApprove(selectedRequest.id)
                 }
                 disabled={!selectedTime}
+              >
+                <Text style={styles.modalButtonText}>Xác nhận</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showRejectModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Bạn muốn từ chối giao dịch này?</Text>
+            <Text style={styles.modalDescription}>
+                    Nhập lời nhắn của bạn:
+                  </Text>
+                  <TextInput
+                    style={styles.requestInput}
+                    placeholder="Nhập tin nhắn..."
+                    value={rejectMessage}
+                    onChangeText={setRejectMessage}
+                    multiline
+                  />
+                  {rejectMessage.length > 99 && (
+                    <Text style={styles.textErrorMessage}>
+                      Lời nhắn của bạn không được vượt quá 100 ký tự.
+                    </Text>
+                  )}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowRejectModal(false);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.confirmButton,
+                ]}
+                onPress={() =>
+                  selectedRequest?.id && handleReject(selectedRequest.id)
+                }
               >
                 <Text style={styles.modalButtonText}>Xác nhận</Text>
               </TouchableOpacity>
@@ -464,6 +553,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     color: "#333",
+  },
+  itemPoint: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.orange500,
   },
   exchangeIconContainer: {
     width: 40,
@@ -620,6 +714,37 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 8,
     marginBottom: 8,
+  },
+  itemMessageContainer: {
+    paddingHorizontal: 12,
+  },
+  timeMessage: {
+    fontWeight: "500",
+    color: "#666",
+  },
+  rejectMessage: {
+    backgroundColor: "#ffe3e3",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  
+  modalDescription: {
+    fontSize: 16,
+    marginBottom: 16,
+    fontWeight: "bold",
+    textAlign: "left",
+  },
+  requestInput: {
+    backgroundColor: "#f2f2f2",
+    borderRadius: 8,
+    padding: 12,
+    textAlignVertical: "top",
+    width: "100%",
+  },
+  textErrorMessage: {
+    color: "#e53e3e",
+    marginBottom: 16,
   },
 });
 
