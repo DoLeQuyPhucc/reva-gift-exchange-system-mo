@@ -15,47 +15,8 @@ import {
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
-interface AddressCoordinates {
-  latitude: string;
-  longitude: string;
-}
+import { Transaction } from "@/src/shared/type";
 
-interface Transaction {
-  id: string;
-  status: string;
-  requestId: string;
-  quantity: number;
-  
-  // Sender details
-  senderId: string;
-  senderName: string;
-  senderProfileUrl: string;
-  senderItemId: string;
-  senderItemName: string;
-  senderItemImage: string[];
-  senderItemQuantity: number;
-  senderItemPoint: number;
-  senderAddress: string;
-  senderAddressCoordinates: AddressCoordinates;
-  senderPhone: string;
-  
-  // Recipient details
-  recipientId: string;
-  recipientName: string;
-  recipientProfileUrl: string;
-  recipientItemId: string;
-  recipientItemName: string;
-  recipientItemImage: string[];
-  recipientItemQuantity: number;
-  recipientItemPoint: number;
-  recipientAddress: string;
-  recipientAddressCoordinates: AddressCoordinates;
-  recipientPhone: string;
-  
-  // Timestamps
-  createdAt: string;
-  appointmentDate: string;
-}
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showModal, setShowModal] = useState(false);

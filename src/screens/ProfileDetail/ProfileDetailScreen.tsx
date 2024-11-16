@@ -14,43 +14,32 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/src/api/axiosInstance';
 import { Picker } from '@react-native-picker/picker';
 import Colors from '@/src/constants/Colors';
+import { User } from '@/src/shared/type';
 
-interface Profile  {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  profilePicture: string;
-  address: string;
-  dob: string | null;
-  gender: string;
-  addressCoordinates: {
-    latitude: string;
-    longitude: string;
-  };
-  dateJoined?: string;
-}
+const DEFAULT_PROFILE_PICTURE = 'https://res.cloudinary.com/djh9baokn/image/upload/v1731336465/png-clipart-man-wearing-blue-shirt-illustration-computer-icons-avatar-user-login-avatar-blue-child_ijzlxf.png';
 
 const ProfileDetailScreen = () => {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Form state
-  const [formData, setFormData] = useState<Profile>({
+  const [formData, setFormData] = useState<User>({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    profilePicture: '',
+    profilePicture: DEFAULT_PROFILE_PICTURE,
     address: '',
     dob: null,
     gender: '',
     addressCoordinates: {
       latitude: '',
       longitude: ''
-    }
+    },
+    point: 0,
+    dateJoined: ''
   });
 
   useEffect(() => {
