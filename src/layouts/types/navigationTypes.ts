@@ -35,6 +35,10 @@ export type RootStackParamList = {
   ChatScreen: undefined;
   PackageScreen: undefined;
   MyPackageScreen: undefined;
+  OTPScreen: {
+    phoneNumber: string;
+    password: string;
+  };
 };
 
 export type BottomTabParamList = {

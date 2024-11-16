@@ -27,6 +27,7 @@ import CreatePostScreen from '@/screens/CreatePost/CreatePostScreen';
 import MyProducts from '../screens/MyProducts/MyProducts';
 import MyRequests from '../screens/MyRequests/MyRequests';
 import MyTransactions from '../screens/MyTransactions/MyTransactions';
+import OTPScreen from '../screens/OTP/OTPScreen';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -120,6 +121,7 @@ export default function Navigation() {
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="OTPScreen" component={OTPScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
           <Stack.Screen name="MyProducts" component={MyProducts} options={{ title: 'Sản phẩm của tôi' }} />
           <Stack.Screen name="MyRequests" component={MyRequests} options={{ title: 'Quản lí các yêu cầu của tôi' }} />

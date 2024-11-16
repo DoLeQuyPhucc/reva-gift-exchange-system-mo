@@ -48,6 +48,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
+  const [availableTime, setAvailableTime] = useState<string>('');
   const [condition, setCondition] = useState<ItemCondition | ''>('');
   const [point, setPoint] = useState<string>('');
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
@@ -88,6 +89,10 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
     if (images.length === 0) {
       Alert.alert('Error', 'Please upload at least one image');
+      return false;
+    }
+    if (!availableTime) {
+      Alert.alert('Error', 'Please select available time');
       return false;
     }
     return true;
@@ -224,7 +229,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         point: isFreeGift ? 0 : parseInt(point),
         quantity: 1,
         condition: condition,
-        images
+        images,
+        availableTime: availableTime
       };
 
       console.log("Form Data: ", postData);
@@ -365,6 +371,21 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             editable={!isFreeGift}
           />
           )}
+        </View>
+
+        {/* Available Time */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>THỜI GIAN CÓ THỂ NHẬN</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={availableTime}
+              onValueChange={(value: string) => setAvailableTime(value)}
+            >
+              <Picker.Item label="Chọn thời gian" value="" />
+              <Picker.Item label="Giờ hành chính" value="office_hour" />
+              <Picker.Item label="Buổi tối" value="evening" />
+            </Picker>
+          </View>
         </View>
 
         {/* Address Section */}

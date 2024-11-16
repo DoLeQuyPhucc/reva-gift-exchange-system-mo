@@ -49,45 +49,10 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      setShowOTP(true);
-
-      if (otp.match('111111')) {
-        const response = await axiosInstance.post('/authentication/login', {
-          phone: phoneNumber,
-          password,
-        });
-      
-        const { token, refreshToken, userId, username, role, firstName, lastName, profileURL  } = response.data.data;
-        console.log(response.data.data);
-      
-        const user: User = {
-          id: userId,
-          username,
-          role,
-          phone: phoneNumber,
-          firstName,
-          lastName,
-          profileURL
-        };
-  
-        console.log('user',user);
-        // Store tokens and user ID in AsyncStorage
-        await AsyncStorage.setItem('accessToken', token);
-        await AsyncStorage.setItem('refreshToken', refreshToken);
-        await AsyncStorage.setItem('userId', userId);
-        await AsyncStorage.setItem('userRole', role);
-        await AsyncStorage.setItem('user', JSON.stringify(user));
-      
-        // Navigate to the main screen
-        navigation.navigate("Main", {
-          screen: "Home"
-        });
-        
-        setPhoneNumber('');
-        setPassword('');
-        setOTP('');
-        setShowOTP(false);
-      }
+      navigation.navigate("OTPScreen", {
+        phoneNumber,
+        password,
+      });
     } catch (error: any) {
       Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
     } finally {
