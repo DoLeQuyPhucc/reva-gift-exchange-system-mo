@@ -9,29 +9,53 @@ import {
   TextInput,
   Alert,
   Image,
+  Linking,
+  Platform,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
+interface AddressCoordinates {
+  latitude: string;
+  longitude: string;
+}
 
 interface Transaction {
   id: string;
   status: string;
   requestId: string;
+  quantity: number;
+  
+  // Sender details
   senderId: string;
   senderName: string;
   senderProfileUrl: string;
+  senderItemId: string;
   senderItemName: string;
   senderItemImage: string[];
+  senderItemQuantity: number;
+  senderItemPoint: number;
+  senderAddress: string;
+  senderAddressCoordinates: AddressCoordinates;
+  senderPhone: string;
+  
+  // Recipient details
   recipientId: string;
   recipientName: string;
   recipientProfileUrl: string;
+  recipientItemId: string;
   recipientItemName: string;
   recipientItemImage: string[];
+  recipientItemQuantity: number;
+  recipientItemPoint: number;
+  recipientAddress: string;
+  recipientAddressCoordinates: AddressCoordinates;
+  recipientPhone: string;
+  
+  // Timestamps
   createdAt: string;
   appointmentDate: string;
 }
-
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -46,7 +70,7 @@ const MyTransactions = () => {
 
   const fetchTransactions = async () => {
     try {
-      const response = await axiosInstance.get("transaction/get-transactions");
+      const response = await axiosInstance.get("transaction/own-transactions");
       setTransactions(response.data.data);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -259,6 +283,51 @@ const MyTransactions = () => {
                   : "Xác thực giao dịch"}
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+  style={styles.detailsButton}
+  onPress={() => {
+    Alert.alert(
+      "Thông tin chi tiết",
+      `Bên gửi:
+• Địa chỉ: ${transaction.senderAddress}
+• Số điện thoại: ${transaction.senderPhone}
+• Tọa độ: ${transaction.senderAddressCoordinates.latitude}, ${transaction.senderAddressCoordinates.longitude}
+
+Bên nhận:
+• Địa chỉ: ${transaction.recipientAddress}
+• Số điện thoại: ${transaction.recipientPhone} 
+• Tọa độ: ${transaction.recipientAddressCoordinates.latitude}, ${transaction.recipientAddressCoordinates.longitude}`,
+      [
+        {
+          text: "Đóng",
+          style: "cancel"
+        },
+        {
+          text: "Mở bản đồ",
+          onPress: () => {
+            const scheme = Platform.select({ ios: 'maps:', android: 'geo:' });
+            const latLng = `${20.841444},${20.810030}`;
+            const url = Platform.select({
+              ios: `${scheme}${latLng}`,
+              android: `${scheme}${latLng}`
+            });
+            if (url) {
+              Linking.openURL(url);
+            } else {
+              Alert.alert("Error", "Unable to open map. Invalid URL.");
+            }
+          }
+        }
+      ]
+    );
+  }}
+>
+  <View style={styles.detailsButtonContent}>
+    <Icon name="info" size={20} color={Colors.orange500} />
+    <Text style={styles.detailsButtonText}>Chi tiết giao dịch</Text>
+  </View>
+</TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -267,6 +336,15 @@ const MyTransactions = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Xác thực giao dịch</Text>
+            {selectedTransaction && (
+              
+            <View style={styles.idContainer}>
+              <Image
+                    source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?data=${selectedTransaction.id}&size=200x200` }}
+                    style={{ width: 200, height: 200 }}
+                  />
+            </View>
+            )}
 
             <View style={styles.idContainer}>
               {showTransactionId && selectedTransaction && (
@@ -309,7 +387,7 @@ const MyTransactions = () => {
                   style={[styles.modalButton, styles.rejectButton]}
                   onPress={() => handleReject(selectedTransaction.id)}
                 >
-                  <Text style={styles.buttonText}>Từ chối giao dịch</Text>
+                  <Text style={styles.buttonText}>Từ chối</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -526,6 +604,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
+  },
+  detailsButton: {
+    marginTop: 8,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f8f8f8',
+  },
+  detailsButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailsButtonText: {
+    marginLeft: 8,
+    color: Colors.orange500,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

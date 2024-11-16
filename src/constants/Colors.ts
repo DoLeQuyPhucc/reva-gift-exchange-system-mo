@@ -18,7 +18,7 @@ const orange300 = "#fdba74";
 const orange500 = "#f97316";
 const orange600 = "#ea580c";
 const orange700 = "#c2410c";
-const lightRed = "#FF0000";
+const lightRed = "#cc0000";
 const lightGreen = "#1ABC9C";
 const pink = "#FF69B4";
 

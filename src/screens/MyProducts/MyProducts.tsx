@@ -9,19 +9,22 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
   Approved: Colors.lightGreen,
-  Rejected: "red",
+  Rejected: Colors.lightRed,
+  Out_of_date: "#48494d"
 };
 
 const STATUS_LABELS = {
   Pending: "Đang chờ",
   Approved: "Đã duyệt",
   Rejected: "Từ chối",
+  Out_of_date: "Hết hạn"
 };
 
 const MyProducts = () => {
   const [activeTab, setActiveTab] = useState('approved');
   const [products, setProducts] = useState({
     approved: [],
+    rejected: [],
     pending: [],
     outOfDate: []
   });
@@ -32,9 +35,10 @@ const MyProducts = () => {
       .then(response => {
         const data = response.data.data;
         setProducts({
-          approved: data['Approved Items'],
-          pending: data['Pending Items'],
-          outOfDate: data['Out of date Items']
+          approved: data['ApprovedItems'],
+          rejected: data['RejectedItems'],
+          pending: data['PendingItems'],
+          outOfDate: data['OutOfDateItems']
         });
       })
       .catch(error => {
@@ -128,13 +132,13 @@ const MyProducts = () => {
           style={[styles.tab, activeTab === 'outOfDate' && styles.activeTab]}
           onPress={() => setActiveTab('outOfDate')}
         >
-          <Text style={{fontSize: 16}}>Đã hết hạn</Text>
+          <Text style={{fontSize: 16}}>Đã huỷ</Text>
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.tabContent}>
         {activeTab === 'approved' && renderProducts(products.approved)}
         {activeTab === 'pending' && renderProducts(products.pending)}
-        {activeTab === 'outOfDate' && renderProducts(products.outOfDate)}
+        {activeTab === 'outOfDate' && renderProducts([...products.outOfDate, ...products.rejected])}
       </ScrollView>
     </View>
   );
@@ -142,13 +146,15 @@ const MyProducts = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
     flex: 1,
   },
   tabs: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 20,
+    backgroundColor: '#fff',
+    paddingTop: 10,
+
   },
   tabButton: {
     paddingVertical: 10,
@@ -168,6 +174,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   card: {
     backgroundColor: '#fff',

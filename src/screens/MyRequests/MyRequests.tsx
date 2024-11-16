@@ -17,25 +17,33 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 
 interface Request {
   id: string;
-  requesterImage: string;
-  requesterName: string;
-  requesterMessage: string;
   status: "Pending" | "Approved" | "Rejected";
+  requestMessage: string;
+  rejectMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
   
-  requesterItemId: string | null;
-  requesterItemImages: string[];
-  requesterItemName: string;
-  requesterItemPoint: string;
-
+  // Recipient details
   recipientId: string;
   recipientName: string;
   recipientImage: string;
-  recipientRejectMessage: string;
-  
-  recipientItemId: string | null;
-  recipientItemImages: string[];
+  recipientItemId: string;
   recipientItemName: string;
-  recipientItemPoint: string;
+  recipientItemImages: string[];
+  recipientItemQuantity: number;
+  recipientItemPoint: number;
+  
+  // Requester details
+  requesterId: string;
+  requesterName: string;
+  requesterImage: string;
+  requesterItemId: string | null;
+  requesterItemName: string | null;
+  requesterItemImages: string[];
+  requesterItemQuantity: number | null;
+  requesterItemPoint: number;
+  
+  // Appointment
   appointmentDate: string[];
 }
 
@@ -145,17 +153,16 @@ const MyRequests = () => {
     }
   };
 
-  const handleOpenRejectModal = () => {
-    setShowRejectModal(true);
-  }
-
   const handleReject = async (requestId: string) => {
     try {
-      const data = rejectMessage;
-      await axiosInstance.post(`request/reject/${requestId}`, data);
-      fetchRequests();
-      setShowRejectModal(false);
-      setRejectMessage("");
+      const data = {reject_message: rejectMessage};
+      const response = await axiosInstance.post(`request/reject/${requestId}`, data);
+
+      if (response.data.isSuccess === true) {
+        fetchRequests();
+        setShowRejectModal(false);
+        setRejectMessage("");
+      }
     } catch (error) {
       console.error("Error rejecting request:", error);
     }
@@ -246,17 +253,16 @@ const MyRequests = () => {
       </View>
 
       
-      {request.requesterMessage && (
+      {request.requestMessage && (
         <View style={styles.itemMessageContainer}>
-          <Text style={styles.timeMessage}>Lời nhắn: hkjhjujhkj</Text>
-          <Text>{request.requesterMessage}</Text>
+          <Text>Lời nhắn: {request.requestMessage}</Text>
         </View>
       )}
 
 
-      {request.recipientRejectMessage && (
+      {request.rejectMessage && (
         <Text style={styles.rejectMessage}>
-          Lời nhắn của bạn đã từ chối: {request.recipientRejectMessage}
+          Lời nhắn của bạn đã từ chối: {request.rejectMessage}
         </Text>
       )}
 
@@ -275,7 +281,10 @@ const MyRequests = () => {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.button, styles.rejectButton]}
-            onPress={() => handleOpenRejectModal()}
+            onPress={() => {
+              setSelectedRequest(request);
+              setShowRejectModal(true);
+            }}
           >
             <Text style={styles.buttonText}>Từ chối</Text>
           </TouchableOpacity>
@@ -478,7 +487,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#fff",
-    marginBottom: 16,
+    marginBottom: 32,
     borderRadius: 12,
     padding: 16,
     ...Platform.select({

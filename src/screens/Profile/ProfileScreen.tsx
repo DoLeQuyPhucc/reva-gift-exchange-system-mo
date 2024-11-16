@@ -117,9 +117,6 @@ const ProfileScreen = () => {
               source={{ uri: userData?.profilePicture }}
               style={styles.avatar}
             />
-            <View style={styles.editAvatarButton}>
-              <Icon name="camera" size={20} color={Colors.orange700} />
-            </View>
           </View>
           <View>
             <Title style={styles.userName}>{userData?.firstName} {userData?.lastName}</Title>
@@ -148,7 +145,7 @@ const ProfileScreen = () => {
         <View style={styles.actionButtons}>
           <Button
             mode="contained"
-            onPress={() => console.log('Edit Profile')}
+            onPress={() => navigation.navigate('ProfileDetail')}
             style={[styles.button, styles.editButton]}
             labelStyle={styles.buttonLabel}
           >

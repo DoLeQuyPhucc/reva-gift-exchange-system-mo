@@ -140,7 +140,7 @@ export default function ProductDetailScreen() {
     try {
       const response = await axiosInstance.get(`/items/current-user`);
       if (response.data.isSuccess) {
-        setUserItems(response.data.data["Approved Items"]);
+        setUserItems(response.data.data["ApprovedItems"]);
       }
     } catch (error) {
       console.error("Error fetching user items:", error);
