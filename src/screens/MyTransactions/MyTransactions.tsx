@@ -15,7 +15,9 @@ import {
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { Transaction } from "@/src/shared/type";
+import { LocationMap, Transaction } from "@/src/shared/type";
+import MapView, { Marker } from 'react-native-maps';
+import MapModal from "@/src/components/Map/MapModal";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -24,6 +26,8 @@ const MyTransactions = () => {
     useState<Transaction | null>(null);
   const [verificationInput, setVerificationInput] = useState("");
   const [showTransactionId, setShowTransactionId] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [location, setLocation] = useState<LocationMap>({ latitude: 0, longitude: 0, title: '', description: '' });
 
   useEffect(() => {
     fetchTransactions();
@@ -267,17 +271,14 @@ Bên nhận:
         {
           text: "Mở bản đồ",
           onPress: () => {
-            const scheme = Platform.select({ ios: 'maps:', android: 'geo:' });
-            const latLng = `${20.841444},${20.810030}`;
-            const url = Platform.select({
-              ios: `${scheme}${latLng}`,
-              android: `${scheme}${latLng}`
-            });
-            if (url) {
-              Linking.openURL(url);
-            } else {
-              Alert.alert("Error", "Unable to open map. Invalid URL.");
+            const data: LocationMap = {
+              latitude: parseFloat(transaction.recipientAddressCoordinates.latitude),
+              longitude: parseFloat(transaction.recipientAddressCoordinates.longitude),
+              title: transaction.recipientName,
+              description: transaction.recipientAddress
             }
+            setLocation(data);
+            setShowMapModal(true);
           }
         }
       ]
@@ -292,6 +293,34 @@ Bên nhận:
           </View>
         ))}
       </ScrollView>
+
+      {/* <Modal visible={showMapModal} transparent animationType="slide">
+  <View style={styles.modalMapContainer}>
+    <MapView
+      style={{ flex: 1, width: "100%" }}
+      initialRegion={{
+        latitude: 34.061651,
+        longitude: -118.255707,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421
+      }}
+    >
+      <Marker
+        coordinate={{ latitude: 34.061651, longitude: -118.255707 }}
+        title="Marker"
+        description="This is a marker"
+      />
+    </MapView>
+    <TouchableOpacity 
+      style={styles.mapCloseButton}
+      onPress={() => setShowMapModal(false)}
+    >
+      <Text style={styles.mapCloseButtonText}>Close</Text>
+    </TouchableOpacity>
+  </View>
+</Modal> */}
+
+<MapModal open={showMapModal} onClose={setShowMapModal} location={location} />
 
       <Modal visible={showModal} transparent animationType="slide">
         <View style={styles.modalContainer}>

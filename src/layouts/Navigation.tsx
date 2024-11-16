@@ -29,6 +29,7 @@ import MyRequests from '../screens/MyRequests/MyRequests';
 import MyTransactions from '../screens/MyTransactions/MyTransactions';
 import ProfileDetailScreen from '../screens/ProfileDetail/ProfileDetailScreen';
 import OTPScreen from '../screens/OTP/OTPScreen';
+import MapScreen from '../components/Map/MapScreen';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -55,7 +56,7 @@ const tabBarProps: TabBarProps[] = [
   },
   {
     route: 'Notifications',
-    component: NotificationsScreen,
+    component: MapScreen,
     tabBarLabel: 'Notifications',
     tabBarIconProps: {
       iconType: Ionicons,

@@ -149,3 +149,10 @@ export interface ConditionOption {
   id: ItemCondition;
   name: string;
 }
+
+export interface LocationMap {
+  latitude: number;
+  longitude: number;
+  title?: string;
+  description?: string;
+}
