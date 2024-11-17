@@ -10,34 +10,10 @@ import {
   Platform,
   TextInput,
 } from "react-native";
-import axios from "axios";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
-
-interface Request {
-  id: string;
-  requesterImage: string;
-  requesterName: string;
-  requesterMessage: string;
-  status: "Pending" | "Approved" | "Rejected";
-  
-  requesterItemId: string | null;
-  requesterItemImages: string[];
-  requesterItemName: string;
-  requesterItemPoint: string;
-
-  recipientId: string;
-  recipientName: string;
-  recipientImage: string;
-  recipientRejectMessage: string;
-  
-  recipientItemId: string | null;
-  recipientItemImages: string[];
-  recipientItemName: string;
-  recipientItemPoint: string;
-  appointmentDate: string[];
-}
+import { Request, User } from "@/src/shared/type";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -60,6 +36,8 @@ const MyRequests = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [rejectMessage, setRejectMessage] = useState<string>("");
+  const [showInfoUser, setShowInfoUser] = useState(false);
+  const [user, setUser] = useState<User>({} as User);
 
   useEffect(() => {
     fetchRequests();
@@ -145,17 +123,27 @@ const MyRequests = () => {
     }
   };
 
-  const handleOpenRejectModal = () => {
-    setShowRejectModal(true);
+  const handleShowInfoUser = async (userId: string) => {
+    try {
+      console.log(userId);
+      const response = await axiosInstance.get(`user/profile/${userId}`);
+      setUser(response.data.data);
+      setShowInfoUser(true);
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
   }
 
   const handleReject = async (requestId: string) => {
     try {
-      const data = rejectMessage;
-      await axiosInstance.post(`request/reject/${requestId}`, data);
-      fetchRequests();
-      setShowRejectModal(false);
-      setRejectMessage("");
+      const data = {reject_message: rejectMessage};
+      const response = await axiosInstance.post(`request/reject/${requestId}`, data);
+
+      if (response.data.isSuccess === true) {
+        fetchRequests();
+        setShowRejectModal(false);
+        setRejectMessage("");
+      }
     } catch (error) {
       console.error("Error rejecting request:", error);
     }
@@ -164,6 +152,7 @@ const MyRequests = () => {
   const renderRequestCard = (request: Request, showActions = false) => (
     <View style={styles.card} key={request.id}>
       <View style={styles.cardHeader}>
+      <TouchableOpacity onPress={() => handleShowInfoUser(request.requesterId)}>
         <View style={styles.userInfo}>
           <Image
             source={{ uri: request.requesterImage }}
@@ -171,6 +160,8 @@ const MyRequests = () => {
           />
           <Text style={styles.name}>{request.requesterName}</Text>
         </View>
+
+      </TouchableOpacity>
         <View
           style={[
             styles.statusBadge,
@@ -246,17 +237,16 @@ const MyRequests = () => {
       </View>
 
       
-      {request.requesterMessage && (
+      {request.requestMessage && (
         <View style={styles.itemMessageContainer}>
-          <Text style={styles.timeMessage}>Lời nhắn: hkjhjujhkj</Text>
-          <Text>{request.requesterMessage}</Text>
+          <Text>Lời nhắn: {request.requestMessage}</Text>
         </View>
       )}
 
 
-      {request.recipientRejectMessage && (
+      {request.rejectMessage && (
         <Text style={styles.rejectMessage}>
-          Lời nhắn của bạn đã từ chối: {request.recipientRejectMessage}
+          Lời nhắn của bạn đã từ chối: {request.rejectMessage}
         </Text>
       )}
 
@@ -275,7 +265,10 @@ const MyRequests = () => {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.button, styles.rejectButton]}
-            onPress={() => handleOpenRejectModal()}
+            onPress={() => {
+              setSelectedRequest(request);
+              setShowRejectModal(true);
+            }}
           >
             <Text style={styles.buttonText}>Từ chối</Text>
           </TouchableOpacity>
@@ -438,6 +431,55 @@ const MyRequests = () => {
           </View>
         </View>
       </Modal>
+      <Modal visible={showInfoUser} transparent animationType="slide">
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <View style={styles.profileHeader}>
+        <Image 
+          source={{ uri: user.profilePicture }} 
+          style={styles.profilePicture}
+        />
+        <Text style={styles.userName}>{user.firstName} {user.lastName}</Text>
+      </View>
+
+      <View style={styles.infoSection}>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Email:</Text>
+          <Text style={styles.infoValue}>{user.email}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Phone:</Text>
+          <Text style={styles.infoValue}>{user.phone}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Address:</Text>
+          <Text style={styles.infoValue}>{user.address}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Points:</Text>
+          <Text style={styles.infoValue}>{user.point}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Member since:</Text>
+          <Text style={styles.infoValue}>
+            {new Date(user.dateJoined as string).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.closeButton}
+        onPress={() => setShowInfoUser(false)}
+      >
+        <Text style={styles.closeButtonText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };
@@ -478,7 +520,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#fff",
-    marginBottom: 16,
+    marginBottom: 32,
     borderRadius: 12,
     padding: 16,
     ...Platform.select({
@@ -745,6 +787,51 @@ const styles = StyleSheet.create({
   textErrorMessage: {
     color: "#e53e3e",
     marginBottom: 16,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profilePicture: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  infoSection: {
+    gap: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  infoLabel: {
+    fontWeight: '600',
+    color: '#666',
+    flex: 1,
+  },
+  infoValue: {
+    flex: 2,
+    textAlign: 'right',
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

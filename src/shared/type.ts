@@ -17,17 +17,90 @@ export interface Product {
   quantity: number;
   dateRemaining: number;
   status: string;
+  availableTime: string;
 }
 
 export interface User {
-  id: string;
-  username: string;
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
-  role: string;
-  profileURL: string;
-  // products: Product[];
+  profilePicture: string;
+  address: string;
+  dob: string | null;
+  gender: string | null;
+  point?: number;
+  addressCoordinates: AddressCoordinates;
+  dateJoined?: string;
+}
+
+export interface Request {
+  id: string;
+  status: "Pending" | "Approved" | "Rejected";
+  requestMessage: string;
+  rejectMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+
+  // Recipient details
+  recipientId: string;
+  recipientName: string;
+  recipientImage: string;
+  recipientItemId: string;
+  recipientItemName: string;
+  recipientItemImages: string[];
+  recipientItemQuantity: number;
+  recipientItemPoint: number;
+
+  // Requester details
+  requesterId: string;
+  requesterName: string;
+  requesterImage: string;
+  requesterItemId: string | null;
+  requesterItemName: string | null;
+  requesterItemImages: string[];
+  requesterItemQuantity: number | null;
+  requesterItemPoint: number;
+
+  // Appointment
+  appointmentDate: string[];
+}
+
+export interface Transaction {
+  id: string;
+  status: string;
+  requestId: string;
+  quantity: number;
+
+  // Sender details
+  senderId: string;
+  senderName: string;
+  senderProfileUrl: string;
+  senderItemId: string;
+  senderItemName: string;
+  senderItemImage: string[];
+  senderItemQuantity: number;
+  senderItemPoint: number;
+  senderAddress: string;
+  senderAddressCoordinates: AddressCoordinates;
+  senderPhone: string;
+
+  // Recipient details
+  recipientId: string;
+  recipientName: string;
+  recipientProfileUrl: string;
+  recipientItemId: string;
+  recipientItemName: string;
+  recipientItemImage: string[];
+  recipientItemQuantity: number;
+  recipientItemPoint: number;
+  recipientAddress: string;
+  recipientAddressCoordinates: AddressCoordinates;
+  recipientPhone: string;
+
+  // Timestamps
+  createdAt: string;
+  appointmentDate: string;
 }
 
 export interface Category {
@@ -75,4 +148,11 @@ export enum ItemCondition {
 export interface ConditionOption {
   id: ItemCondition;
   name: string;
+}
+
+export interface LocationMap {
+  latitude: number;
+  longitude: number;
+  title?: string;
+  description?: string;
 }

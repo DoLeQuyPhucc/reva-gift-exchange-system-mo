@@ -33,6 +33,11 @@ type ProductDetailScreenRouteProp = RouteProp<
   "ProductDetail"
 >;
 
+const availableTimeSlots = {
+  "office_hour": [8, 9, 10, 11, 13, 14, 15, 16],
+  "evening": [17, 18, 19, 20, 21],
+}
+
 export default function ProductDetailScreen() {
   const route = useRoute<ProductDetailScreenRouteProp>();
   const itemId = route.params.productId;
@@ -52,13 +57,14 @@ export default function ProductDetailScreen() {
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
   const [userItems, setUserItems] = useState<Product[]>([]);
-  const [selectedUserItem, setSelectedUserItem] = useState<Product | null>(
-    null
-  );
+  const [selectedUserItem, setSelectedUserItem] = useState<Product | null>(null);
   const [loadingUserItems, setLoadingUserItems] = useState(false);
 
   const [wannaRequest, setWannaRequest] = useState(false);
   const [isTrue, setIsTrue] = useState(true);
+
+  const [selectedRange, setSelectedRange] = useState('office_hour'); // or 'evening'
+
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -74,6 +80,7 @@ export default function ProductDetailScreen() {
 
         if (response.data.isSuccess && response.data.data) {
           setProduct(response.data.data);
+          setSelectedRange(response.data.data?.availableTime || 'office_hour');
           console.log("Product:", response.data.data);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
@@ -89,11 +96,16 @@ export default function ProductDetailScreen() {
     fetchProduct();
   }, [itemId]);
 
-  // Generate time slots for the day (0-23)
-  const timeSlots = Array.from({ length: 24 }, (_, i) => ({
-    hour: i,
-    label: `${i}:00 - ${i + 1}:00`,
-  }));
+  const generateTimeSlots = (range: string) => {
+    const hours = availableTimeSlots[range as keyof typeof availableTimeSlots];
+    return hours.map(hour => ({
+      hour,
+      label: `${hour}:00 - ${hour + 1}:00`,
+    }));
+  };
+  
+  // Use generated time slots
+  const timeSlots = generateTimeSlots(selectedRange);
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -140,7 +152,7 @@ export default function ProductDetailScreen() {
     try {
       const response = await axiosInstance.get(`/items/current-user`);
       if (response.data.isSuccess) {
-        setUserItems(response.data.data["Approved Items"]);
+        setUserItems(response.data.data["ApprovedItems"]);
       }
     } catch (error) {
       console.error("Error fetching user items:", error);
@@ -795,7 +807,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     marginBottom: 20,
   },
   userInfoContainer: {
@@ -804,10 +816,6 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     padding: 8,
     backgroundColor: "#fff",
-    // borderRadius: 8,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   avatar: {

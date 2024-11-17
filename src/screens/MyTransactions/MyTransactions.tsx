@@ -9,28 +9,15 @@ import {
   TextInput,
   Alert,
   Image,
+  Linking,
+  Platform,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
-
-interface Transaction {
-  id: string;
-  status: string;
-  requestId: string;
-  senderId: string;
-  senderName: string;
-  senderProfileUrl: string;
-  senderItemName: string;
-  senderItemImage: string[];
-  recipientId: string;
-  recipientName: string;
-  recipientProfileUrl: string;
-  recipientItemName: string;
-  recipientItemImage: string[];
-  createdAt: string;
-  appointmentDate: string;
-}
+import { LocationMap, Transaction } from "@/src/shared/type";
+import MapView, { Marker } from 'react-native-maps';
+import MapModal from "@/src/components/Map/MapModal";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -39,6 +26,8 @@ const MyTransactions = () => {
     useState<Transaction | null>(null);
   const [verificationInput, setVerificationInput] = useState("");
   const [showTransactionId, setShowTransactionId] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [location, setLocation] = useState<LocationMap>({ latitude: 0, longitude: 0, title: '', description: '' });
 
   useEffect(() => {
     fetchTransactions();
@@ -46,7 +35,7 @@ const MyTransactions = () => {
 
   const fetchTransactions = async () => {
     try {
-      const response = await axiosInstance.get("transaction/get-transactions");
+      const response = await axiosInstance.get("transaction/own-transactions");
       setTransactions(response.data.data);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -259,14 +248,93 @@ const MyTransactions = () => {
                   : "Xác thực giao dịch"}
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+  style={styles.detailsButton}
+  onPress={() => {
+    Alert.alert(
+      "Thông tin chi tiết",
+      `Bên gửi:
+• Địa chỉ: ${transaction.senderAddress}
+• Số điện thoại: ${transaction.senderPhone}
+• Tọa độ: ${transaction.senderAddressCoordinates.latitude}, ${transaction.senderAddressCoordinates.longitude}
+
+Bên nhận:
+• Địa chỉ: ${transaction.recipientAddress}
+• Số điện thoại: ${transaction.recipientPhone} 
+• Tọa độ: ${transaction.recipientAddressCoordinates.latitude}, ${transaction.recipientAddressCoordinates.longitude}`,
+      [
+        {
+          text: "Đóng",
+          style: "cancel"
+        },
+        {
+          text: "Mở bản đồ",
+          onPress: () => {
+            const data: LocationMap = {
+              latitude: parseFloat(transaction.recipientAddressCoordinates.latitude),
+              longitude: parseFloat(transaction.recipientAddressCoordinates.longitude),
+              title: transaction.recipientName,
+              description: transaction.recipientAddress
+            }
+            setLocation(data);
+            setShowMapModal(true);
+          }
+        }
+      ]
+    );
+  }}
+>
+  <View style={styles.detailsButtonContent}>
+    <Icon name="info" size={20} color={Colors.orange500} />
+    <Text style={styles.detailsButtonText}>Chi tiết giao dịch</Text>
+  </View>
+</TouchableOpacity>
           </View>
         ))}
       </ScrollView>
+
+      {/* <Modal visible={showMapModal} transparent animationType="slide">
+  <View style={styles.modalMapContainer}>
+    <MapView
+      style={{ flex: 1, width: "100%" }}
+      initialRegion={{
+        latitude: 34.061651,
+        longitude: -118.255707,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421
+      }}
+    >
+      <Marker
+        coordinate={{ latitude: 34.061651, longitude: -118.255707 }}
+        title="Marker"
+        description="This is a marker"
+      />
+    </MapView>
+    <TouchableOpacity 
+      style={styles.mapCloseButton}
+      onPress={() => setShowMapModal(false)}
+    >
+      <Text style={styles.mapCloseButtonText}>Close</Text>
+    </TouchableOpacity>
+  </View>
+</Modal> */}
+
+<MapModal open={showMapModal} onClose={setShowMapModal} location={location} />
 
       <Modal visible={showModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Xác thực giao dịch</Text>
+            {selectedTransaction && (
+              
+            <View style={styles.idContainer}>
+              <Image
+                    source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?data=${selectedTransaction.id}&size=200x200` }}
+                    style={{ width: 200, height: 200 }}
+                  />
+            </View>
+            )}
 
             <View style={styles.idContainer}>
               {showTransactionId && selectedTransaction && (
@@ -309,7 +377,7 @@ const MyTransactions = () => {
                   style={[styles.modalButton, styles.rejectButton]}
                   onPress={() => handleReject(selectedTransaction.id)}
                 >
-                  <Text style={styles.buttonText}>Từ chối giao dịch</Text>
+                  <Text style={styles.buttonText}>Từ chối</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -526,6 +594,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
+  },
+  detailsButton: {
+    marginTop: 8,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f8f8f8',
+  },
+  detailsButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailsButtonText: {
+    marginLeft: 8,
+    color: Colors.orange500,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

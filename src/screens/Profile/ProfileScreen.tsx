@@ -6,17 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/hooks/useNavigation';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Colors from '@/src/constants/Colors';
+import { User } from '@/src/shared/type';
 
 const ProfileScreen = () => {
-  interface User {
-    firstName: string;
-    lastName: string;
-    phone: string;
-    profilePicture: string;
-    address: string;
-    email: string;
-  }
-
   const [userData, setUserData] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -117,9 +109,6 @@ const ProfileScreen = () => {
               source={{ uri: userData?.profilePicture }}
               style={styles.avatar}
             />
-            <View style={styles.editAvatarButton}>
-              <Icon name="camera" size={20} color={Colors.orange700} />
-            </View>
           </View>
           <View>
             <Title style={styles.userName}>{userData?.firstName} {userData?.lastName}</Title>
@@ -148,7 +137,7 @@ const ProfileScreen = () => {
         <View style={styles.actionButtons}>
           <Button
             mode="contained"
-            onPress={() => console.log('Edit Profile')}
+            onPress={() => navigation.navigate('ProfileDetail')}
             style={[styles.button, styles.editButton]}
             labelStyle={styles.buttonLabel}
           >

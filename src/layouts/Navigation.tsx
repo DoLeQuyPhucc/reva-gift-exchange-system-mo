@@ -27,7 +27,9 @@ import CreatePostScreen from '@/screens/CreatePost/CreatePostScreen';
 import MyProducts from '../screens/MyProducts/MyProducts';
 import MyRequests from '../screens/MyRequests/MyRequests';
 import MyTransactions from '../screens/MyTransactions/MyTransactions';
+import ProfileDetailScreen from '../screens/ProfileDetail/ProfileDetailScreen';
 import OTPScreen from '../screens/OTP/OTPScreen';
+import MapScreen from '../components/Map/MapScreen';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -54,7 +56,7 @@ const tabBarProps: TabBarProps[] = [
   },
   {
     route: 'Notifications',
-    component: NotificationsScreen,
+    component: MapScreen,
     tabBarLabel: 'Notifications',
     tabBarIconProps: {
       iconType: Ionicons,
@@ -123,6 +125,7 @@ export default function Navigation() {
           <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OTPScreen" component={OTPScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
+          <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Thông tin cá nhân' }} />
           <Stack.Screen name="MyProducts" component={MyProducts} options={{ title: 'Sản phẩm của tôi' }} />
           <Stack.Screen name="MyRequests" component={MyRequests} options={{ title: 'Quản lí các yêu cầu của tôi' }} />
           <Stack.Screen name="MyTransactions" component={MyTransactions} options={{ title: 'Quản lí giao dịch của tôi' }} />
