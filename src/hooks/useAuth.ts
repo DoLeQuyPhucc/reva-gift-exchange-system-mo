@@ -1,23 +1,26 @@
-import { useState, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/stores/authStore";
 
-const useUserId = () => {
-  const [userId, setUserId] = useState<string | null>(null);
+export const useAuthCheck = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, checkAuth, accessToken, userId, userRole } = useAuthStore();
 
   useEffect(() => {
-    const getUserId = async () => {
+    const init = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem("userId");
-        setUserId(storedUserId);
-      } catch (error) {
-        console.error("Error getting userId:", error);
+        setIsLoading(true);
+        await checkAuth();
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    getUserId();
+    init();
   }, []);
 
-  return userId;
+  return {
+    isAuthenticated,
+    isLoading,
+    userData: { accessToken, userId, userRole },
+    checkAuthStatus: checkAuth,
+  };
 };
-
-export default useUserId;

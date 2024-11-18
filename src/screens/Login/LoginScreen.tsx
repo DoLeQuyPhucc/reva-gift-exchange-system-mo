@@ -60,8 +60,27 @@ const LoginScreen: React.FC = () => {
     }
   };
 
+  const handleGoBack = () => {
+    try {
+      navigation.goBack();
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
   return (
     <SafeAreaView>
+      <TouchableOpacity 
+        onPress={handleGoBack}
+        style={{
+          position: 'absolute',
+          left: Spacing * 2,
+          top: Spacing * 6,
+          zIndex: 1,
+        }}
+      >
+        <Ionicons name="arrow-back" size={24} color={Colors.text} />
+      </TouchableOpacity>
       <View style={{ padding: Spacing * 2 }}>
         <View style={{ alignItems: "center" }}>
           <Text style={styles.title}>Đăng nhập</Text>

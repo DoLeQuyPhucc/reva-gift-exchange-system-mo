@@ -19,6 +19,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import axiosInstance from "@/src/api/axiosInstance";
 import { User } from "@/src/shared/type";
+import { useAuthStore } from '@/stores/authStore';
 
 type OTPScreenProps = NativeStackScreenProps<RootStackParamList, 'OTPScreen'>;
 
@@ -105,11 +106,14 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           }
         };
   
-        await AsyncStorage.setItem('accessToken', token);
-        await AsyncStorage.setItem('refreshToken', refreshToken);
-        await AsyncStorage.setItem('userId', userId);
-        await AsyncStorage.setItem('userRole', role);
-        await AsyncStorage.setItem('user', JSON.stringify(user));
+        const login = useAuthStore.getState().login;
+        await login({
+          accessToken: token,
+          refreshToken: refreshToken,
+          userId: userId,
+          userRole: role,
+          user: user
+        });
       
         navigation.navigate("Main", {
           screen: "Home"
