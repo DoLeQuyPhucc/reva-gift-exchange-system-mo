@@ -45,24 +45,24 @@ const tabBarProps: TabBarProps[] = [
       iconName: 'home',
     },
   },
-  {
-    route: 'Favorites',
-    component: FavoritesScreen,
-    tabBarLabel: 'Favorites',
-    tabBarIconProps: {
-      iconType: Ionicons,
-      iconName: 'favorite',
-    },
-  },
-  {
-    route: 'Notifications',
-    component: MapScreen,
-    tabBarLabel: 'Notifications',
-    tabBarIconProps: {
-      iconType: Ionicons,
-      iconName: 'notifications',
-    },
-  },
+  // {
+  //   route: 'Favorites',
+  //   component: FavoritesScreen,
+  //   tabBarLabel: 'Favorites',
+  //   tabBarIconProps: {
+  //     iconType: Ionicons,
+  //     iconName: 'favorite',
+  //   },
+  // },
+  // {
+  //   route: 'Notifications',
+  //   component: MapScreen,
+  //   tabBarLabel: 'Notifications',
+  //   tabBarIconProps: {
+  //     iconType: Ionicons,
+  //     iconName: 'notifications',
+  //   },
+  // },
   {
     route: 'Profile',
     component: ProfileScreen,

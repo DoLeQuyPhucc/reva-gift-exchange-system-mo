@@ -21,6 +21,9 @@ import { formatDate } from "@/src/shared/formatDate";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/src/constants/Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MediaUploadSection from "@/src/components/MediaUploadSection";
+import * as ImagePicker from "expo-image-picker";
+import { Alert } from "react-native";
 
 type TimeSlot = {
   id: string;
@@ -34,9 +37,9 @@ type ProductDetailScreenRouteProp = RouteProp<
 >;
 
 const availableTimeSlots = {
-  "office_hour": [8, 9, 10, 11, 13, 14, 15, 16],
-  "evening": [17, 18, 19, 20, 21],
-}
+  office_hour: [8, 9, 10, 11, 13, 14, 15, 16],
+  evening: [17, 18, 19, 20, 21],
+};
 
 export default function ProductDetailScreen() {
   const route = useRoute<ProductDetailScreenRouteProp>();
@@ -49,6 +52,9 @@ export default function ProductDetailScreen() {
   const [errorRequestMessage, setErrorRequestMessage] = useState("");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
 
+  const [moreImages, setMoreImages] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlot[]>([]);
@@ -57,14 +63,15 @@ export default function ProductDetailScreen() {
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
   const [userItems, setUserItems] = useState<Product[]>([]);
-  const [selectedUserItem, setSelectedUserItem] = useState<Product | null>(null);
+  const [selectedUserItem, setSelectedUserItem] = useState<Product | null>(
+    null
+  );
   const [loadingUserItems, setLoadingUserItems] = useState(false);
 
   const [wannaRequest, setWannaRequest] = useState(false);
   const [isTrue, setIsTrue] = useState(true);
 
-  const [selectedRange, setSelectedRange] = useState('office_hour'); // or 'evening'
-
+  const [selectedRange, setSelectedRange] = useState("office_hour"); // or 'evening'
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -80,7 +87,7 @@ export default function ProductDetailScreen() {
 
         if (response.data.isSuccess && response.data.data) {
           setProduct(response.data.data);
-          setSelectedRange(response.data.data?.availableTime || 'office_hour');
+          setSelectedRange(response.data.data?.availableTime || "office_hour");
           console.log("Product:", response.data.data);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
@@ -96,14 +103,111 @@ export default function ProductDetailScreen() {
     fetchProduct();
   }, [itemId]);
 
+  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
+    try {
+      console.log("Starting upload process with URI:", uri);
+
+      // Create file object
+      const filename = uri.split("/").pop() || "photo.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : "image/jpeg";
+
+      console.log("File details:", {
+        filename,
+        type,
+      });
+
+      const formData = new FormData();
+
+      // Append file with proper structure
+      const fileData = {
+        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
+        name: filename,
+        type: type,
+      };
+
+      const CLOUDINARY_UPLOAD_PRESET = "gift_system";
+      const CLOUDINARY_URL =
+        "https://api.cloudinary.com/v1_1/dt4ianp80/image/upload";
+
+      console.log("FormData file object:", fileData);
+      formData.append("file", fileData as any);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      console.log("Cloudinary URL:", CLOUDINARY_URL);
+      console.log("Upload preset:", CLOUDINARY_UPLOAD_PRESET);
+
+      const response = await fetch(CLOUDINARY_URL, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("Response status:", response.status);
+
+      // Get detailed error message if available
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
+      if (!response.ok) {
+        throw new Error(
+          `Upload failed: ${response.status} - ${JSON.stringify(responseData)}`
+        );
+      }
+
+      return responseData.secure_url;
+    } catch (error: any) {
+      console.error("Detailed upload error:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
+  };
+
+  const handleImageUpload = async () => {
+    try {
+      setIsUploadingImage(true);
+      setSelectedUserItem(null);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const uri = result.assets[0].uri;
+        setSelectedImage(uri);
+
+        const imageUrl = await uploadImageToCloudinary(uri);
+        setMoreImages((prev) => [...prev, imageUrl]);
+        console.log("Image uploaded successfully:", imageUrl);
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      Alert.alert("Upload Failed", "Please try again");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = moreImages.filter((_, idx) => idx !== index);
+    setMoreImages(newImages);
+  };
+
   const generateTimeSlots = (range: string) => {
     const hours = availableTimeSlots[range as keyof typeof availableTimeSlots];
-    return hours.map(hour => ({
+    return hours.map((hour) => ({
       hour,
       label: `${hour}:00 - ${hour + 1}:00`,
     }));
   };
-  
+
   // Use generated time slots
   const timeSlots = generateTimeSlots(selectedRange);
 
@@ -172,40 +276,31 @@ export default function ProductDetailScreen() {
   };
 
   const handleConfirmRequest = async () => {
-    setShowRequestDialog(false);
-
-    if (!selectedUserItem) {
+    try {
+      setShowRequestDialog(false);
+  
+      //thêm ảnh 
+      // moreImages
       const data = {
         itemId: product?.id,
         message: requestMessage,
         appointmentDate: selectedTimeSlots.map((slot) => slot.dateTime),
-        requesterItemId: null,
+        requesterItemId: selectedUserItem?.id || null,
       };
+  
       const response = await axiosInstance.post("/request/create", data);
-
+  
       if (response.data.isSuccess) {
-        setShowRequestDialog(false);
+        // Reset form
         setSelectedTimeSlots([]);
         setRequestMessage("");
+        Alert.alert("Success", "Request created successfully");
       }
-      return;
-    }
-
-    const data = {
-      itemId: product?.id,
-      message: requestMessage,
-      appointmentDate: selectedTimeSlots.map((slot) => slot.dateTime),
-      requesterItemId: selectedUserItem.id,
-    };
-
-    console.log("Request data:", data);
-
-    const response = await axiosInstance.post("/request/create", data);
-
-    if (response.data.isSuccess) {
-      setShowRequestDialog(false);
-      setSelectedTimeSlots([]);
-      setRequestMessage("");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to create request"
+      );
     }
   };
 
@@ -242,6 +337,12 @@ export default function ProductDetailScreen() {
       );
     }
 
+    const handleItemPress = (item: any) => {
+      setSelectedUserItem(prevItem => 
+        prevItem?.id === item.id ? null : item
+      );
+    };
+
     return (
       <ScrollView horizontal style={styles.userItemsScroll}>
         {userItems
@@ -253,7 +354,7 @@ export default function ProductDetailScreen() {
                 styles.userItemCard,
                 selectedUserItem?.id === item.id && styles.selectedUserItemCard,
               ]}
-              onPress={() => setSelectedUserItem(item)}
+              onPress={() => handleItemPress(item)}
             >
               <Image
                 source={{ uri: item.images[0] }}
@@ -429,14 +530,26 @@ export default function ProductDetailScreen() {
                 <>
                   <View style={styles.exchangeArrowContainer}>
                     <Icon name="swap-vert" size={24} color={Colors.orange500} />
-                    <Text style={styles.exchangeText}>
-                      Chọn sản phẩm để trao đổi
-                    </Text>
+                    {moreImages.length === 0 && (
+                      <>
+                        <Text style={styles.exchangeText}>
+                          Chọn sản phẩm để trao đổi
+                        </Text>
+                      </>
+                    )}
                   </View>
+                  {moreImages.length === 0 && (
+                    <>
+                      <View style={styles.userItemsSection}>
+                        {renderUserItems()}
+                      </View>
+                    </>
+                  )}
 
-                  <View style={styles.userItemsSection}>
-                    {renderUserItems()}
-                  </View>
+                  <Text style={styles.moreItemText}>
+                    Sản phẩm khác, bạn hãy chụp lại sản phẩm và ghi rõ thông tin
+                    sản phẩm
+                  </Text>
                   {selectedUserItem && (
                     <View style={styles.selectedItemInfo}>
                       <Text style={styles.selectedItemText}>
@@ -444,6 +557,18 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   )}
+                  
+                  <MediaUploadSection
+                    images={moreImages}
+                    video={""}
+                    selectedImage={selectedImage}
+                    isLoading={isUploadingImage}
+                    onPickImage={handleImageUpload}
+                    onPickVideo={() => {}}
+                    onRemoveImage={removeImage}
+                    onRemoveVideo={() => {}}
+                    canUploadVideo={false}
+                  />
                   <TouchableOpacity onPress={() => handleWannaRequest()}>
                     <Text style={styles.requestText}>
                       Tôi muốn xin món đồ này.
@@ -487,12 +612,12 @@ export default function ProductDetailScreen() {
                   )}
 
                   <Text style={styles.modalDescription}>
-                    Vui lòng chọn khung thời gian theo thời gian rãnh của chủ sản phẩm
+                    Vui lòng chọn khung thời gian theo thời gian rãnh của chủ
+                    sản phẩm
                   </Text>
                   <Text style={styles.modalDescriptionSub}>
-                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù
-                    hợp sẽ tiếp hành trao đổi. Bạn có thể chọn tối đa 3 khung
-                    giờ.
+                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp
+                    hành trao đổi. Bạn có thể chọn tối đa 3 khung giờ.
                   </Text>
 
                   <View style={styles.selectedSlotsContainer}>
@@ -578,14 +703,14 @@ export default function ProductDetailScreen() {
                   styles.confirmButton,
                   (product.isGift
                     ? selectedTimeSlots.length === 0
-                    : !selectedUserItem || selectedTimeSlots.length === 0) &&
+                    : (!selectedUserItem && moreImages.length === 0) || selectedTimeSlots.length === 0) &&
                     styles.disabledButton,
                 ]}
                 onPress={handleConfirmRequest}
                 disabled={
                   product.isGift
                     ? selectedTimeSlots.length === 0
-                    : !selectedUserItem || selectedTimeSlots.length === 0
+                    : (!selectedUserItem && moreImages.length === 0) || selectedTimeSlots.length === 0
                 }
               >
                 <Text style={styles.buttonText}>Xác nhận</Text>
@@ -870,6 +995,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginTop: 4,
+  },
+  moreItemText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    paddingVertical: 16,
   },
   userItemsSection: {
     marginBottom: 16,
