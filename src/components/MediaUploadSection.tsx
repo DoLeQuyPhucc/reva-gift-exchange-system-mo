@@ -19,6 +19,7 @@ interface MediaUploadSectionProps {
   onRemoveImage: (index: number) => void;
   onRemoveVideo: () => void;
   isLoading?: boolean;
+  canUploadVideo?: boolean;
 }
 
 const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
@@ -28,7 +29,8 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
   onPickVideo,
   onRemoveImage,
   onRemoveVideo,
-  isLoading = false
+  isLoading = false,
+  canUploadVideo = true
 }) => {
   const screenWidth = Dimensions.get('window').width;
   const boxSize = (screenWidth - 48 - 32) / 5;
@@ -110,17 +112,19 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
           )}
         </View>
       </View>
-
+      
       {/* Video Upload Section */}
-      <TouchableOpacity 
-        style={styles.videoUploadBox} 
-        onPress={onPickVideo}
-        disabled={video !== '' || isLoading}
-      >
-        <Icon name="videocam" size={32} color="#f97314" />
-        <Text style={styles.uploadText}>ĐĂNG TỐI ĐA 01 VIDEO</Text>
-        <Text style={styles.subText}>BẠN ĐÃ ĐĂNG 0/20 VIDEO TRONG THÁNG</Text>
-      </TouchableOpacity>
+      {canUploadVideo && (
+        <TouchableOpacity 
+          style={styles.videoUploadBox} 
+          onPress={onPickVideo}
+          disabled={video !== '' || isLoading}
+        >
+          <Icon name="videocam" size={32} color="#f97314" />
+          <Text style={styles.uploadText}>ĐĂNG TỐI ĐA 01 VIDEO</Text>
+          <Text style={styles.subText}>BẠN ĐÃ ĐĂNG 0/20 VIDEO TRONG THÁNG</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
