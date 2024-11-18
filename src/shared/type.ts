@@ -21,6 +21,10 @@ export interface Product {
 }
 
 export interface User {
+  id: string;
+  username: string;
+  role: string;
+  profileURL: string;
   firstName: string;
   lastName: string;
   email: string;
