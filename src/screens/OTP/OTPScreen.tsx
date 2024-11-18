@@ -93,7 +93,16 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           phone: phoneNumber,
           firstName,
           lastName,
-          profileURL
+          profileURL,
+          email: "",
+          profilePicture: profileURL || "",
+          address: "",
+          dob: null,
+          gender: null,
+          addressCoordinates: {
+            latitude: "",
+            longitude: ""
+          }
         };
   
         await AsyncStorage.setItem('accessToken', token);
