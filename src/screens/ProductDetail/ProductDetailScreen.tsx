@@ -20,10 +20,12 @@ import { Button } from "react-native";
 import { formatDate } from "@/src/shared/formatDate";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/src/constants/Colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import MediaUploadSection from "@/src/components/MediaUploadSection";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
+
+import { useAuthCheck } from "@/src/hooks/useAuth";
+import { useNavigation } from "@/src/hooks/useNavigation";
 
 type TimeSlot = {
   id: string;
@@ -44,6 +46,9 @@ const availableTimeSlots = {
 export default function ProductDetailScreen() {
   const route = useRoute<ProductDetailScreenRouteProp>();
   const itemId = route.params.productId;
+
+  const { isAuthenticated, isLoading } = useAuthCheck();
+  const navigation = useNavigation();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -266,10 +271,16 @@ export default function ProductDetailScreen() {
   };
 
   const handleRequest = async () => {
+    if (!isAuthenticated) {
+      navigation.navigate('LoginScreen');
+      return;
+    }
+
     if (!product) {
       console.error("Product not found");
       return;
     }
+
     setCountTimeSlots(selectedTimeSlots.length);
     setShowRequestDialog(true);
     await fetchUserItems();

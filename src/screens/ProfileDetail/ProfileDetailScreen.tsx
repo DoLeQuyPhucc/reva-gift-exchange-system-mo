@@ -26,6 +26,10 @@ const ProfileDetailScreen = () => {
 
   // Form state
   const [formData, setFormData] = useState<User>({
+    id: '',
+    username: '',
+    role: '',
+    profileURL: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -33,7 +37,7 @@ const ProfileDetailScreen = () => {
     profilePicture: DEFAULT_PROFILE_PICTURE,
     address: '',
     dob: null,
-    gender: '',
+    gender: null,
     addressCoordinates: {
       latitude: '',
       longitude: ''

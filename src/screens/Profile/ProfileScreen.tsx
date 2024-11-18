@@ -1,61 +1,119 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, ActivityIndicator, SafeAreaView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Avatar, Button, Card, Text, Title } from 'react-native-paper';
-import axiosInstance, { clearAuthTokens } from '@/api/axiosInstance';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axiosInstance from '@/api/axiosInstance';
 import { useNavigation } from '@/hooks/useNavigation';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Colors from '@/src/constants/Colors';
-import { User } from '@/src/shared/type';
+import { useAuthCheck } from '@/src/hooks/useAuth';
+import { Alert } from 'react-native';
+import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
+import { useAuthStore } from '@/stores/authStore';
+
+const userDataSelector = (state: ReturnType<typeof useAuthStore.getState>) => state.userData;
+const setUserDataSelector = (state: ReturnType<typeof useAuthStore.getState>) => state.setUserData;
 
 const ProfileScreen = () => {
-  const [userData, setUserData] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const { isAuthenticated } = useAuthCheck();
+  const userData = useAuthStore(userDataSelector);
+  const setUserData = useAuthStore(setUserDataSelector);
   const [loading, setLoading] = useState(false);
-
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const getToken = async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      setAccessToken(token);
-    };
-    getToken();
-  }, []);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosInstance.get('/user/profile');
-        setUserData(response.data.data);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (accessToken) {
-      fetchUserData();
+  const fetchUserData = async () => {
+    if (!isAuthenticated) {
+      setUserData(null);
+      return;
     }
-  }, [accessToken]);
+
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/user/profile');
+      setUserData(response.data.data);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchUserData();
+  }, [isAuthenticated]);
   
   const handleLogout = async () => {
     try {
-      await clearAuthTokens();
-
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      await AsyncStorage.removeItem('userId');
-      await AsyncStorage.removeItem('userRole');
-      await AsyncStorage.removeItem('user');
-
-      navigation.navigate('WelcomeScreen');
+      const logout = useAuthStore.getState().logout;
+      await logout();
+      navigation.navigate('Main', {
+        screen: 'Home'
+      });
     } catch (error) {
       console.error('Error clearing session:', error);
     }
   };
+
+  const handleAuthenticatedNavigation = (screenName: keyof RootStackParamList) => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu đăng nhập',
+        'Vui lòng đăng nhập để sử dụng tính năng này',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { 
+            text: 'Đăng nhập', 
+            onPress: () => {
+              try {
+                navigation.navigate('LoginScreen', undefined);
+              } catch (error) {
+                console.error('Navigation error:', error);
+                Alert.alert('Lỗi', 'Không thể chuyển đến trang đăng nhập');
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+    
+    try {
+      if (screenName === 'MyProducts') {
+        navigation.navigate('MyProducts');
+      } else if (screenName === 'MyRequests') {
+        navigation.navigate('MyRequests');
+      } else if (screenName === 'MyTransactions') {
+        navigation.navigate('MyTransactions');
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Lỗi', 'Không thể chuyển đến trang yêu cầu');
+    }
+  };
+
+  const handleEditProfile = () => {
+    if(!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu đăng nhập',
+        'Vui lòng đăng nhập để sử dụng tính năng này',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { 
+            text: 'Đăng nhập', 
+            onPress: () => {
+              try {
+                navigation.navigate('LoginScreen', undefined);
+              } catch (error) {
+                console.error('Navigation error:', error);
+                Alert.alert('Lỗi', 'Không thể chuyển đến trang đăng nhập');
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+    navigation.navigate('ProfileDetail');
+  }
   
   if (loading) {
     return (
@@ -66,37 +124,60 @@ const ProfileScreen = () => {
   }
 
   const menuItems = [
-    // {
-    //   title: 'Quản lý gói đăng bài',
-    //   icon: 'newspaper-outline',
-    //   onPress: () => navigation.navigate('MyPackageScreen')
-    // },
     {
       title: 'Sản phẩm của tôi',
       icon: 'cube-outline',
-      onPress: () => navigation.navigate('MyProducts')
+      onPress: () => handleAuthenticatedNavigation('MyProducts')
     },
     {
       title: 'Quản lí các yêu cầu của tôi',
       icon: 'cube-outline',
-      onPress: () => navigation.navigate('MyRequests')
+      onPress: () => handleAuthenticatedNavigation('MyRequests')
     },
     {
       title: 'Quản lí các giao dịch của tôi',
       icon: 'cube-outline',
-      onPress: () => navigation.navigate('MyTransactions')
+      onPress: () => handleAuthenticatedNavigation('MyTransactions')
     },
-    // {
-    //   title: 'Danh sách bài viết yêu thích',
-    //   icon: 'heart-outline',
-    //   onPress: () => navigation.navigate('ListFavoriteBlogScreen')
-    // },
-    // {
-    //   title: 'Trung tâm tư vấn',
-    //   icon: 'chatbubbles-outline',
-    //   onPress: () => navigation.navigate('ChatScreen')
-    // }
   ];
+
+  const renderActionButtons = () => {
+    if (isAuthenticated) {
+      return (
+        <View style={styles.actionButtons}>
+          <Button
+            mode="contained"
+            onPress={handleEditProfile}
+            style={[styles.button, styles.editButton]}
+            labelStyle={styles.buttonLabel}
+          >
+            Chỉnh sửa thông tin
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={handleLogout}
+            style={[styles.button, styles.logoutButton]}
+            labelStyle={styles.logoutButtonLabel}
+          >
+            Đăng xuất
+          </Button>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.actionButtons}>
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('LoginScreen')}
+          style={[styles.button, styles.editButton]}
+          labelStyle={styles.buttonLabel}
+        >
+          Đăng nhập
+        </Button>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,24 +215,7 @@ const ProfileScreen = () => {
         </View>
         
         {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate('ProfileDetail')}
-            style={[styles.button, styles.editButton]}
-            labelStyle={styles.buttonLabel}
-          >
-            Chỉnh sửa thông tin
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={handleLogout}
-            style={[styles.button, styles.logoutButton]}
-            labelStyle={styles.logoutButtonLabel}
-          >
-            Đăng xuất
-          </Button>
-        </View>
+        {renderActionButtons()}
       </ScrollView>
     </SafeAreaView>
   );

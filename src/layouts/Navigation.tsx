@@ -87,24 +87,8 @@ export default function Navigation() {
   }, [appIsReady, fontsLoaded]);
 
   useEffect(() => {
-    const checkInitialRoute = async () => {
-      try {
-        const accessToken = await AsyncStorage.getItem('accessToken');
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-  
-        if (accessToken && refreshToken) {
-          setInitialRoute('Main');
-        } else {
-          setInitialRoute('WelcomeScreen');
-        }
-      } catch (error) {
-        console.error('Error checking initial route:', error);
-      } finally {
-        setAppIsReady(true);
-      }
-    };
-  
-    checkInitialRoute();
+    setInitialRoute('Main');
+    setAppIsReady(true);
   }, []);
 
   if (!appIsReady || !fontsLoaded || !initialRoute) {

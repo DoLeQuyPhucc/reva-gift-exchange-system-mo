@@ -7,6 +7,8 @@ import Colors from '@/constants/Colors';
 import { useNavigation } from '@/hooks/useNavigation';
 import { Category } from '@/shared/type';
 import useCategories from '@/hooks/useCategories';
+import { useAuthCheck } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 
 const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -22,19 +24,26 @@ export interface TabBarProps {
 }
 
 const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const { categories, isLoading } = useCategories();
   const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const navigation = useNavigation();
 
   const showModal = () => {
-    setModalVisible(true);
-    Animated.spring(slideAnim, {
+    if (!isAuthenticated) {
+      navigation.navigate('LoginScreen');
+      return;
+    } else {
+      setModalVisible(true);
+      Animated.spring(slideAnim, {
       toValue: 0,
       useNativeDriver: true,
       tension: 50,
       friction: 8
     }).start();
+    }
+    
   };
 
   const hideModal = () => {
