@@ -6,26 +6,42 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   Platform,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, Checkbox } from 'react-native-paper';
+import { ActivityIndicator, Checkbox, RadioButton } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
-import { uriToFile } from '@/src/utils/uriToFile';
 import { RouteProp, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import * as ImagePicker from 'expo-image-picker';
-import Video from 'react-native-video';
-
 
 import MediaUploadSection from '@/src/components/MediaUploadSection';
 import { Category, ConditionOption, ItemCondition } from '@/src/shared/type';
 
 import useCategories from '@/src/hooks/useCategories';
 import useCreatePost from '@/src/hooks/useCreatePost';
-import axiosInstance from '@/src/api/axiosInstance';
+
+interface CreatePostScreenProps {
+  route: RouteProp<RootStackParamList, 'CreatePost'>;
+  navigation: NavigationProp<RootStackParamList>;
+}
+
+type TimeSlot = {
+  label: string;
+  value: string;
+};
+
+const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
+  const hour = Math.floor(idx / 2) + 9;
+  const minute = idx % 2 === 0 ? '00' : '30';
+  const time = `${hour.toString().padStart(2, '0')}:${minute}`;
+  return {
+    label: time,
+    value: time,
+  };
+});
+
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, 'CreatePost'>;
@@ -51,20 +67,50 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [availableTime, setAvailableTime] = useState<string>('');
   const [condition, setCondition] = useState<ItemCondition | ''>('');
   const [point, setPoint] = useState<string>('');
+  const [isExchange, setIsExchange] = useState<boolean>(false);
+  const [isGift, setIsGift] = useState<boolean>(false);
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [showTitleHint, setShowTitleHint] = useState<boolean>(false);
   const [showDescriptionHint, setShowDescriptionHint] = useState<boolean>(false);
 
+  const [timePreference, setTimePreference] = useState<string>('all_day');
+  const [customStartTime, setCustomStartTime] = useState<string>('09:00');
+  const [customEndTime, setCustomEndTime] = useState<string>('21:00');
+
   const conditions: ConditionOption[] = [
     { id: ItemCondition.NEW, name: 'Mới' },
     { id: ItemCondition.USED, name: 'Đã sử dụng' },
   ];
+
+  const handlePostTypeChange = (type: 'exchange' | 'gift') => {
+    if (type === 'exchange') {
+      setIsExchange(true);
+      setIsGift(false);
+    } else {
+      setIsExchange(false);
+      setIsGift(true);
+    }
+  };
+
+  const getAvailableTimeString = () => {
+    switch (timePreference) {
+      case 'all_day':
+        return '9h - 21h hằng ngày';
+      case 'office_hours':
+        return '9h - 17h';
+      case 'evening':
+        return '17h - 21h';
+      case 'custom':
+        return `${customStartTime} - ${customEndTime} hằng ngày`;
+      default:
+        return '';
+    }
+  };
 
   const validateForm = () => {
     if (!title.trim()) {
@@ -226,7 +272,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         description: description.trim(),
         categoryId: selectedCategory!.id,
         isGift: isFreeGift,
-        point: isFreeGift ? 0 : parseInt(point),
+        point: 0,
         quantity: 1,
         condition: condition,
         images,
@@ -317,13 +363,45 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             </Picker>
           </View>
 
-          <View style={styles.checkboxContainer}>
+          {/* <View style={styles.checkboxContainer}>
             <Checkbox
               status={isFreeGift ? 'checked' : 'unchecked'}
               onPress={() => setIsFreeGift(!isFreeGift)}
             />
             <Text>Tôi muốn cho tặng miễn phí</Text>
+          </View> */}
+        </View>
+
+        {/* Post Type Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>HÌNH THỨC</Text>
+          <View style={styles.postTypeContainer}>
+            <RadioButton.Group
+              onValueChange={value => handlePostTypeChange(value as 'exchange' | 'gift')}
+              value={isExchange ? 'exchange' : 'gift'}
+            >
+              <View style={styles.radioOption}>
+                <RadioButton.Item
+                  label="Tôi muốn trao đổi"
+                  value="exchange"
+                  position="trailing"
+                />
+              </View>
+              <View style={styles.radioOption}>
+                <RadioButton.Item
+                  label="Tôi muốn cho tặng miễn phí"
+                  value="gift"
+                  position="trailing"
+                />
+              </View>
+            </RadioButton.Group>
           </View>
+          
+          {isExchange && (
+            <Text style={styles.exchangeHint}>
+              Bạn nên ghi rõ món đồ mình cần trao đổi để có được trải nghiệm tốt nhất.
+            </Text>
+          )}
         </View>
 
         {/* Title and Description */}
@@ -361,7 +439,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             </Text>
           )}
 
-          {!isFreeGift && (
+          {/* {!isFreeGift && (
             <TextInput
             style={styles.input}
             placeholder="Points"
@@ -370,22 +448,83 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             keyboardType="numeric"
             editable={!isFreeGift}
           />
-          )}
+          )} */}
         </View>
 
-        {/* Available Time */}
+        {/* Time Availability Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>THỜI GIAN CÓ THỂ NHẬN</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={availableTime}
-              onValueChange={(value: string) => setAvailableTime(value)}
-            >
-              <Picker.Item label="Chọn thời gian" value="" />
-              <Picker.Item label="Giờ hành chính" value="office_hour" />
-              <Picker.Item label="Buổi tối" value="evening" />
-            </Picker>
-          </View>
+          <RadioButton.Group
+            onValueChange={value => setTimePreference(value)}
+            value={timePreference}
+          >
+            <View style={styles.radioOption}>
+              <RadioButton.Item
+                label="Cả ngày (9h - 21h hằng ngày)"
+                value="all_day"
+                position="trailing"
+              />
+            </View>
+            <View style={styles.radioOption}>
+              <RadioButton.Item
+                label="Giờ hành chính (9h - 17h)"
+                value="office_hours"
+                position="trailing"
+              />
+            </View>
+            <View style={styles.radioOption}>
+              <RadioButton.Item
+                label="Chỉ buổi tối (17h - 21h)"
+                value="evening"
+                position="trailing"
+              />
+            </View>
+            <View style={styles.radioOption}>
+              <RadioButton.Item
+                label="Khung giờ tự chọn"
+                value="custom"
+                position="trailing"
+              />
+            </View>
+          </RadioButton.Group>
+
+          {timePreference === 'custom' && (
+            <View style={styles.customTimeContainer}>
+              <View style={styles.timePickerContainer}>
+                <Text>Từ:</Text>
+                <Picker
+                  selectedValue={customStartTime}
+                  style={styles.timePicker}
+                  onValueChange={(value) => setCustomStartTime(value)}
+                >
+                  {TIME_SLOTS.map((slot) => (
+                    <Picker.Item
+                      key={slot.value}
+                      label={slot.label}
+                      value={slot.value}
+                    />
+                  ))}
+                </Picker>
+              </View>
+              
+              <View style={styles.timePickerContainer}>
+                <Text>Đến:</Text>
+                <Picker
+                  selectedValue={customEndTime}
+                  style={styles.timePicker}
+                  onValueChange={(value) => setCustomEndTime(value)}
+                >
+                  {TIME_SLOTS.map((slot) => (
+                    <Picker.Item
+                      key={slot.value}
+                      label={slot.label}
+                      value={slot.value}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Address Section */}
@@ -547,6 +686,36 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  postTypeContainer: {
+    marginBottom: 16,
+  },
+  radioOption: {
+    marginVertical: 4,
+  },
+  exchangeHint: {
+    color: '#666',
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  customTimeContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  timePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  timePicker: {
+    flex: 1,
+    marginLeft: 8,
   },
 });
 
