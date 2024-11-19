@@ -122,14 +122,16 @@ export interface AddressCoordinates {
 }
 
 export interface AddressData {
+  addressId: string;
   address: string;
   addressCoordinates: AddressCoordinates;
+  isDefault: boolean;
 }
 
 export interface AddressResponse {
   isSuccess: boolean;
   code: number;
-  data: AddressData;
+  data: AddressData[];
   message: string;
 }
 
@@ -138,10 +140,10 @@ export interface CreatePostData {
   description: string;
   categoryId: string;
   isGift: boolean;
-  point: number;
   quantity: number;
   condition: string;
   images: string[];
+  addressId: string;
 }
 
 export enum ItemCondition {

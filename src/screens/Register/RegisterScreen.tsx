@@ -49,7 +49,7 @@ interface Ward extends AddressItem {
 const RegisterScreen = () => {
   const navigation = useNavigation();
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [firstName, setFirstName] = useState("");
+  const [username, setUsername] = useState("");
   const [lastName, setLastName] = useState("");
   const [otp, setOTP] = useState('');
   const [showOTP, setShowOTP] = useState(false);
@@ -189,7 +189,7 @@ const RegisterScreen = () => {
   // Form submission
   const resetForm = () => {
     setPhoneNumber("");
-    setFirstName("");
+    setUsername("");
     setLastName("");
     setSelectedDate(new Date());
     setGender("");
@@ -203,11 +203,6 @@ const RegisterScreen = () => {
   };
 
   const registerUser = async () => {
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return;
-    }
-
     if (!selectedProvince || !selectedDistrict || !selectedWard || !address) {
       Alert.alert("Error", "Please select your complete address");
       return;
@@ -216,12 +211,7 @@ const RegisterScreen = () => {
     setLoading(true);
     const data = {
       phone: phoneNumber,
-      firstName,
-      lastName,
-      dob: formatDateOnlyDate(selectedDate.toDateString()),
-      gender,
-      password,
-      confirmedPassword: confirmPassword,
+      username: username,
       address: `${address}, ${selectedWard.name},  ${selectedDistrict.name}, ${selectedProvince.name}`,
       latitude: "0",
       longitude: "0",
@@ -307,55 +297,15 @@ const RegisterScreen = () => {
 
           <View style={{ marginVertical: Spacing * 3 }}>
             <AppTextInput
-              placeholder="Tên"
-              value={firstName}
-              onChangeText={setFirstName}
-            />
-            <AppTextInput
-              placeholder="Họ"
-              value={lastName}
-              onChangeText={setLastName}
+              placeholder="Username"
+              value={username}
+              onChangeText={setUsername}
             />
             <AppTextInput
               placeholder="Số điện thoại"
               value={phoneNumber}
               onChangeText={setPhoneNumber}
             />
-            <AppTextInput
-              placeholder="Mật khẩu"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-            <AppTextInput
-              placeholder="Xác nhận mật khẩu"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
-            <AppTextInput
-              placeholder="Giới tính"
-              value={gender}
-              onChangeText={setGender}
-            />
-
-            <TouchableOpacity
-              style={styles.datePickerButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.datePickerButtonText}>
-                Ngày sinh: {formatDateOnlyDate(selectedDate.toDateString())}
-              </Text>
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
             {/* Address Selection */}
             <TouchableOpacity
               style={styles.addressInput}

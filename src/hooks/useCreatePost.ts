@@ -3,7 +3,7 @@ import axiosInstance from "@/api/axiosInstance";
 import { AddressData, AddressResponse, CreatePostData } from "@/shared/type";
 
 const useCreatePost = () => {
-  const [addressData, setAddressData] = useState<AddressData | null>(null);
+  const [addressData, setAddressData] = useState<AddressData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 

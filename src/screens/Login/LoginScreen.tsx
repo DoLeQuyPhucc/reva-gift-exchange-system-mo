@@ -24,8 +24,6 @@ import { User } from "@/src/shared/type";
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOTP] = useState('');
-  const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
@@ -42,8 +40,8 @@ const LoginScreen: React.FC = () => {
   );
 
   const handleLogin = async () => {
-    if (!phoneNumber || !password) {
-      Alert.alert("Error", "Please fill in both Phone Number and password");
+    if (!phoneNumber) {
+      Alert.alert("Error", "Please fill in your phone number");
       return;
     }
 
@@ -51,7 +49,6 @@ const LoginScreen: React.FC = () => {
     try {
       navigation.navigate("OTPScreen", {
         phoneNumber,
-        password,
       });
     } catch (error: any) {
       Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
@@ -95,21 +92,6 @@ const LoginScreen: React.FC = () => {
             onChangeText={setPhoneNumber}
             autoCapitalize="none"
           />
-          <AppTextInput 
-            placeholder="Mật khẩu" 
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-          {showOTP && (
-            <AppTextInput 
-              placeholder="OTP" 
-              value={otp}
-              onChangeText={setOTP}
-              autoCapitalize="none"
-            />
-          )}
         </View>
         <View>
           <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
