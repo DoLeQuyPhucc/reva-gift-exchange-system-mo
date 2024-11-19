@@ -61,12 +61,15 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
     return null;
   });
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string>(() => {
+    const defaultAddress = addressData.find(addr => addr.isDefault);
+    return defaultAddress?.addressId || '';
+  });
   
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
-  const [availableTime, setAvailableTime] = useState<string>('');
   const [condition, setCondition] = useState<ItemCondition | ''>('');
-  const [point, setPoint] = useState<string>('');
   const [isExchange, setIsExchange] = useState<boolean>(false);
   const [isGift, setIsGift] = useState<boolean>(false);
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
@@ -129,15 +132,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       Alert.alert('Error', 'Please select condition');
       return false;
     }
-    if (!isFreeGift && (!point || isNaN(Number(point)))) {
-      Alert.alert('Error', 'Please enter valid points');
-      return false;
-    }
     if (images.length === 0) {
       Alert.alert('Error', 'Please upload at least one image');
       return false;
     }
-    if (!availableTime) {
+    if (!timePreference) {
       Alert.alert('Error', 'Please select available time');
       return false;
     }
@@ -272,11 +271,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         description: description.trim(),
         categoryId: selectedCategory!.id,
         isGift: isFreeGift,
-        point: 0,
         quantity: 1,
         condition: condition,
         images,
-        availableTime: availableTime
+        availableTime: timePreference,
+        addressId: selectedAddressId
       };
 
       console.log("Form Data: ", postData);
@@ -461,21 +460,21 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             <View style={styles.radioOption}>
               <RadioButton.Item
                 label="Cả ngày (9h - 21h hằng ngày)"
-                value="all_day"
+                value="allDay_09:00_21:00"
                 position="trailing"
               />
             </View>
             <View style={styles.radioOption}>
               <RadioButton.Item
                 label="Giờ hành chính (9h - 17h)"
-                value="office_hours"
+                value="officeHours_09:00_21:00"
                 position="trailing"
               />
             </View>
             <View style={styles.radioOption}>
               <RadioButton.Item
                 label="Chỉ buổi tối (17h - 21h)"
-                value="evening"
+                value="evening_17:00_21:00"
                 position="trailing"
               />
             </View>
@@ -534,9 +533,30 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             <ActivityIndicator size="small" color="#0000ff" />
           ) : (
             <View style={styles.addressContainer}>
-              <Text style={styles.addressText}>
-                {addressData?.address}
-              </Text>
+              {addressData.map((address) => (
+                <TouchableOpacity
+                  key={address.addressId}
+                  style={[
+                    styles.addressCard,
+                    selectedAddressId === address.addressId && styles.selectedAddressCard
+                  ]}
+                  onPress={() => setSelectedAddressId(address.addressId)}
+                >
+                  <View style={styles.addressRadioContainer}>
+                    <View style={styles.radioOuter}>
+                      {selectedAddressId === address.addressId && (
+                        <View style={styles.radioInner} />
+                      )}
+                    </View>
+                    <View style={styles.addressTextContainer}>
+                      <Text style={styles.addressText}>{address.address}</Text>
+                      {address.isDefault && (
+                        <Text style={styles.defaultBadge}>Mặc định</Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           )}
         </View>
@@ -659,10 +679,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8,
   },
-  addressText: {
-    fontSize: 16,
-    color: '#333',
-  },
   footer: {
     flexDirection: 'row',
     padding: 16,
@@ -716,6 +732,50 @@ const styles = StyleSheet.create({
   timePicker: {
     flex: 1,
     marginLeft: 8,
+  },
+  addressCard: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectedAddressCard: {
+    borderColor: '#007AFF',
+    backgroundColor: '#F0F8FF',
+  },
+  addressRadioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  radioOuter: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  radioInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: '#007AFF',
+  },
+  addressTextContainer: {
+    flex: 1,
+  },
+  addressText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  defaultBadge: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 4,
   },
 });
 

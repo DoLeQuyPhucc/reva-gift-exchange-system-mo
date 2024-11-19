@@ -38,7 +38,6 @@ export type RootStackParamList = {
   MyPackageScreen: undefined;
   OTPScreen: {
     phoneNumber: string;
-    password: string;
   };
 };
 

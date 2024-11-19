@@ -24,7 +24,7 @@ import { useAuthStore } from '@/stores/authStore';
 type OTPScreenProps = NativeStackScreenProps<RootStackParamList, 'OTPScreen'>;
 
 const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
-  const { phoneNumber, password } = route.params;
+  const { phoneNumber } = route.params;
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
@@ -81,8 +81,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
     try {
       if (otpString === '111111') {
         const response = await axiosInstance.post('/authentication/login', {
-          phone: phoneNumber,
-          password,
+          phone: phoneNumber
         });
       
         const { token, refreshToken, userId, username, role, firstName, lastName, profileURL } = response.data.data;
