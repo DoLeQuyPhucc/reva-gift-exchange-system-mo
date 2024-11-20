@@ -1,3 +1,4 @@
+import Colors from "@/src/constants/Colors";
 import { LocationMap } from "@/src/shared/type";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -14,6 +15,7 @@ interface MapModalProps {
     longitudeDelta: number;
   };
   canMarkerMove: boolean;
+  onSetAddressCoordinates?: (coordinates: LocationMap) => void;
 }
 
 export default function MapModal({
@@ -21,10 +23,11 @@ export default function MapModal({
   onClose,
   location,
   zoomLevel = {
-    latitudeDelta: 0.08,
-    longitudeDelta: 0.04,
+    latitudeDelta: 0.003,
+    longitudeDelta: 0.003,
   },
   canMarkerMove = false,
+  onSetAddressCoordinates = () => {},
 }: MapModalProps) {
   const [markerPosition, setMarkerPosition] = useState<{
     latitude: number;
@@ -42,6 +45,14 @@ export default function MapModal({
     const { latitude, longitude } = event.nativeEvent.coordinate;
     setMarkerPosition({ latitude, longitude });
   };
+
+  const handleConfirm = () => {
+    if (markerPosition) {
+      onSetAddressCoordinates(markerPosition);
+      onClose(false);
+    }
+  };
+
   return (
     <Modal visible={open} transparent animationType="slide">
       <View style={styles.modalMapContainer}>
@@ -52,41 +63,63 @@ export default function MapModal({
             longitude: location.longitude,
             ...zoomLevel,
           }}
-          onPress={handleMapPress} // Lấy tọa độ khi nhấn
+          onPress={handleMapPress}
         >
           {markerPosition && (
             <Marker
               coordinate={markerPosition}
-              title={location.title || "Location"}
-              description={location.description}
+              title={"Location"}
+              description={"location.description"}
             />
           )}
         </MapView>
-        <TouchableOpacity
-          style={styles.mapCloseButton}
-          onPress={() => onClose(false)}
-        >
-          <Text style={styles.mapCloseButtonText}>Close</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.closeButton]}
+            onPress={() => onClose(false)}
+          >
+            <Text style={styles.buttonText}>Close</Text>
+          </TouchableOpacity>
+          {canMarkerMove && (
+            <TouchableOpacity
+              style={[styles.button, styles.confirmButton]}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.buttonText}>Confirm Location</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </Modal>
   );
 }
+
 const styles = StyleSheet.create({
   modalMapContainer: {
     flex: 1,
     position: "relative",
   },
-  mapCloseButton: {
+  buttonContainer: {
     position: "absolute",
     top: 40,
     right: 20,
-    backgroundColor: "#000000aa",
-    padding: 10,
-    borderRadius: 8,
+    flexDirection: "row",
+    gap: 10,
     zIndex: 1,
   },
-  mapCloseButtonText: {
+  button: {
+    padding: 10,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  closeButton: {
+    backgroundColor: "#000000aa",
+  },
+  confirmButton: {
+    backgroundColor: Colors.orange500,
+  },
+  buttonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",

@@ -23,6 +23,9 @@ import {
 import axiosInstance from "@/src/api/axiosInstance";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { formatDateOnlyDate } from "@/src/shared/formatDate";
+import axios from "axios";
+import MapModal from "@/src/components/Map/MapModal";
+import { LocationMap } from "@/src/shared/type";
 
 interface AddressItem {
   name: string;
@@ -87,6 +90,18 @@ const RegisterScreen = () => {
     "province"
   );
   const [loadingAddress, setLoadingAddress] = useState(false);
+
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [addressCoordinates, setAddressCoordinates] = useState<LocationMap>({
+    latitude: 0,
+    longitude: 0,
+  });
+
+  
+  const [markerPosition, setMarkerPosition] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   // Fetch provinces on component mount
   useEffect(() => {
@@ -202,6 +217,24 @@ const RegisterScreen = () => {
     setShowOTP(false);
   };
 
+  const handleOpenMapModal = async () => {
+    if (!selectedProvince || !selectedDistrict || !selectedWard || !address) {
+      Alert.alert("Error", "Please select your complete address");
+      return;
+    }
+    const addressResult = `${address}, ${selectedWard.name.trim()}, ${selectedDistrict.name.trim()}, ${selectedProvince.name.trim()}`;
+
+    const addressResponse = await axios.get(`https://rsapi.goong.io/geocode?address=${addressResult}&api_key=6kasogsvyfA9EAUfWQKM6mlbITVlfl8IMSfGkL8o`);
+
+    const addressCoordinates = {
+      latitude: addressResponse.data.results[0].geometry.location.lat,
+      longitude: addressResponse.data.results[0].geometry.location.lng,
+    };
+
+    setAddressCoordinates(addressCoordinates);
+    setShowMapModal(true);
+  }
+
   const registerUser = async () => {
     if (!selectedProvince || !selectedDistrict || !selectedWard || !address) {
       Alert.alert("Error", "Please select your complete address");
@@ -212,12 +245,10 @@ const RegisterScreen = () => {
     const data = {
       phone: phoneNumber,
       username: username,
-      address: `${address}, ${selectedWard.name},  ${selectedDistrict.name}, ${selectedProvince.name}`,
-      latitude: "0",
-      longitude: "0",
+      address: `${address}, ${selectedWard.name.trim()}, ${selectedDistrict.name.trim()}, ${selectedProvince.name.trim()}`,
+      latitude: addressCoordinates.latitude.toString(),
+      longitude: addressCoordinates.longitude.toString(),
     };
-
-    console.log(data);
 
     try {
       setShowOTP(true);
@@ -351,6 +382,17 @@ const RegisterScreen = () => {
               value={address}
               onChangeText={setAddress}
             />
+
+            {/* Address Map */}
+            {address && selectedWard && (
+              <TouchableOpacity
+                style={styles.addressInput}
+                onPress={handleOpenMapModal}
+                disabled={loadingAddress}
+              >
+                <Text style={styles.addressInputText}>Chọn vị trí trên bản đồ</Text>
+              </TouchableOpacity>
+            )}
             
           {showOTP && (
             <AppTextInput 
@@ -416,6 +458,15 @@ const RegisterScreen = () => {
         </View>
 
         <SelectionModal />
+        
+
+    <MapModal
+    open={showMapModal}
+    onClose={setShowMapModal}
+    location={addressCoordinates}
+    onSetAddressCoordinates={setAddressCoordinates}
+    canMarkerMove={true}
+  />
       </ScrollView>
     </GestureHandlerRootView>
   );

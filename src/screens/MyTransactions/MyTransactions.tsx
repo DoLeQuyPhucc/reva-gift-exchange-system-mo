@@ -29,8 +29,6 @@ const MyTransactions = () => {
   const [location, setLocation] = useState<LocationMap>({
     latitude: 0,
     longitude: 0,
-    title: "",
-    description: "",
   });
 
   useEffect(() => {
@@ -288,8 +286,6 @@ Bên nhận:
                           longitude: parseFloat(
                             transaction.recipientAddressCoordinates.longitude
                           ),
-                          title: transaction.recipientName,
-                          description: transaction.recipientAddress,
                         };
                         setLocation(data);
                         setShowMapModal(true);
@@ -315,8 +311,6 @@ Bên nhận:
                   longitude: parseFloat(
                     transaction.recipientAddressCoordinates.longitude
                   ),
-                  title: transaction.recipientName,
-                  description: transaction.recipientAddress,
                 };
                 console.log(data);
                 setLocation(data);
@@ -336,7 +330,7 @@ Bên nhận:
         open={showMapModal}
         onClose={setShowMapModal}
         location={location}
-        canMarkerMove={true}
+        canMarkerMove={false}
       />
 
       <Modal visible={showModal} transparent animationType="slide">

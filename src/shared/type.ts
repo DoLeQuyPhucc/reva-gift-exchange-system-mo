@@ -157,6 +157,4 @@ export interface ConditionOption {
 export interface LocationMap {
   latitude: number;
   longitude: number;
-  title?: string;
-  description?: string;
 }
