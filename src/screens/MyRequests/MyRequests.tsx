@@ -197,9 +197,6 @@ const MyRequests = () => {
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.requesterItemName}
               </Text>
-              <Text style={styles.itemPoint} numberOfLines={1}>
-                {request.requesterItemPoint}P
-              </Text>
             </View>
 
             <View style={styles.exchangeIconContainer}>
@@ -214,9 +211,6 @@ const MyRequests = () => {
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.recipientItemName}
               </Text>
-              <Text style={styles.itemPoint} numberOfLines={1}>
-                {request.recipientItemPoint}P
-              </Text>
             </View>
           </>
         ) : (
@@ -229,9 +223,6 @@ const MyRequests = () => {
             <Text style={styles.itemName} numberOfLines={2}>
               {request.recipientItemName}
             </Text>
-              <Text style={styles.itemPoint} numberOfLines={1}>
-                {request.recipientItemPoint}P
-              </Text>
           </View>
         )}
       </View>

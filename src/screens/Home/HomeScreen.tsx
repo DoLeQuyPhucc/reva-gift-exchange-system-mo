@@ -51,17 +51,7 @@ const HomeScreen: React.FC = () => {
       const userId = await AsyncStorage.getItem('userId');
       setUserId(userId || '');
       const response = await axiosInstance.get('/items');
-      const productsData = response.data.data.map((item: any) => ({
-        id: item.id,
-        name: item.name || '',
-        description: item.description,
-        category: item.category,
-        condition: item.condition,
-        owner_id: item.owner_id,
-        images: item.images,
-        available: item.available,
-        createdAt: item.createdAt,
-      }));
+      const productsData = response.data.data;
       setProducts(productsData);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -128,6 +118,12 @@ const HomeScreen: React.FC = () => {
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{product.condition}</Text>
           </View>
+        {product.isGift && (
+            <View>
+              <Icon name="card-giftcard" size={24} color={Colors.orange500} />
+              
+            </View>
+          )}
           <View style={[styles.badge, styles.outlineBadge]}>
             <Text style={styles.outlineBadgeText}>{product.category}</Text>
           </View>

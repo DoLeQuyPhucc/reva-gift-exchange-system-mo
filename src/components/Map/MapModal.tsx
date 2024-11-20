@@ -1,5 +1,5 @@
 import { LocationMap } from "@/src/shared/type";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { Modal } from "react-native";
@@ -29,7 +29,11 @@ export default function MapModal({
   const [markerPosition, setMarkerPosition] = useState<{
     latitude: number;
     longitude: number;
-  } | null>(null);
+  } | null>({ latitude: location.latitude, longitude: location.longitude });
+
+  useEffect(() => {
+    setMarkerPosition({ latitude: location.latitude, longitude: location.longitude });
+  }, [location, canMarkerMove]);
 
   const handleMapPress = (event: {
     nativeEvent: { coordinate: { latitude: number; longitude: number } };
