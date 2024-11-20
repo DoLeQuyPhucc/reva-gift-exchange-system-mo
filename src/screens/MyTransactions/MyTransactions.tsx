@@ -16,7 +16,6 @@ import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { LocationMap, Transaction } from "@/src/shared/type";
-import MapView, { Marker } from 'react-native-maps';
 import MapModal from "@/src/components/Map/MapModal";
 
 const MyTransactions = () => {
@@ -27,7 +26,10 @@ const MyTransactions = () => {
   const [verificationInput, setVerificationInput] = useState("");
   const [showTransactionId, setShowTransactionId] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
-  const [location, setLocation] = useState<LocationMap>({ latitude: 0, longitude: 0, title: '', description: '' });
+  const [location, setLocation] = useState<LocationMap>({
+    latitude: 0,
+    longitude: 0,
+  });
 
   useEffect(() => {
     fetchTransactions();
@@ -44,7 +46,10 @@ const MyTransactions = () => {
 
   const handleVerification = async () => {
     if (selectedTransaction && verificationInput === selectedTransaction.id) {
-      const res = await axiosInstance.put(`transaction/update-status/${selectedTransaction.id}`, "Completed")
+      const res = await axiosInstance.put(
+        `transaction/update-status/${selectedTransaction.id}`,
+        "Completed"
+      );
       if (res.data.isSuccess === true) {
         Alert.alert("Thành công", "Mã định danh trùng khớp");
         setShowModal(false);
@@ -64,8 +69,11 @@ const MyTransactions = () => {
       },
       {
         text: "Xác nhận",
-        onPress: async ()  => {
-          const res = await axiosInstance.put(`transaction/update-status/${transactionId}`, "Not_Completed")
+        onPress: async () => {
+          const res = await axiosInstance.put(
+            `transaction/update-status/${transactionId}`,
+            "Not_Completed"
+          );
           if (res.data.isSuccess === true) {
             Alert.alert("Thành công", "Bạn đã từ chối giao dịch.");
             setShowModal(false);
@@ -250,11 +258,11 @@ const MyTransactions = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-  style={styles.detailsButton}
-  onPress={() => {
-    Alert.alert(
-      "Thông tin chi tiết",
-      `Bên gửi:
+              style={styles.detailsButton}
+              onPress={() => {
+                Alert.alert(
+                  "Thông tin chi tiết",
+                  `Bên gửi:
 • Địa chỉ: ${transaction.senderAddress}
 • Số điện thoại: ${transaction.senderPhone}
 • Tọa độ: ${transaction.senderAddressCoordinates.latitude}, ${transaction.senderAddressCoordinates.longitude}
@@ -263,77 +271,81 @@ Bên nhận:
 • Địa chỉ: ${transaction.recipientAddress}
 • Số điện thoại: ${transaction.recipientPhone} 
 • Tọa độ: ${transaction.recipientAddressCoordinates.latitude}, ${transaction.recipientAddressCoordinates.longitude}`,
-      [
-        {
-          text: "Đóng",
-          style: "cancel"
-        },
-        {
-          text: "Mở bản đồ",
-          onPress: () => {
-            const data: LocationMap = {
-              latitude: parseFloat(transaction.recipientAddressCoordinates.latitude),
-              longitude: parseFloat(transaction.recipientAddressCoordinates.longitude),
-              title: transaction.recipientName,
-              description: transaction.recipientAddress
-            }
-            setLocation(data);
-            setShowMapModal(true);
-          }
-        }
-      ]
-    );
-  }}
->
-  <View style={styles.detailsButtonContent}>
-    <Icon name="info" size={20} color={Colors.orange500} />
-    <Text style={styles.detailsButtonText}>Chi tiết giao dịch</Text>
-  </View>
-</TouchableOpacity>
+                  [
+                    {
+                      text: "Đóng",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Mở bản đồ",
+                      onPress: () => {
+                        const data: LocationMap = {
+                          latitude: parseFloat(
+                            transaction.recipientAddressCoordinates.latitude
+                          ),
+                          longitude: parseFloat(
+                            transaction.recipientAddressCoordinates.longitude
+                          ),
+                        };
+                        setLocation(data);
+                        setShowMapModal(true);
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <View style={styles.detailsButtonContent}>
+                <Icon name="info" size={20} color={Colors.orange500} />
+                <Text style={styles.detailsButtonText}>Chi tiết giao dịch</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() => {
+                const data: LocationMap = {
+                  latitude: parseFloat(
+                    transaction.recipientAddressCoordinates.latitude
+                  ),
+                  longitude: parseFloat(
+                    transaction.recipientAddressCoordinates.longitude
+                  ),
+                };
+                console.log(data);
+                setLocation(data);
+                setShowMapModal(true);
+              }}
+            >
+              <View style={styles.detailsButtonContent}>
+                <Icon name="map" size={20} color={Colors.orange500} />
+                <Text style={styles.detailsButtonText}>Xem địa chỉ</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
 
-      {/* <Modal visible={showMapModal} transparent animationType="slide">
-  <View style={styles.modalMapContainer}>
-    <MapView
-      style={{ flex: 1, width: "100%" }}
-      initialRegion={{
-        latitude: 34.061651,
-        longitude: -118.255707,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421
-      }}
-    >
-      <Marker
-        coordinate={{ latitude: 34.061651, longitude: -118.255707 }}
-        title="Marker"
-        description="This is a marker"
+      <MapModal
+        open={showMapModal}
+        onClose={setShowMapModal}
+        location={location}
+        canMarkerMove={false}
       />
-    </MapView>
-    <TouchableOpacity 
-      style={styles.mapCloseButton}
-      onPress={() => setShowMapModal(false)}
-    >
-      <Text style={styles.mapCloseButtonText}>Close</Text>
-    </TouchableOpacity>
-  </View>
-</Modal> */}
-
-<MapModal open={showMapModal} onClose={setShowMapModal} location={location} />
 
       <Modal visible={showModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Xác thực giao dịch</Text>
             {selectedTransaction && (
-              
-            <View style={styles.idContainer}>
-              <Image
-                    source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?data=${selectedTransaction.id}&size=200x200` }}
-                    style={{ width: 200, height: 200 }}
-                  />
-            </View>
+              <View style={styles.idContainer}>
+                <Image
+                  source={{
+                    uri: `https://api.qrserver.com/v1/create-qr-code/?data=${selectedTransaction.id}&size=200x200`,
+                  }}
+                  style={{ width: 200, height: 200 }}
+                />
+              </View>
             )}
 
             <View style={styles.idContainer}>
@@ -599,18 +611,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
   },
   detailsButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   detailsButtonText: {
     marginLeft: 8,
     color: Colors.orange500,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
 

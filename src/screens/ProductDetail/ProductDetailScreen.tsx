@@ -374,10 +374,6 @@ export default function ProductDetailScreen() {
               <Text style={styles.userItemName} numberOfLines={1}>
                 {item.name}
               </Text>
-
-              <Text style={styles.userItemName} numberOfLines={1}>
-                {item.point}P
-              </Text>
             </TouchableOpacity>
           ))}
       </ScrollView>
@@ -436,9 +432,6 @@ export default function ProductDetailScreen() {
             </View>
           )}
         </View>
-        {!product.isGift && (
-          <Text style={styles.pointText}>{product.point}P</Text>
-        )}
 
         <Text style={styles.description}>{product.description}</Text>
 
@@ -528,9 +521,6 @@ export default function ProductDetailScreen() {
                     <View style={styles.currentProductInfo}>
                       <Text style={styles.currentProductName}>
                         {product?.name}
-                      </Text>
-                      <Text style={styles.currentProductPrice}>
-                        {product.point}P
                       </Text>
                     </View>
                   </View>

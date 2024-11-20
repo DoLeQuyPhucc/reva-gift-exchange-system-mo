@@ -54,7 +54,6 @@ export interface Request {
   recipientItemName: string;
   recipientItemImages: string[];
   recipientItemQuantity: number;
-  recipientItemPoint: number;
 
   // Requester details
   requesterId: string;
@@ -64,7 +63,6 @@ export interface Request {
   requesterItemName: string | null;
   requesterItemImages: string[];
   requesterItemQuantity: number | null;
-  requesterItemPoint: number;
 
   // Appointment
   appointmentDate: string[];
@@ -159,6 +157,4 @@ export interface ConditionOption {
 export interface LocationMap {
   latitude: number;
   longitude: number;
-  title?: string;
-  description?: string;
 }
