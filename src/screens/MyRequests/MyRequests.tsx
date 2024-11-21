@@ -14,6 +14,8 @@ import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { Request, User } from "@/src/shared/type";
+import { formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
+import ImagesModalViewer from "@/src/components/modal/ImagesModalViewer";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -38,6 +40,14 @@ const MyRequests = () => {
   const [rejectMessage, setRejectMessage] = useState<string>("");
   const [showInfoUser, setShowInfoUser] = useState(false);
   const [user, setUser] = useState<User>({} as User);
+  
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+  const handleImagePress = (listImages: string[]) => {
+    setSelectedImages(listImages);
+    setModalVisible(true);
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -58,7 +68,6 @@ const MyRequests = () => {
 
   const formatTimeSlot = (timeString: string) => {
     const startTime = new Date(timeString);
-    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
     const formatTime = (date: Date) => {
       return date.toLocaleTimeString("en-US", {
@@ -68,17 +77,7 @@ const MyRequests = () => {
       });
     };
 
-    const formatDate = (date: Date) => {
-      return date.toLocaleDateString("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-      });
-    };
-
-    return `${formatTime(startTime)} - ${formatTime(endTime)} ${formatDate(
-      startTime
-    )}`;
+    return `${formatTime(startTime)} ${formatDate_DD_MM_YYYY(startTime.toISOString())}`;
   };
 
   const handleApprove = async (requestId: string) => {
@@ -186,14 +185,16 @@ const MyRequests = () => {
       </View>
 
       <View style={styles.itemsContainer}>
-        {request.requesterItemId ? (
+        {request.requesterItemId || request.requestImages.length > 0 ? (
           // Trường hợp trao đổi bình thường
           <>
             <View style={styles.itemCard}>
+            <TouchableOpacity onPress={() => handleImagePress(request.requesterItemId ? request.requesterItemImages : request.requestImages)}>
               <Image
-                source={{ uri: request.requesterItemImages[0] }}
+                source={{ uri: request.requesterItemImages[0] || request.requestImages[0] }}
                 style={styles.itemImage}
               />
+              </TouchableOpacity>
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.requesterItemName}
               </Text>
@@ -204,10 +205,12 @@ const MyRequests = () => {
             </View>
 
             <View style={styles.itemCard}>
+            <TouchableOpacity onPress={() => handleImagePress(request.recipientItemImages)}>
               <Image
                 source={{ uri: request.recipientItemImages[0] }}
                 style={styles.itemImage}
               />
+              </TouchableOpacity>
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.recipientItemName}
               </Text>
@@ -216,10 +219,12 @@ const MyRequests = () => {
         ) : (
           // Trường hợp đăng ký nhận
           <View style={styles.singleItemContainer}>
+            <TouchableOpacity onPress={() => handleImagePress(request.recipientItemImages)}>
             <Image
               source={{ uri: request.recipientItemImages[0] }}
               style={styles.singleItemImage}
             />
+            </TouchableOpacity>
             <Text style={styles.itemName} numberOfLines={2}>
               {request.recipientItemName}
             </Text>
@@ -228,9 +233,13 @@ const MyRequests = () => {
       </View>
 
       
-      {request.requestMessage && (
+      {request.requestMessage ? (
         <View style={styles.itemMessageContainer}>
           <Text>Lời nhắn: {request.requestMessage}</Text>
+        </View>
+      ): (
+        <View style={styles.itemMessageContainer}>
+          <Text>*Không có lời nhắn nào được gửi tới bạn</Text>
         </View>
       )}
 
@@ -471,6 +480,12 @@ const MyRequests = () => {
     </View>
   </View>
 </Modal>
+
+<ImagesModalViewer 
+        images={selectedImages} 
+        isVisible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

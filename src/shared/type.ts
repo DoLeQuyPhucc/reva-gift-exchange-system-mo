@@ -63,6 +63,7 @@ export interface Request {
   requesterItemName: string | null;
   requesterItemImages: string[];
   requesterItemQuantity: number | null;
+  requestImages: string[];
 
   // Appointment
   appointmentDate: string[];
