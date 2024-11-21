@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { Category, ConditionOption, ItemCondition } from '@/src/shared/type';
 
 import useCategories from '@/src/hooks/useCategories';
 import useCreatePost from '@/src/hooks/useCreatePost';
+import Colors from '@/src/constants/Colors';
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, 'CreatePost'>;
@@ -53,7 +54,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const initialCategoryId = route.params?.categoryId;
   const { categories } = useCategories();
   const { addressData, loading, submitPost } = useCreatePost();  
-  
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(() => {
     if (initialCategory) return initialCategory;
     if (initialCategoryId) {
@@ -62,10 +62,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     return null;
   });
 
-  const [selectedAddressId, setSelectedAddressId] = useState<string>(() => {
-    const defaultAddress = addressData.find(addr => addr.isDefault);
-    return defaultAddress?.addressId || '';
-  });
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
@@ -85,6 +82,13 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [customStartTime, setCustomStartTime] = useState<string>('09:00');
   const [customEndTime, setCustomEndTime] = useState<string>('21:00');
 
+  useEffect(() => {
+    if (addressData.length > 0) {
+      const defaultAddress = addressData.find(addr => addr.isDefault);
+      setSelectedAddressId(defaultAddress?.addressId || addressData[0].addressId);
+    }
+  }, [addressData]);
+
   const conditions: ConditionOption[] = [
     { id: ItemCondition.NEW, name: 'Mới' },
     { id: ItemCondition.USED, name: 'Đã sử dụng' },
@@ -100,16 +104,16 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
   };
 
-  const getAvailableTimeString = () => {
+  const getAvailableTimeString = (timePreference: string) => {
     switch (timePreference) {
-      case 'all_day':
-        return '9h - 21h hằng ngày';
-      case 'office_hours':
-        return '9h - 17h';
+      case 'allDay':
+        return 'allDay 09:00_21:00';
+      case 'officeHours':
+        return 'officeHours 09:00_17:00';
       case 'evening':
-        return '17h - 21h';
+        return 'evening 17:00_21:00';
       case 'custom':
-        return `${customStartTime} - ${customEndTime} hằng ngày`;
+        return `custom ${customStartTime}_${customEndTime}`;
       default:
         return '';
     }
@@ -274,19 +278,19 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         quantity: 1,
         condition: condition,
         images,
-        availableTime: timePreference,
+        availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId
       };
 
       console.log("Form Data: ", postData);
   
-      const result = await submitPost(postData);
+      // const result = await submitPost(postData);
       
-      if (result) {
-        Alert.alert('Success', 'Post created successfully');
-      }
+      // if (result) {
+      //   Alert.alert('Success', 'Post created successfully');
+      // }
 
-      navigation.goBack();
+      // navigation.goBack();
   
     } catch (error) {
       Alert.alert('Error', 'Failed to create post');
@@ -460,21 +464,21 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             <View style={styles.radioOption}>
               <RadioButton.Item
                 label="Cả ngày (9h - 21h hằng ngày)"
-                value="allDay_09:00_21:00"
+                value="allDay"
                 position="trailing"
               />
             </View>
             <View style={styles.radioOption}>
               <RadioButton.Item
                 label="Giờ hành chính (9h - 17h)"
-                value="officeHours_09:00_21:00"
+                value="officeHours"
                 position="trailing"
               />
             </View>
             <View style={styles.radioOption}>
               <RadioButton.Item
                 label="Chỉ buổi tối (17h - 21h)"
-                value="evening_17:00_21:00"
+                value="evening"
                 position="trailing"
               />
             </View>
@@ -742,8 +746,8 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   selectedAddressCard: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
+    borderColor: Colors.orange500,
+    backgroundColor: Colors.orange50,
   },
   addressRadioContainer: {
     flexDirection: 'row',
@@ -754,7 +758,7 @@ const styles = StyleSheet.create({
     width: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: Colors.orange500,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -763,7 +767,7 @@ const styles = StyleSheet.create({
     height: 10,
     width: 10,
     borderRadius: 5,
-    backgroundColor: '#007AFF',
+    backgroundColor: Colors.orange500,
   },
   addressTextContainer: {
     flex: 1,
@@ -774,7 +778,7 @@ const styles = StyleSheet.create({
   },
   defaultBadge: {
     fontSize: 12,
-    color: '#007AFF',
+    color: Colors.orange500,
     marginTop: 4,
   },
 });
