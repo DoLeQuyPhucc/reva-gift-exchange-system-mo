@@ -104,6 +104,16 @@ export interface Transaction {
   // Timestamps
   createdAt: string;
   appointmentDate: string;
+
+  rating: number | null;
+  ratingComment: string | null;
+}
+
+export interface TransactionRatingType {
+  ratedUserId: string;
+  transactionId: string;
+  comment: string;
+  rating: number;
 }
 
 export interface Category {

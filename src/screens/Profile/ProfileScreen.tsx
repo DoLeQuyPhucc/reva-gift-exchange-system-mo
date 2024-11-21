@@ -192,7 +192,7 @@ const ProfileScreen = () => {
             />
           </View>
           <View>
-            <Title style={styles.userName}>{userData?.firstName} {userData?.lastName}</Title>
+            <Title style={styles.userName}>{userData?.username}</Title>
             <Text style={styles.userEmail}>{userData?.phone}</Text>
           </View>
         </View>
