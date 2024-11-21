@@ -84,7 +84,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           phone: phoneNumber
         });
       
-        const { token, refreshToken, userId, username, role, firstName, lastName, profileURL } = response.data.data;
+        const { token, refreshToken, userId, username, email, role, firstName, lastName, profileURL } = response.data.data;
       
         const user: User = {
           id: userId,
@@ -94,7 +94,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           firstName,
           lastName,
           profileURL,
-          email: "",
+          email: email,
           profilePicture: profileURL || "",
           address: "",
           dob: null,
@@ -109,6 +109,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
         await login({
           accessToken: token,
           refreshToken: refreshToken,
+          email: email || "",
           userId: userId,
           userRole: role,
           user: user
@@ -121,6 +122,8 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
         Alert.alert('Error', 'Invalid OTP');
       }
     } catch (error: any) {
+      console.log("Error: ", error);
+      
       Alert.alert('Error', error.response?.data?.message || 'Invalid OTP');
     } finally {
       setLoading(false);

@@ -12,24 +12,37 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/src/api/axiosInstance';
-import { Picker } from '@react-native-picker/picker';
 import Colors from '@/src/constants/Colors';
 import { User } from '@/src/shared/type';
+
+import { useProfile } from '@/src/hooks/useProfile';
+import { useAuthStore } from '@/stores/authStore';
 
 const DEFAULT_PROFILE_PICTURE = 'https://res.cloudinary.com/djh9baokn/image/upload/v1731336465/png-clipart-man-wearing-blue-shirt-illustration-computer-icons-avatar-user-login-avatar-blue-child_ijzlxf.png';
 
 const ProfileDetailScreen = () => {
+  const { userData } = useAuthStore();
   const [profile, setProfile] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Form state
+  const {
+    isLoading,
+    error,
+    otpInput,
+    showOtpInput,
+    setOtpInput,
+    sendConfirmationEmail,
+    updateProfile,
+  } = useProfile(userData?.email || '');
+
   const [formData, setFormData] = useState<User>({
     id: '',
     username: '',
     role: '',
     profileURL: '',
+    fullname: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -40,11 +53,13 @@ const ProfileDetailScreen = () => {
     gender: null,
     addressCoordinates: {
       latitude: '',
-      longitude: ''
+      longitude: '',
     },
     point: 0,
-    dateJoined: ''
+    dateJoined: '',
   });
+
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -63,20 +78,67 @@ const ProfileDetailScreen = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSendEmail = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.put('user/profile', formData);
-      if (response.data.isSuccess) {
+      const emailSent = await sendConfirmationEmail(formData.email);
+      setLoading(false);
+
+      if (emailSent) {
+        Alert.alert('Success', 'Verification email sent. Please check your email.');
+      } else {
+        Alert.alert('Error', 'Failed to send verification email.');
+      }
+    } catch (error) {
+      setLoading(false);
+      Alert.alert('Error', 'An error occurred while sending email.');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!emailConfirmed) {
+      Alert.alert('Error', 'Please confirm your email before saving.');
+      return;
+    }
+
+    if (!otpInput || otpInput.trim().length !== 6) {
+      Alert.alert('Error', 'Please enter a valid OTP code.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const updatePayload = {
+        username: formData.username,
+        fullname: "Nguyen Van A",
+        email: formData.email,
+        profilePicture: formData.profilePicture,
+      };
+
+      const response = await updateProfile(updatePayload);
+
+      setLoading(false);
+
+      if (response.isSuccess) {
         Alert.alert('Success', 'Profile updated successfully');
         setProfile(formData);
         setIsEditing(false);
+      } else {
+        Alert.alert('Error', response.message || 'Update failed.');
       }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update profile');
-      console.error(error);
-    } finally {
+    } catch (error: any) {
       setLoading(false);
+      Alert.alert('Error', error.message || 'An error occurred while updating the profile.');
+    }
+  };
+
+  const handleOtpInput = (otp: string) => {
+    setOtpInput(otp);
+    if (otp.length === 6) {
+      setEmailConfirmed(true);
+    } else {
+      setEmailConfirmed(false);
     }
   };
 
@@ -127,10 +189,10 @@ const ProfileDetailScreen = () => {
           )}
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={() => isEditing ? handleSave() : setIsEditing(true)}
-          disabled={loading}
+        <TouchableOpacity
+          style={[styles.editButton, { backgroundColor: emailConfirmed ? Colors.orange500 : '#ccc' }]}
+          onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
+          disabled={loading || (isEditing && !emailConfirmed)}
         >
           <Text style={styles.editButtonText}>
             {loading ? 'Saving...' : isEditing ? 'Save' : 'Edit Profile'}
@@ -140,36 +202,47 @@ const ProfileDetailScreen = () => {
 
       {/* Profile Form */}
       <View style={styles.form}>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>First Name</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.firstName}
-            onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-            editable={isEditing}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Last Name</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.lastName}
-            onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-            editable={isEditing}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
+      <View style={styles.formGroup}>
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
             value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            onChangeText={(text) => {
+              setFormData({ ...formData, email: text });
+              setEmailConfirmed(false);
+            }}
             editable={isEditing}
             keyboardType="email-address"
           />
+          {isEditing && (
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={handleSendEmail}
+              disabled={loading || emailConfirmed}
+            >
+              <Text style={styles.sendButtonText}>Send</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {showOtpInput && isEditing && (
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Verification Code</Text>
+          <View style={styles.otpContainer}>
+            <TextInput
+              style={[styles.input, styles.otpInput]}
+              value={otpInput}
+              onChangeText={handleOtpInput}
+              placeholder="Enter OTP code"
+              keyboardType="number-pad"
+              maxLength={6}
+            />
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
+          </View>
+        </View>
+      )}
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>Phone</Text>
@@ -191,36 +264,6 @@ const ProfileDetailScreen = () => {
             editable={isEditing}
             multiline
           />
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Date of Birth</Text>
-          <TouchableOpacity
-            onPress={() => isEditing && setShowDatePicker(true)}
-            style={styles.input}
-          >
-            <Text>
-              {formData.dob ? new Date(formData.dob).toLocaleDateString() : 'Not set'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Gender</Text>
-          {isEditing ? (
-            <Picker
-              selectedValue={formData.gender}
-              style={styles.picker}
-              onValueChange={(value) => setFormData({ ...formData, gender: value })}
-            >
-              <Picker.Item label="Select gender" value={null} />
-              <Picker.Item label="Male" value="male" />
-              <Picker.Item label="Female" value="female" />
-              <Picker.Item label="Other" value="other" />
-            </Picker>
-          ) : (
-            <Text style={styles.input}>{formData.gender || 'Not set'}</Text>
-          )}
         </View>
 
         <View style={styles.formGroup}>
@@ -317,6 +360,32 @@ const styles = StyleSheet.create({
   },
   coordinateInput: {
     flex: 0.48,
+  },
+  otpContainer: {
+    marginVertical: 8,
+  },
+  otpInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  sendButton: {
+    marginTop: 10,
+    backgroundColor: Colors.orange500,
+    padding: 10,
+    borderRadius: 8,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 
