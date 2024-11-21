@@ -15,8 +15,15 @@ import {
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { LocationMap, Transaction } from "@/src/shared/type";
+import {
+  LocationMap,
+  Transaction,
+  TransactionRatingType,
+} from "@/src/shared/type";
 import MapModal from "@/src/components/Map/MapModal";
+import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
+import { Buffer } from 'buffer';
+
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -26,19 +33,49 @@ const MyTransactions = () => {
   const [verificationInput, setVerificationInput] = useState("");
   const [showTransactionId, setShowTransactionId] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
+  const [isRatingModalVisible, setIsRatingModalVisible] = useState(false);
   const [location, setLocation] = useState<LocationMap>({
     latitude: 0,
     longitude: 0,
   });
+const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
+  useEffect(() => {
+    if (selectedTransaction) {
+      fetchQRCode(selectedTransaction.id);
+    }
+  }, [selectedTransaction]);
+
   const fetchTransactions = async () => {
     try {
       const response = await axiosInstance.get("transaction/own-transactions");
-      setTransactions(response.data.data);
+
+      if (!response.data.data) {
+        return;
+      }
+      const transactionsList = await Promise.all(
+        response.data.data.map(async (transaction: Transaction) => {
+          if (transaction.status === "Completed") {
+            const rating = await axiosInstance.get(
+              `rating/transaction/${transaction.id}`
+            );
+            if (rating.data.data.length === 0) {
+              transaction.rating = null;
+            } else {
+              transaction.rating = rating.data.data[0].rating;
+              transaction.ratingComment = rating.data.data[0].comment;
+            }
+            return transaction;
+          }
+
+          return transaction;
+        })
+      );
+      setTransactions(transactionsList);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
@@ -124,6 +161,106 @@ const MyTransactions = () => {
     }
     return `Giao dịch giữa ${transaction.senderName} & ${transaction.recipientName}`;
   };
+  interface RatingResponse {
+    isSuccess: boolean;
+    message?: string;
+  }
+
+  const handleRating = async (
+    ratingData: TransactionRatingType
+  ): Promise<void> => {
+    try {
+      // Input validation
+      if (!ratingData || !ratingData.rating) {
+        Alert.alert("Lỗi", "Vui lòng nhập đánh giá");
+        return;
+      }
+
+      // API call to submit rating
+      const response = await axiosInstance.post<RatingResponse>(
+        "rating",
+        JSON.stringify(ratingData),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.isSuccess) {
+        fetchTransactions();
+        Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
+      } else {
+        Alert.alert(
+          "Lỗi",
+          response.data.message ||
+            "Không thể gửi đánh giá. Vui lòng thử lại sau"
+        );
+      }
+    } catch (error) {
+      console.error("Rating error:", error);
+      Alert.alert(
+        "Lỗi",
+        "Đã xảy ra lỗi khi gửi đánh giá. Vui lòng thử lại sau"
+      );
+    }
+  };
+
+  const handleOpenRatingModal = (transaction: Transaction) => {
+    setIsRatingModalVisible(true);
+    setSelectedTransaction(transaction);
+  };
+
+  const renderStars = (rating: number) => {
+    return [1, 2, 3, 4, 5].map((star) => (
+      <Icon
+        name="star"
+        size={30}
+        color={star <= rating ? "#FFD700" : "#D3D3D3"}
+      />
+    ));
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "Đang diễn ra";
+      case "Completed":
+        return "Hoàn thành";
+      case "Not_Completed":
+        return "Đã hủy";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return Colors.orange500;
+      case "Completed":
+        return Colors.lightGreen;
+      case "Not_Completed":
+        return Colors.lightRed || "#FF0000"; // Add error color to Colors constant
+      default:
+        return Colors.orange500;
+    }
+  };
+
+  const fetchQRCode = async (transactionId: string) => {
+    try {
+      const response = await axiosInstance.get(`qr/generate?transactionId=${transactionId}`, {
+        responseType: 'arraybuffer'
+      });
+      console.log('QR code response:', response);
+    
+      // Convert binary data to base64
+      const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
+      setQrCodeBase64(base64Image);
+    } catch (error) {
+      console.error('Error fetching QR code:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -138,28 +275,16 @@ const MyTransactions = () => {
                 <View
                   style={[
                     styles.statusDot,
-                    {
-                      backgroundColor:
-                        transaction.status === "Pending"
-                          ? Colors.orange500
-                          : Colors.lightGreen,
-                    },
+                    { backgroundColor: getStatusColor(transaction.status) },
                   ]}
                 />
                 <Text
                   style={[
                     styles.status,
-                    {
-                      color:
-                        transaction.status === "Pending"
-                          ? Colors.orange500
-                          : Colors.lightGreen,
-                    },
+                    { color: getStatusColor(transaction.status) },
                   ]}
                 >
-                  {transaction.status === "Pending"
-                    ? "Đang diễn ra"
-                    : "Hoàn thành"}
+                  {getStatusText(transaction.status)}
                 </Text>
               </View>
             </View>
@@ -237,95 +362,135 @@ const MyTransactions = () => {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.verifyButton,
-                { opacity: transaction.status === "Completed" ? 0.5 : 1 },
-              ]}
-              disabled={transaction.status === "Completed"}
-              onPress={() => {
-                setSelectedTransaction(transaction);
-                setShowModal(true);
-                setShowTransactionId(false);
-                setVerificationInput("");
-              }}
-            >
-              <Text style={styles.verifyButtonText}>
-                {transaction.status === "Completed"
-                  ? "Đã xác thực"
-                  : "Xác thực giao dịch"}
-              </Text>
-            </TouchableOpacity>
+            {transaction.status === "Pending" && (
+              <TouchableOpacity
+                style={styles.verifyButton}
+                onPress={() => {
+                  setSelectedTransaction(transaction);
+                  setShowModal(true);
+                  setShowTransactionId(false);
+                  setVerificationInput("");
+                }}
+              >
+                <Text style={styles.verifyButtonText}>Xác thực giao dịch</Text>
+              </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              style={styles.detailsButton}
-              onPress={() => {
-                Alert.alert(
-                  "Thông tin chi tiết",
-                  `Bên gửi:
-• Địa chỉ: ${transaction.senderAddress}
-• Số điện thoại: ${transaction.senderPhone}
-• Tọa độ: ${transaction.senderAddressCoordinates.latitude}, ${transaction.senderAddressCoordinates.longitude}
+            {transaction.status === "Pending" && (
+              <>
+                <TouchableOpacity
+                  style={styles.detailsButton}
+                  onPress={() => {
+                    Alert.alert(
+                      "Thông tin chi tiết",
+                      `Bên gửi:
+      • Địa chỉ: ${transaction.senderAddress}
+      • Số điện thoại: ${transaction.senderPhone}
+      • Tọa độ: ${transaction.senderAddressCoordinates.latitude}, ${transaction.senderAddressCoordinates.longitude}
 
-Bên nhận:
-• Địa chỉ: ${transaction.recipientAddress}
-• Số điện thoại: ${transaction.recipientPhone} 
-• Tọa độ: ${transaction.recipientAddressCoordinates.latitude}, ${transaction.recipientAddressCoordinates.longitude}`,
-                  [
-                    {
-                      text: "Đóng",
-                      style: "cancel",
-                    },
-                    {
-                      text: "Mở bản đồ",
-                      onPress: () => {
-                        const data: LocationMap = {
-                          latitude: parseFloat(
-                            transaction.recipientAddressCoordinates.latitude
-                          ),
-                          longitude: parseFloat(
-                            transaction.recipientAddressCoordinates.longitude
-                          ),
-                        };
-                        setLocation(data);
-                        setShowMapModal(true);
-                      },
-                    },
-                  ]
-                );
-              }}
-            >
-              <View style={styles.detailsButtonContent}>
-                <Icon name="info" size={20} color={Colors.orange500} />
-                <Text style={styles.detailsButtonText}>Chi tiết giao dịch</Text>
-              </View>
-            </TouchableOpacity>
+      Bên nhận:
+      • Địa chỉ: ${transaction.recipientAddress}
+      • Số điện thoại: ${transaction.recipientPhone} 
+      • Tọa độ: ${transaction.recipientAddressCoordinates.latitude}, ${transaction.recipientAddressCoordinates.longitude}`,
+                      [
+                        {
+                          text: "Đóng",
+                          style: "cancel",
+                        },
+                        {
+                          text: "Mở bản đồ",
+                          onPress: () => {
+                            const data: LocationMap = {
+                              latitude: parseFloat(
+                                transaction.recipientAddressCoordinates.latitude
+                              ),
+                              longitude: parseFloat(
+                                transaction.recipientAddressCoordinates
+                                  .longitude
+                              ),
+                            };
+                            setLocation(data);
+                            setShowMapModal(true);
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <View style={styles.detailsButtonContent}>
+                    <Icon name="info" size={20} color={Colors.orange500} />
+                    <Text style={styles.detailsButtonText}>
+                      Chi tiết giao dịch
+                    </Text>
+                  </View>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.detailsButton}
-              onPress={() => {
-                const data: LocationMap = {
-                  latitude: parseFloat(
-                    transaction.recipientAddressCoordinates.latitude
-                  ),
-                  longitude: parseFloat(
-                    transaction.recipientAddressCoordinates.longitude
-                  ),
-                };
-                console.log(data);
-                setLocation(data);
-                setShowMapModal(true);
-              }}
-            >
-              <View style={styles.detailsButtonContent}>
-                <Icon name="map" size={20} color={Colors.orange500} />
-                <Text style={styles.detailsButtonText}>Xem địa chỉ</Text>
-              </View>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.detailsButton}
+                  onPress={() => {
+                    const data: LocationMap = {
+                      latitude: parseFloat(
+                        transaction.recipientAddressCoordinates.latitude
+                      ),
+                      longitude: parseFloat(
+                        transaction.recipientAddressCoordinates.longitude
+                      ),
+                    };
+                    console.log(data);
+                    setLocation(data);
+                    setShowMapModal(true);
+                  }}
+                >
+                  <View style={styles.detailsButtonContent}>
+                    <Icon name="map" size={20} color={Colors.orange500} />
+                    <Text style={styles.detailsButtonText}>Xem địa chỉ</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {transaction.status === "Completed" && (
+              <>
+                <TouchableOpacity
+                  style={[styles.verifyButton, { opacity: 0.5 }]}
+                  disabled={true}
+                >
+                  <Text style={styles.verifyButtonText}>Đã xác thực</Text>
+                </TouchableOpacity>
+                {transaction.rating === null ? (
+                  <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => handleOpenRatingModal(transaction)}
+                  >
+                    <View style={styles.detailsButtonContent}>
+                      <Icon name="map" size={20} color={Colors.orange500} />
+                      <Text style={styles.detailsButtonText}>Đánh giá</Text>
+                    </View>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.starContainer}>
+                    <Text style={styles.titleText}>Đánh giá giao dịch</Text>
+                    <View style={styles.ratingContainer}>
+                      <Text style={styles.labelText}>Chất lượng: </Text>
+                      <Text style={styles.starText}>
+                        {renderStars(transaction.rating || 0)}
+                      </Text>
+                    </View>
+                    {transaction.ratingComment && (
+                      <View style={styles.commentContainer}>
+                        <Text style={styles.labelText}>Nhận xét: </Text>
+                        <Text style={styles.commentText}>
+                          {transaction.ratingComment}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
+            )}
           </View>
         ))}
       </ScrollView>
-
       <MapModal
         open={showMapModal}
         onClose={setShowMapModal}
@@ -341,7 +506,7 @@ Bên nhận:
               <View style={styles.idContainer}>
                 <Image
                   source={{
-                    uri: `https://api.qrserver.com/v1/create-qr-code/?data=${selectedTransaction.id}&size=200x200`,
+                    uri: qrCodeBase64 || undefined
                   }}
                   style={{ width: 200, height: 200 }}
                 />
@@ -402,6 +567,17 @@ Bên nhận:
           </View>
         </View>
       </Modal>
+
+      <UserRatingModal
+        isVisible={isRatingModalVisible}
+        onClose={() => setIsRatingModalVisible(false)}
+        onSubmitRating={handleRating}
+        userTransactionToRate={{
+          userId: selectedTransaction?.recipientId || "",
+          userName: selectedTransaction?.recipientName || "",
+          transactionId: selectedTransaction?.id || "",
+        }}
+      />
     </View>
   );
 };
@@ -623,6 +799,39 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontSize: 14,
     fontWeight: "500",
+  },
+  starContainer: {
+    marginVertical: 10,
+  },
+  titleText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  labelText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  starText: {
+    fontSize: 18,
+    color: "#FFD700", // Gold color for stars
+  },
+  commentContainer: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+    padding: 10,
+  },
+  commentText: {
+    fontSize: 14,
+    color: "#333",
+    fontStyle: "italic",
   },
 });
 

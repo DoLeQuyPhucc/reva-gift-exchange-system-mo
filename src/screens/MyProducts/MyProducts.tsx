@@ -100,12 +100,7 @@ const MyProducts = () => {
                 </View>
 
             ) : (
-              <View style={styles.detailItem}>
-                <Icon name="hotel-class" size={20} color={Colors.orange500} />
-                <Text style={[styles.detailText, styles.giftText]}>
-                  {item.point}P
-                </Text>
-              </View>
+              <></>
             )}
           </View>
         </View>

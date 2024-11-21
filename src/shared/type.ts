@@ -63,6 +63,7 @@ export interface Request {
   requesterItemName: string | null;
   requesterItemImages: string[];
   requesterItemQuantity: number | null;
+  requestImages: string[];
 
   // Appointment
   appointmentDate: string[];
@@ -103,6 +104,16 @@ export interface Transaction {
   // Timestamps
   createdAt: string;
   appointmentDate: string;
+
+  rating: number | null;
+  ratingComment: string | null;
+}
+
+export interface TransactionRatingType {
+  ratedUserId: string;
+  transactionId: string;
+  comment: string;
+  rating: number;
 }
 
 export interface Category {
