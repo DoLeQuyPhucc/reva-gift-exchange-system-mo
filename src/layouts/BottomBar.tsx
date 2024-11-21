@@ -1,13 +1,12 @@
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import React, { useState } from 'react';
-import { View, Modal, TouchableOpacity, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Modal, TouchableOpacity, Text, StyleSheet, Animated, Dimensions, Alert } from 'react-native';
 import { BottomTabParamList } from '@/src/layouts/types/navigationTypes';
 import Colors from '@/constants/Colors';
 import { useNavigation } from '@/hooks/useNavigation';
 import { Category } from '@/shared/type';
 import useCategories from '@/hooks/useCategories';
-import { useAuthCheck } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 
 const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
@@ -25,6 +24,7 @@ export interface TabBarProps {
 
 const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const userEmail = useAuthStore(state => state.email);
   const { categories, isLoading } = useCategories();
   const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -32,18 +32,48 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
 
   const showModal = () => {
     if (!isAuthenticated) {
-      navigation.navigate('LoginScreen');
+      Alert.alert(
+        "Đăng nhập",
+        "Bạn cần phải đăng nhập trước khi thực hiện hành động này",
+        [
+          {
+            text: "Hủy",
+            style: "cancel"
+          },
+          {
+            text: "Đăng nhập",
+            onPress: () => navigation.navigate('LoginScreen')
+          }
+        ]
+      );
       return;
-    } else {
-      setModalVisible(true);
-      Animated.spring(slideAnim, {
+    }
+     
+    if (!userEmail) {
+      Alert.alert(
+        "Cập nhật thông tin",
+        "Vui lòng cập nhật email trước khi thực hiện hành động này",
+        [
+          {
+            text: "Hủy",
+            style: "cancel"
+          },
+          {
+            text: "Cập nhật",
+            onPress: () => navigation.navigate('ProfileDetail')
+          }
+        ]
+      );
+      return;
+    }
+  
+    setModalVisible(true);
+    Animated.spring(slideAnim, {
       toValue: 0,
       useNativeDriver: true,
       tension: 50,
       friction: 8
     }).start();
-    }
-    
   };
 
   const hideModal = () => {

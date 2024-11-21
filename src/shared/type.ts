@@ -25,6 +25,7 @@ export interface User {
   username: string;
   role: string;
   profileURL: string;
+  fullname: string;
   firstName: string;
   lastName: string;
   email: string;

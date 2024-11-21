@@ -63,7 +63,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   });
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
-  
+  const [selectedCategorySwap, setSelectedCategorySwap] = useState('');
+  const [selectedSubcategorySwap, setSelectedSubcategorySwap] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
   const [condition, setCondition] = useState<ItemCondition | ''>('');
@@ -81,6 +82,12 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [timePreference, setTimePreference] = useState<string>('all_day');
   const [customStartTime, setCustomStartTime] = useState<string>('09:00');
   const [customEndTime, setCustomEndTime] = useState<string>('21:00');
+
+  const categoriesSwap = [
+    { name: 'Điện tử', subcategories: ['Điện thoại', 'Máy tính', 'Máy ảnh'] },
+    { name: 'Nội thất', subcategories: ['Bàn', 'Ghế', 'Giường'] },
+    { name: 'Quần áo', subcategories: ['Nam', 'Nữ', 'Trẻ em'] },
+  ];
 
   useEffect(() => {
     if (addressData.length > 0) {
@@ -404,6 +411,39 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             <Text style={styles.exchangeHint}>
               Bạn nên ghi rõ món đồ mình cần trao đổi để có được trải nghiệm tốt nhất.
             </Text>
+          )}
+        </View>
+
+        {/* New section for categories and subcategories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Danh mục muốn trao đổi</Text>
+          
+          <Picker
+            selectedValue={selectedCategorySwap}
+            onValueChange={(itemValue) => {
+              setSelectedCategorySwap(itemValue);
+              setSelectedSubcategorySwap(''); // Reset subcategory when category changes
+            }}
+            style={styles.picker}
+          >
+            <Picker.Item label="Chọn danh mục" value="" />
+            {categoriesSwap.map((category, index) => (
+              <Picker.Item key={index} label={category.name} value={category.name} />
+            ))}
+          </Picker>
+
+          {selectedCategorySwap && (
+            <Picker
+              selectedValue={selectedSubcategorySwap}
+              onValueChange={(itemValue) => setSelectedSubcategorySwap(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Chọn danh mục phụ" value="" />
+              {categoriesSwap
+                .find((category) => category.name === selectedCategorySwap)?.subcategories.map((subcategory, index) => (
+                  <Picker.Item key={index} label={subcategory} value={subcategory} />
+                ))}
+            </Picker>
           )}
         </View>
 
@@ -736,6 +776,10 @@ const styles = StyleSheet.create({
   timePicker: {
     flex: 1,
     marginLeft: 8,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
   addressCard: {
     padding: 12,
