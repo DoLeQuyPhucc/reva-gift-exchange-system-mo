@@ -22,6 +22,8 @@ import {
 } from "@/src/shared/type";
 import MapModal from "@/src/components/Map/MapModal";
 import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
+import { Buffer } from 'buffer';
+
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -36,10 +38,17 @@ const MyTransactions = () => {
     latitude: 0,
     longitude: 0,
   });
+const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  useEffect(() => {
+    if (selectedTransaction) {
+      fetchQRCode(selectedTransaction.id);
+    }
+  }, [selectedTransaction]);
 
   const fetchTransactions = async () => {
     try {
@@ -235,6 +244,21 @@ const MyTransactions = () => {
         return Colors.lightRed || "#FF0000"; // Add error color to Colors constant
       default:
         return Colors.orange500;
+    }
+  };
+
+  const fetchQRCode = async (transactionId: string) => {
+    try {
+      const response = await axiosInstance.get(`qr/generate?transactionId=${transactionId}`, {
+        responseType: 'arraybuffer'
+      });
+      console.log('QR code response:', response);
+    
+      // Convert binary data to base64
+      const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
+      setQrCodeBase64(base64Image);
+    } catch (error) {
+      console.error('Error fetching QR code:', error);
     }
   };
 
@@ -482,7 +506,7 @@ const MyTransactions = () => {
               <View style={styles.idContainer}>
                 <Image
                   source={{
-                    uri: `https://api.qrserver.com/v1/create-qr-code/?data=${selectedTransaction.id}&size=200x200`,
+                    uri: qrCodeBase64 || undefined
                   }}
                   style={{ width: 200, height: 200 }}
                 />
