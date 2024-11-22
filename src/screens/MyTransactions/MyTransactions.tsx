@@ -19,10 +19,13 @@ import {
   LocationMap,
   Transaction,
   TransactionRatingType,
+  TransactionReportType,
 } from "@/src/shared/type";
 import MapModal from "@/src/components/Map/MapModal";
 import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
 import { Buffer } from 'buffer';
+import UserReportModal from "@/src/components/modal/UserReportModal";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 
 
 const MyTransactions = () => {
@@ -34,18 +37,20 @@ const MyTransactions = () => {
   const [showTransactionId, setShowTransactionId] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
   const [isRatingModalVisible, setIsRatingModalVisible] = useState(false);
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [location, setLocation] = useState<LocationMap>({
     latitude: 0,
     longitude: 0,
   });
 const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+const userId = useAuthCheck().userData.userId;
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
   useEffect(() => {
-    if (selectedTransaction) {
+    if (selectedTransaction?.status === "Pending") {
       fetchQRCode(selectedTransaction.id);
     }
   }, [selectedTransaction]);
@@ -208,6 +213,46 @@ const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
 
   const handleOpenRatingModal = (transaction: Transaction) => {
     setIsRatingModalVisible(true);
+    setSelectedTransaction(transaction);
+  };
+
+  
+  const handleReport = async (
+    reportData: TransactionReportType
+  ): Promise<void> => {
+    try {
+      // API call to submit rating
+      const response = await axiosInstance.post(
+        "report/create",
+        JSON.stringify(reportData),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.isSuccess) {
+        fetchTransactions();
+        Alert.alert("Thành công", "Cảm ơn bạn đã gửi báo cáo.");
+      } else {
+        Alert.alert(
+          "Lỗi",
+          response.data.message ||
+            "Không thể gửi báo cáo. Vui lòng thử lại sau"
+        );
+      }
+    } catch (error) {
+      console.error("Rating error:", error);
+      Alert.alert(
+        "Lỗi",
+        "Đã xảy ra lỗi khi gửi báo cáo. Vui lòng thử lại sau"
+      );
+    }
+  };
+
+  const handleOpenReportModal = (transaction: Transaction) => {
+    setIsReportModalVisible(true);
     setSelectedTransaction(transaction);
   };
 
@@ -463,30 +508,43 @@ const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
                     onPress={() => handleOpenRatingModal(transaction)}
                   >
                     <View style={styles.detailsButtonContent}>
-                      <Icon name="map" size={20} color={Colors.orange500} />
+                      <Icon name="drive-file-rename-outline" size={20} color={Colors.orange500} />
                       <Text style={styles.detailsButtonText}>Đánh giá</Text>
                     </View>
                   </TouchableOpacity>
                 ) : (
-                  <View style={styles.starContainer}>
-                    <Text style={styles.titleText}>Đánh giá giao dịch</Text>
-                    <View style={styles.ratingContainer}>
-                      <Text style={styles.labelText}>Chất lượng: </Text>
-                      <Text style={styles.starText}>
-                        {renderStars(transaction.rating || 0)}
-                      </Text>
-                    </View>
-                    {transaction.ratingComment && (
-                      <View style={styles.commentContainer}>
-                        <Text style={styles.labelText}>Nhận xét: </Text>
-                        <Text style={styles.commentText}>
-                          {transaction.ratingComment}
+                  <>
+                    <View style={styles.starContainer}>
+                      <Text style={styles.titleText}>Đánh giá giao dịch</Text>
+                      <View style={styles.ratingContainer}>
+                        <Text style={styles.labelText}>Chất lượng: </Text>
+                        <Text style={styles.starText}>
+                          {renderStars(transaction.rating || 0)}
                         </Text>
                       </View>
-                    )}
-                  </View>
+                      {transaction.ratingComment && (
+                        <View style={styles.commentContainer}>
+                          <Text style={styles.labelText}>Nhận xét: </Text>
+                          <Text style={styles.commentText}>
+                            {transaction.ratingComment}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
                 )}
+                
+                <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => handleOpenReportModal(transaction)}
+                  >
+                    <View style={styles.detailsButtonContent}>
+                      <Icon name="report" size={20} color={Colors.orange500} />
+                      <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                    </View>
+                  </TouchableOpacity>
               </>
+              
             )}
           </View>
         ))}
@@ -504,12 +562,14 @@ const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
             <Text style={styles.modalTitle}>Xác thực giao dịch</Text>
             {selectedTransaction && (
               <View style={styles.idContainer}>
-                <Image
-                  source={{
-                    uri: qrCodeBase64 || undefined
-                  }}
-                  style={{ width: 200, height: 200 }}
-                />
+                {qrCodeBase64 && (
+                  <Image
+                    source={{
+                      uri: qrCodeBase64
+                    }}
+                    style={{ width: 200, height: 200 }}
+                  />
+                )}
               </View>
             )}
 
@@ -573,8 +633,19 @@ const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
         onClose={() => setIsRatingModalVisible(false)}
         onSubmitRating={handleRating}
         userTransactionToRate={{
-          userId: selectedTransaction?.recipientId || "",
-          userName: selectedTransaction?.recipientName || "",
+          userId: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderId : selectedTransaction?.recipientId || "",
+          userName: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderName : selectedTransaction?.senderItemName || "",
+          transactionId: selectedTransaction?.id || "",
+        }}
+      />
+
+      <UserReportModal
+        isVisible={isReportModalVisible}
+        onClose={() => setIsReportModalVisible(false)}
+        onSubmitRating={handleReport}
+        userTransactionToRate={{
+          userId: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderId : selectedTransaction?.recipientId || "",
+          userName: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderName : selectedTransaction?.senderItemName || "",
           transactionId: selectedTransaction?.id || "",
         }}
       />

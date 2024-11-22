@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/src/hooks/useNavigation';
 import { Product } from '@/src/shared/type';
 import { useRefreshControl } from '@/src/hooks/useRefreshControl';
+import { useFocusEffect } from 'expo-router';
 
 interface SortOption {
   value: 'createdAt' | 'name' | 'condition';
@@ -59,7 +60,7 @@ const HomeScreen: React.FC = () => {
       setLoading(false);
     }
   };
-
+  // Initial fetch on mount
   useEffect(() => {
     fetchProducts();
   }, [userId]);
