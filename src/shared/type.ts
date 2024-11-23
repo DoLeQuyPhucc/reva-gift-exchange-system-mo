@@ -176,3 +176,15 @@ export interface LocationMap {
   latitude: number;
   longitude: number;
 }
+
+export interface Notification {
+  id: string;
+  type: string;
+  data: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationGlobal {
+  data: string;
+}

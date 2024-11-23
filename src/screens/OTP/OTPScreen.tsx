@@ -93,6 +93,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           phone: phoneNumber,
           firstName,
           lastName,
+          fullname: `${firstName} ${lastName}`,
           profileURL,
           email: email,
           profilePicture: profileURL || "",

@@ -107,6 +107,7 @@ export default function Navigation() {
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OTPScreen" component={OTPScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
           <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Thông tin cá nhân' }} />
