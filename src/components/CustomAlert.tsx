@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Colors from '../constants/Colors';
 
 interface CustomAlertProps {
   visible: boolean;
@@ -29,11 +30,11 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
           <View style={styles.buttonContainer}>
             {onCancel && (
               <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Huỷ</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-              <Text style={styles.confirmButtonText}>OK</Text>
+              <Text style={styles.confirmButtonText}>Đồng ý</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -73,11 +74,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   confirmButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: Colors.orange500,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
-    minWidth: 100,
+    width: '48%'
   },
   confirmButtonText: {
     color: 'white',
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
-    minWidth: 100,
+    width: '48%'
   },
   cancelButtonText: {
     color: '#666',

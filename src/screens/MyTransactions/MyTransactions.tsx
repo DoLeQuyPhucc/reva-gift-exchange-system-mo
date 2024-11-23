@@ -6,11 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  TextInput,
   Alert,
   Image,
-  Linking,
-  Platform,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -23,10 +20,11 @@ import {
 } from "@/src/shared/type";
 import MapModal from "@/src/components/Map/MapModal";
 import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
-import { Buffer } from 'buffer';
+import { Buffer } from "buffer";
 import UserReportModal from "@/src/components/modal/UserReportModal";
 import { useAuthCheck } from "@/src/hooks/useAuth";
-
+import { TouchableWithoutFeedback } from "react-native";
+import { formatDate } from "@/src/shared/formatDate";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -34,7 +32,6 @@ const MyTransactions = () => {
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [verificationInput, setVerificationInput] = useState("");
-  const [showTransactionId, setShowTransactionId] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
   const [isRatingModalVisible, setIsRatingModalVisible] = useState(false);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
@@ -42,8 +39,8 @@ const MyTransactions = () => {
     latitude: 0,
     longitude: 0,
   });
-const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
-const userId = useAuthCheck().userData.userId;
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+  const userId = useAuthCheck().userData.userId;
 
   useEffect(() => {
     fetchTransactions();
@@ -86,6 +83,15 @@ const userId = useAuthCheck().userData.userId;
     }
   };
 
+  const checkRole = (transaction: Transaction) => {
+    if (userId === transaction.charitarian.id) {
+      return "charitarian";
+    } else if (userId === transaction.requester.id) {
+      return "requester";
+    }
+    return "";
+  };
+
   const handleVerification = async () => {
     if (selectedTransaction && verificationInput === selectedTransaction.id) {
       const res = await axiosInstance.put(
@@ -95,7 +101,6 @@ const userId = useAuthCheck().userData.userId;
       if (res.data.isSuccess === true) {
         Alert.alert("Thành công", "Mã định danh trùng khớp");
         setShowModal(false);
-        setShowTransactionId(false);
         setVerificationInput("");
       }
     } else {
@@ -119,7 +124,6 @@ const userId = useAuthCheck().userData.userId;
           if (res.data.isSuccess === true) {
             Alert.alert("Thành công", "Bạn đã từ chối giao dịch.");
             setShowModal(false);
-            setShowTransactionId(false);
             setVerificationInput("");
           }
         },
@@ -129,7 +133,8 @@ const userId = useAuthCheck().userData.userId;
 
   const formatTimeRange = (dateString: string) => {
     const date = new Date(dateString);
-    const endTime = new Date(date.getTime() + 60 * 60 * 1000); // Add 1 hour
+    const startTime = new Date(date.getTime() - 15 * 60 * 1000); // Subtract 15 minutes
+    const endTime = new Date(date.getTime() + 45 * 60 * 1000); // Add 45 minutes
 
     const formatTime = (d: Date) => {
       return d.toLocaleTimeString("en-US", {
@@ -147,24 +152,14 @@ const userId = useAuthCheck().userData.userId;
       });
     };
 
-    return `${formatTime(date)} - ${formatTime(endTime)} ${formatDate(date)}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return `${formatTime(startTime)} - ${formatTime(endTime)} ${formatDate(date)}`;
   };
 
   const getTransactionTitle = (transaction: Transaction) => {
-    if (!transaction.senderItemName) {
-      return `Giao dịch đăng ký nhận từ ${transaction.recipientName}`;
+    if (!transaction.requesterItem?.itemName) {
+      return `Giao dịch đăng ký nhận từ ${transaction.charitarian.name}`;
     }
-    return `Giao dịch giữa ${transaction.senderName} & ${transaction.recipientName}`;
+    return `Giao dịch giữa bạn và ${checkRole(transaction) === 'charitarian' ? transaction.requester.name :  transaction.charitarian.name}`;
   };
   interface RatingResponse {
     isSuccess: boolean;
@@ -216,7 +211,6 @@ const userId = useAuthCheck().userData.userId;
     setSelectedTransaction(transaction);
   };
 
-  
   const handleReport = async (
     reportData: TransactionReportType
   ): Promise<void> => {
@@ -238,16 +232,12 @@ const userId = useAuthCheck().userData.userId;
       } else {
         Alert.alert(
           "Lỗi",
-          response.data.message ||
-            "Không thể gửi báo cáo. Vui lòng thử lại sau"
+          response.data.message || "Không thể gửi báo cáo. Vui lòng thử lại sau"
         );
       }
     } catch (error) {
       console.error("Rating error:", error);
-      Alert.alert(
-        "Lỗi",
-        "Đã xảy ra lỗi khi gửi báo cáo. Vui lòng thử lại sau"
-      );
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi gửi báo cáo. Vui lòng thử lại sau");
     }
   };
 
@@ -294,16 +284,22 @@ const userId = useAuthCheck().userData.userId;
 
   const fetchQRCode = async (transactionId: string) => {
     try {
-      const response = await axiosInstance.get(`qr/generate?transactionId=${transactionId}`, {
-        responseType: 'arraybuffer'
-      });
-      console.log('QR code response:', response);
-    
+      const response = await axiosInstance.get(
+        `qr/generate?transactionId=${transactionId}`,
+        {
+          responseType: "arraybuffer",
+        }
+      );
+      console.log("QR code response:", response);
+
       // Convert binary data to base64
-      const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
+      const base64Image = `data:image/png;base64,${Buffer.from(
+        response.data,
+        "binary"
+      ).toString("base64")}`;
       setQrCodeBase64(base64Image);
     } catch (error) {
-      console.error('Error fetching QR code:', error);
+      console.error("Error fetching QR code:", error);
     }
   };
 
@@ -334,21 +330,20 @@ const userId = useAuthCheck().userData.userId;
               </View>
             </View>
 
-            {transaction.senderItemName !== "" ? (
+            {transaction.requesterItem?.itemName !== "" ? (
               <View style={styles.productsContainer}>
                 <View style={styles.productCard}>
                   <Image
                     source={{
                       uri:
-                        transaction.senderItemImage[0] ||
-                        transaction.senderProfileUrl,
+                        transaction.requesterItem?.itemImages[0]
                     }}
                     style={styles.productImage}
                   />
                   <Text style={styles.productName} numberOfLines={2}>
-                    {transaction.senderItemName}
+                    {transaction.requesterItem?.itemName}
                   </Text>
-                  <Text style={styles.ownerName}>{transaction.senderName}</Text>
+                  <Text style={styles.ownerName}>{transaction.requester.name}</Text>
                 </View>
 
                 <View style={styles.exchangeContainer}>
@@ -360,16 +355,15 @@ const userId = useAuthCheck().userData.userId;
                   <Image
                     source={{
                       uri:
-                        transaction.recipientItemImage[0] ||
-                        transaction.recipientProfileUrl,
+                        transaction.charitarianItem.itemImages[0]
                     }}
                     style={styles.productImage}
                   />
                   <Text style={styles.productName} numberOfLines={2}>
-                    {transaction.recipientItemName}
+                    {transaction.charitarianItem.itemName}
                   </Text>
                   <Text style={styles.ownerName}>
-                    {transaction.recipientName}
+                    {transaction.charitarian.name}
                   </Text>
                 </View>
               </View>
@@ -378,16 +372,15 @@ const userId = useAuthCheck().userData.userId;
                 <Image
                   source={{
                     uri:
-                      transaction.recipientItemImage[0] ||
-                      transaction.recipientProfileUrl,
+                      transaction.charitarianItem.itemImages[0]
                   }}
                   style={styles.productImage}
                 />
                 <Text style={styles.productName} numberOfLines={2}>
-                  {transaction.recipientItemName}
+                  {transaction.charitarianItem.itemName}
                 </Text>
                 <Text style={styles.ownerName}>
-                  {transaction.recipientName}
+                  {transaction.charitarian.name}
                 </Text>
               </View>
             )}
@@ -402,97 +395,98 @@ const userId = useAuthCheck().userData.userId;
               <View style={styles.dateRow}>
                 <Text style={styles.dateLabel}>Thời gian hẹn:</Text>
                 <Text style={styles.dateValue}>
-                  {formatTimeRange(transaction.appointmentDate)}
+                  {formatDate(transaction.appointmentDate)}
                 </Text>
               </View>
             </View>
+            
+            <View style={styles.dateInfo}>
+              <Text>
+              Lưu ý: Bạn nên tới vào lúc {formatTimeRange(transaction.appointmentDate)} để có thể thấy được mã xác nhận và hoàn thành giao dịch.
+              </Text>
 
-            {transaction.status === "Pending" && (
-              <TouchableOpacity
-                style={styles.verifyButton}
-                onPress={() => {
-                  setSelectedTransaction(transaction);
-                  setShowModal(true);
-                  setShowTransactionId(false);
-                  setVerificationInput("");
-                }}
-              >
-                <Text style={styles.verifyButtonText}>Xác thực giao dịch</Text>
-              </TouchableOpacity>
-            )}
+            </View>
 
-            {transaction.status === "Pending" && (
-              <>
-                <TouchableOpacity
-                  style={styles.detailsButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Thông tin chi tiết",
-                      `Bên gửi:
-      • Địa chỉ: ${transaction.senderAddress}
-      • Số điện thoại: ${transaction.senderPhone}
-      • Tọa độ: ${transaction.senderAddressCoordinates.latitude}, ${transaction.senderAddressCoordinates.longitude}
-
-      Bên nhận:
-      • Địa chỉ: ${transaction.recipientAddress}
-      • Số điện thoại: ${transaction.recipientPhone} 
-      • Tọa độ: ${transaction.recipientAddressCoordinates.latitude}, ${transaction.recipientAddressCoordinates.longitude}`,
-                      [
-                        {
-                          text: "Đóng",
-                          style: "cancel",
-                        },
-                        {
-                          text: "Mở bản đồ",
-                          onPress: () => {
-                            const data: LocationMap = {
-                              latitude: parseFloat(
-                                transaction.recipientAddressCoordinates.latitude
-                              ),
-                              longitude: parseFloat(
-                                transaction.recipientAddressCoordinates
-                                  .longitude
-                              ),
-                            };
-                            setLocation(data);
-                            setShowMapModal(true);
-                          },
-                        },
-                      ]
-                    );
-                  }}
-                >
-                  <View style={styles.detailsButtonContent}>
-                    <Icon name="info" size={20} color={Colors.orange500} />
-                    <Text style={styles.detailsButtonText}>
-                      Chi tiết giao dịch
+            {transaction.status === "Pending" &&
+              checkRole(transaction) === "requester" && (
+                <>
+                  <TouchableOpacity
+                    style={styles.verifyButton}
+                    onPress={() => {
+                      setSelectedTransaction(transaction);
+                      setShowModal(true);
+                      setVerificationInput("");
+                    }}
+                  >
+                    <Text style={styles.verifyButtonText}>
+                      Xem mã định danh
                     </Text>
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.detailsButton}
-                  onPress={() => {
-                    const data: LocationMap = {
-                      latitude: parseFloat(
-                        transaction.recipientAddressCoordinates.latitude
-                      ),
-                      longitude: parseFloat(
-                        transaction.recipientAddressCoordinates.longitude
-                      ),
-                    };
-                    console.log(data);
-                    setLocation(data);
-                    setShowMapModal(true);
-                  }}
-                >
-                  <View style={styles.detailsButtonContent}>
-                    <Icon name="map" size={20} color={Colors.orange500} />
-                    <Text style={styles.detailsButtonText}>Xem địa chỉ</Text>
-                  </View>
-                </TouchableOpacity>
-              </>
-            )}
+                  <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => {
+                      const data: LocationMap = {
+                        latitude: parseFloat(
+                          transaction.charitarianAddress.addressCoordinates.latitude
+                        ),
+                        longitude: parseFloat(
+                          transaction.charitarianAddress.addressCoordinates.longitude
+                        ),
+                      };
+                      setLocation(data);
+                      setShowMapModal(true);
+                    }}
+                  >
+                    <View style={styles.detailsButtonContent}>
+                      <Icon name="map" size={20} color={Colors.orange500} />
+                      <Text style={styles.detailsButtonText}>Xem địa chỉ</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => {
+                      console.log("Gọi điện");
+                    }}
+                  >
+                    <View style={styles.detailsButtonContent}>
+                      <Icon name="phone" size={20} color={Colors.orange500} />
+                      <Text style={styles.detailsButtonText}>Gọi điện</Text>
+                    </View>
+                  </TouchableOpacity>
+                </>
+              )}
+
+            {transaction.status === "Pending" &&
+              checkRole(transaction) === "charitarian" && (
+                <>
+                  <TouchableOpacity
+                    style={styles.verifyButton}
+                    onPress={() => {
+                      setSelectedTransaction(transaction);
+                      setShowModal(true);
+                      setVerificationInput("");
+                    }}
+                  >
+                    <Text style={styles.verifyButtonText}>
+                      Xác thực giao dịch
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => {
+                      console.log("Gọi điện");
+                    }}
+                  >
+                    <View style={styles.detailsButtonContent}>
+                      <Icon name="phone" size={20} color={Colors.orange500} />
+                      <Text style={styles.detailsButtonText}>Gọi điện</Text>
+                    </View>
+                  </TouchableOpacity>
+                </>
+              )}
 
             {transaction.status === "Completed" && (
               <>
@@ -508,7 +502,11 @@ const userId = useAuthCheck().userData.userId;
                     onPress={() => handleOpenRatingModal(transaction)}
                   >
                     <View style={styles.detailsButtonContent}>
-                      <Icon name="drive-file-rename-outline" size={20} color={Colors.orange500} />
+                      <Icon
+                        name="drive-file-rename-outline"
+                        size={20}
+                        color={Colors.orange500}
+                      />
                       <Text style={styles.detailsButtonText}>Đánh giá</Text>
                     </View>
                   </TouchableOpacity>
@@ -533,18 +531,17 @@ const userId = useAuthCheck().userData.userId;
                     </View>
                   </>
                 )}
-                
+
                 <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => handleOpenReportModal(transaction)}
-                  >
-                    <View style={styles.detailsButtonContent}>
-                      <Icon name="report" size={20} color={Colors.orange500} />
-                      <Text style={styles.detailsButtonText}>Báo cáo</Text>
-                    </View>
-                  </TouchableOpacity>
+                  style={styles.detailsButton}
+                  onPress={() => handleOpenReportModal(transaction)}
+                >
+                  <View style={styles.detailsButtonContent}>
+                    <Icon name="report" size={20} color={Colors.orange500} />
+                    <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                  </View>
+                </TouchableOpacity>
               </>
-              
             )}
           </View>
         ))}
@@ -557,22 +554,23 @@ const userId = useAuthCheck().userData.userId;
       />
 
       <Modal visible={showModal} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Xác thực giao dịch</Text>
-            {selectedTransaction && (
-              <View style={styles.idContainer}>
-                {qrCodeBase64 && (
-                  <Image
-                    source={{
-                      uri: qrCodeBase64
-                    }}
-                    style={{ width: 200, height: 200 }}
-                  />
-                )}
-              </View>
-            )}
-
+        <TouchableWithoutFeedback onPress={() => setShowModal(false)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Mã định danh</Text>
+              {selectedTransaction && (
+                <View style={styles.idContainer}>
+                  {qrCodeBase64 && (
+                    <Image
+                      source={{
+                        uri: qrCodeBase64,
+                      }}
+                      style={{ width: 220, height: 220 }}
+                    />
+                  )}
+                </View>
+              )}
+              {/* 
             <View style={styles.idContainer}>
               {showTransactionId && selectedTransaction && (
                 <View style={styles.transactionIdBox}>
@@ -596,36 +594,38 @@ const userId = useAuthCheck().userData.userId;
               placeholder="Nhập mã định danh"
               value={verificationInput}
               onChangeText={setVerificationInput}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setShowModal(false);
-                  setShowTransactionId(false);
-                  setVerificationInput("");
-                }}
-              >
-                <Text style={styles.buttonText}>Hủy</Text>
-              </TouchableOpacity>
-              {selectedTransaction && (
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.rejectButton]}
-                  onPress={() => handleReject(selectedTransaction.id)}
-                >
-                  <Text style={styles.buttonText}>Từ chối</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={[styles.modalButton, styles.verifyButton]}
-                onPress={handleVerification}
-              >
-                <Text style={styles.buttonText}>Xác thực</Text>
-              </TouchableOpacity>
+            /> */}
+              {selectedTransaction &&
+                checkRole(selectedTransaction) === "charitarian" && (
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.cancelButton]}
+                      onPress={() => {
+                        setShowModal(false);
+                        setVerificationInput("");
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Hủy</Text>
+                    </TouchableOpacity>
+                    {selectedTransaction && (
+                      <TouchableOpacity
+                        style={[styles.modalButton, styles.rejectButton]}
+                        onPress={() => handleReject(selectedTransaction.id)}
+                      >
+                        <Text style={styles.buttonText}>Từ chối</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.verifyButton]}
+                      onPress={handleVerification}
+                    >
+                      <Text style={styles.buttonText}>Xác nhận giao dịch</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       <UserRatingModal
@@ -633,8 +633,14 @@ const userId = useAuthCheck().userData.userId;
         onClose={() => setIsRatingModalVisible(false)}
         onSubmitRating={handleRating}
         userTransactionToRate={{
-          userId: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderId : selectedTransaction?.recipientId || "",
-          userName: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderName : selectedTransaction?.senderItemName || "",
+          userId:
+            userId === selectedTransaction?.charitarian.id
+              ? selectedTransaction?.requester.id
+              : selectedTransaction?.charitarian.id || "",
+          userName:
+            userId === selectedTransaction?.charitarian.id
+              ? selectedTransaction?.requester.name || ""
+              : selectedTransaction?.charitarian.name || "",
           transactionId: selectedTransaction?.id || "",
         }}
       />
@@ -644,8 +650,14 @@ const userId = useAuthCheck().userData.userId;
         onClose={() => setIsReportModalVisible(false)}
         onSubmitRating={handleReport}
         userTransactionToRate={{
-          userId: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderId : selectedTransaction?.recipientId || "",
-          userName: userId === selectedTransaction?.recipientId ? selectedTransaction?.senderName : selectedTransaction?.senderItemName || "",
+          userId:
+            userId === selectedTransaction?.charitarian.id
+              ? selectedTransaction?.requester.id
+              : selectedTransaction?.charitarian.id || "",
+          userName:
+            userId === selectedTransaction?.charitarian.id
+              ? selectedTransaction?.requester.name || ""
+              : selectedTransaction?.charitarian.name || "",
           transactionId: selectedTransaction?.id || "",
         }}
       />
@@ -792,7 +804,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 12,
     textAlign: "center",
     color: "#333",
   },

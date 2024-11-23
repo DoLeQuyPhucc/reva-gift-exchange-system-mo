@@ -41,20 +41,21 @@ const ProfileDetailScreen = () => {
     id: '',
     username: '',
     role: '',
-    profileURL: '',
     fullname: '',
-    firstName: '',
-    lastName: '',
     email: '',
     phone: '',
     profilePicture: DEFAULT_PROFILE_PICTURE,
-    address: '',
+    address: {
+      addressId: "",
+      address: "",
+      addressCoordinates: {
+        latitude: "",
+        longitude: ""
+      },
+      isDefault: false
+    },
     dob: null,
     gender: null,
-    addressCoordinates: {
-      latitude: '',
-      longitude: '',
-    },
     point: 0,
     dateJoined: '',
   });
@@ -259,8 +260,8 @@ const ProfileDetailScreen = () => {
           <Text style={styles.label}>Address</Text>
           <TextInput
             style={styles.input}
-            value={formData.address}
-            onChangeText={(text) => setFormData({ ...formData, address: text })}
+            value={formData.address.address}
+            onChangeText={(text) => setFormData({ ...formData, address: { ...formData.address, address: text } })}
             editable={isEditing}
             multiline
           />

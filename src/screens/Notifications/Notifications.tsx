@@ -1,7 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet, RefreshControl, ScrollView, ActivityIndicator, Animated } from 'react-native';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Notification, useNotificationStore } from '@/stores/notificationStore';
+import { useNotificationStore } from '@/stores/notificationStore';
 import axiosInstance from '@/src/api/axiosInstance';
+import { Notification } from '@/src/shared/type';
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications } = useNotificationStore();
@@ -83,15 +84,15 @@ export default function NotificationsScreen() {
         ]}
       >
         <TouchableOpacity
-          onPress={() => !notification.read && notification.id && markAsRead(notification.id)}
+          onPress={() => !notification.isRead && notification.id && markAsRead(notification.id)}
           style={[
             styles.notificationContent,
-            !notification.read && styles.unreadNotification
+            !notification.isRead && styles.unreadNotification
           ]}
         >
           <View style={styles.notificationHeader}>
             <Text style={styles.notificationTime}>{formattedDate}</Text>
-            {!notification.read && (
+            {!notification.isRead && (
               <View style={styles.unreadIndicator} />
             )}
           </View>
@@ -100,7 +101,7 @@ export default function NotificationsScreen() {
             {parsedData.message}
           </Text>
           
-          {!notification.read && (
+          {!notification.isRead && (
             <Text style={styles.tapToMark}>Tap to mark as read</Text>
           )}
         </TouchableOpacity>

@@ -48,8 +48,9 @@ const HomeScreen: React.FC = () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       setUserId(userId || '');
-      const response = await axiosInstance.get('/items');
+      const response = await axiosInstance.get('items');
       const productsData = response.data.data;
+      console.log(productsData.length)
       setProducts(productsData);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -64,15 +65,16 @@ const HomeScreen: React.FC = () => {
 
   const { refreshing, refreshControl } = useRefreshControl(fetchProducts);
 
-  const categories = [...new Set(products.map((product) => product.category))];
+  const categories = [...new Set(products.map((product) => product.subCategory.category.name))];
 
   const filteredProducts = products
-    .filter((product) => product.owner_id.toLowerCase().trim() !== userId.toLowerCase().trim())
+    .filter((product) => {
+      return product.owner_id !== userId})
     .filter((product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter((product) => (selectedCategory ? product.category === selectedCategory : true))
+    .filter((product) => (selectedCategory ? product.subCategory.category.name === selectedCategory : true))
     .sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -123,7 +125,7 @@ const HomeScreen: React.FC = () => {
             </View>
           )}
           <View style={[styles.badge, styles.outlineBadge]}>
-            <Text style={styles.outlineBadgeText}>{product.category}</Text>
+            <Text style={styles.outlineBadgeText}>{product.subCategory.category.name}</Text>
           </View>
         </View>
       </View>

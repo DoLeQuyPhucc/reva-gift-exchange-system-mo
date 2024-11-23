@@ -9,7 +9,6 @@ import {
   Alert,
   BackHandler,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Spacing from "@/src/constants/Spacing";
 import FontSize from "@/src/constants/FontSize";
 import Colors from "@/src/constants/Colors";
@@ -18,12 +17,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AppTextInput from "@/src/components/AppTextInput";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { useFocusEffect } from "@react-navigation/native";
-import axiosInstance from "@/src/api/axiosInstance";
-import { User } from "@/src/shared/type";
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 

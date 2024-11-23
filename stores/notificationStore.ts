@@ -2,14 +2,7 @@ import { create } from "zustand";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { useAuthStore } from "./authStore";
 import Toast from "react-native-toast-message";
-
-export interface Notification {
-  id?: string;
-  type?: string;
-  data: string;
-  read?: boolean;
-  createdAt?: string | Date;
-}
+import { Notification } from "@/src/shared/type";
 
 interface NotificationState {
   connection: HubConnection | null;
