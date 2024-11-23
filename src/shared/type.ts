@@ -117,6 +117,12 @@ export interface TransactionRatingType {
   rating: number;
 }
 
+export interface TransactionReportType {
+  reportedId: string;
+  transactionId: string;
+  reasons: string[];
+}
+
 export interface Category {
   id: string;
   name: string;
