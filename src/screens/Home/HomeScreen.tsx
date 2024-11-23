@@ -19,8 +19,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@/src/hooks/useNavigation';
 import { Product } from '@/src/shared/type';
 import { useRefreshControl } from '@/src/hooks/useRefreshControl';
-import { useFocusEffect } from 'expo-router';
-
 interface SortOption {
   value: 'createdAt' | 'name' | 'condition';
   label: string;
@@ -33,7 +31,6 @@ const sortOptions: SortOption[] = [
 ];
 
 const { width } = Dimensions.get('window');
-
 
 const HomeScreen: React.FC = () => {
 
@@ -175,12 +172,12 @@ const HomeScreen: React.FC = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search"
-        value={searchTerm}
-        onChangeText={setSearchTerm}
-      />
+      <View style={styles.searchContainer}>
+        <TextInput style={styles.searchInput} placeholder="Search..." />
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+          <Icon name="notifications" size={24} color={Colors.text} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.filterHeader}>
         <View style={styles.filterTitleContainer}>
           <Icon name="filter-alt" size={20} />
@@ -275,6 +272,19 @@ const HomeScreen: React.FC = () => {
 }
 
 const styles = StyleSheet.create({
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderColor: Colors.text,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+  },
   searchBar: {
     paddingVertical: 8,
     paddingHorizontal: 16,
