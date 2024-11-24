@@ -1,11 +1,10 @@
 import { View, Text, TouchableOpacity, StyleSheet, RefreshControl, ScrollView, ActivityIndicator, Animated } from 'react-native';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useNotificationStore } from '@/stores/notificationStore';
+import { Notification, useNotificationStore } from '@/stores/notificationStore';
 import axiosInstance from '@/src/api/axiosInstance';
-import { Notification } from '@/src/shared/type';
 import { formatDate } from '@/src/shared/formatDate';
 import { useAuthCheck } from '@/src/hooks/useAuth';
-import { useNavigation } from '@/hooks/useNavigation';
+import { useNavigation } from '@/src/hooks/useNavigation';
 import { Alert } from 'react-native';
 
 export default function NotificationsScreen() {
@@ -13,7 +12,7 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   
   const { isAuthenticated } = useAuthCheck();
   const navigation = useNavigation();
@@ -42,6 +41,7 @@ export default function NotificationsScreen() {
     }
   };
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const fadeIn = useCallback(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -49,7 +49,6 @@ export default function NotificationsScreen() {
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
-
   const fetchNotifications = async () => {
     try {
       if (!isAuthenticated) {
@@ -72,13 +71,11 @@ export default function NotificationsScreen() {
       setLoading(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchNotifications();
     setRefreshing(false);
   };
-
   const markAsRead = async (notificationId: string) => {
     try {
       await axiosInstance.put(`notification/mark-as-read/${notificationId}`);
@@ -91,17 +88,27 @@ export default function NotificationsScreen() {
       console.error('Error marking notification as read:', error);
     }
   };
-
   useEffect(() => {
     fetchNotifications();
   }, []);
-
   const renderNotification = useCallback(({ item: notification, index }: { item: Notification, index: number }) => {
     const formattedDate = notification.createdAt 
-      ? formatDate(notification.createdAt.toLocaleString())
+      ? formatDate(notification.createdAt.toLocaleString()) 
       : 'Unknown date';
     
-    const parsedData = JSON.parse(notification.data);
+      let parsedData;
+  try {
+    // Kiểm tra xem data có phải là string JSON không
+    parsedData = typeof notification.data === 'string' 
+      ? JSON.parse(notification.data)
+      : notification.data;
+  } catch (error) {
+    console.error('Error parsing notification data:', error);
+    // Fallback nếu parse thất bại
+    parsedData = {
+      message: notification.data || 'Invalid notification data'
+    };
+  }
 
     return (
       <Animated.View 
@@ -119,15 +126,15 @@ export default function NotificationsScreen() {
         ]}
       >
         <TouchableOpacity
-          onPress={() => !notification.isRead && notification.id && markAsRead(notification.id)}
+          onPress={() => !notification.read && notification.id && markAsRead(notification.id)}
           style={[
             styles.notificationContent,
-            !notification.isRead && styles.unreadNotification
+            !notification.read && styles.unreadNotification
           ]}
         >
           <View style={styles.notificationHeader}>
             <Text style={styles.notificationTime}>{formattedDate}</Text>
-            {!notification.isRead && (
+            {!notification.read && (
               <View style={styles.unreadIndicator} />
             )}
           </View>
@@ -136,14 +143,13 @@ export default function NotificationsScreen() {
             {parsedData.message}
           </Text>
           
-          {!notification.isRead && (
-            <Text style={styles.tapToMark}>Nhấn vào để đọc</Text>
+          {!notification.read && (
+            <Text style={styles.tapToMark}>Nhấn để đánh dấu đã đọc!</Text>
           )}
         </TouchableOpacity>
       </Animated.View>
     );
   }, [fadeAnim, markAsRead]);
-
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -151,7 +157,6 @@ export default function NotificationsScreen() {
       </View>
     );
   }
-
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -160,12 +165,11 @@ export default function NotificationsScreen() {
           style={styles.retryButton}
           onPress={fetchNotifications}
         >
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.retryText}>Thử lại</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
   return (
     <ScrollView
       style={styles.container}
@@ -178,10 +182,10 @@ export default function NotificationsScreen() {
       }
     >
       <View style={styles.notificationContainer}>
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={styles.title}>Thông báo</Text>
         {notifications.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
+            <Text style={styles.emptyText}>Không có thông báo nào hết</Text>
           </View>
         ) : (
           notifications.map((notification, index) => 
@@ -192,12 +196,11 @@ export default function NotificationsScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingVertical: 16,
     backgroundColor: '#F8F9FA',
-    paddingVertical: 16
   },
   centerContainer: {
     flex: 1,
