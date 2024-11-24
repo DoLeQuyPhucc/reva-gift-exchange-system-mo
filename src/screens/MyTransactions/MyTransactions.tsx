@@ -42,9 +42,11 @@ const MyTransactions = () => {
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const userId = useAuthCheck().userData.userId;
 
+  const [isConfirm, setIsConfirm] = useState(false);
+
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [isConfirm]);
 
   useEffect(() => {
     if (selectedTransaction?.status === "Pending") {
@@ -93,18 +95,18 @@ const MyTransactions = () => {
   };
 
   const handleVerification = async () => {
-    if (selectedTransaction && verificationInput === selectedTransaction.id) {
+    if (selectedTransaction) {
       const res = await axiosInstance.put(
         `transaction/update-status/${selectedTransaction.id}`,
         "Completed"
       );
       if (res.data.isSuccess === true) {
-        Alert.alert("Thành công", "Mã định danh trùng khớp");
+        Alert.alert("Thành công", "Xác nhận giao dịch thành công.");
         setShowModal(false);
-        setVerificationInput("");
+        setIsConfirm(!isConfirm);
       }
     } else {
-      Alert.alert("Lỗi", "Mã định danh không trùng khớp");
+      Alert.alert("Lỗi", "Không tìm thấy giao dịch, vui lòng thử lại.");
     }
   };
 
@@ -125,6 +127,7 @@ const MyTransactions = () => {
             Alert.alert("Thành công", "Bạn đã từ chối giao dịch.");
             setShowModal(false);
             setVerificationInput("");
+            setIsConfirm(!isConfirm);
           }
         },
       },
@@ -157,7 +160,7 @@ const MyTransactions = () => {
 
   const getTransactionTitle = (transaction: Transaction) => {
     if (!transaction.requesterItem?.itemName) {
-      return `Giao dịch đăng ký nhận từ ${transaction.charitarian.name}`;
+      return `Giao dịch đăng ký nhận từ ${checkRole(transaction) === 'requester' ? 'bạn' :  transaction.requester.name}`;
     }
     return `Giao dịch giữa bạn và ${checkRole(transaction) === 'charitarian' ? transaction.requester.name :  transaction.charitarian.name}`;
   };
@@ -285,12 +288,11 @@ const MyTransactions = () => {
   const fetchQRCode = async (transactionId: string) => {
     try {
       const response = await axiosInstance.get(
-        `qr/generate?transactionId=${transactionId}`,
+        `qr/generateinfor?transactionId=${transactionId}`,
         {
           responseType: "arraybuffer",
         }
       );
-      console.log("QR code response:", response);
 
       // Convert binary data to base64
       const base64Image = `data:image/png;base64,${Buffer.from(
@@ -330,7 +332,7 @@ const MyTransactions = () => {
               </View>
             </View>
 
-            {transaction.requesterItem?.itemName !== "" ? (
+            {transaction.requesterItem ? (
               <View style={styles.productsContainer}>
                 <View style={styles.productCard}>
                   <Image
@@ -488,7 +490,7 @@ const MyTransactions = () => {
                 </>
               )}
 
-            {transaction.status === "Completed" && (
+            {transaction.status === "Completed" || transaction.status === "Not_Completed" && (
               <>
                 <TouchableOpacity
                   style={[styles.verifyButton, { opacity: 0.5 }]}
@@ -597,7 +599,8 @@ const MyTransactions = () => {
             /> */}
               {selectedTransaction &&
                 checkRole(selectedTransaction) === "charitarian" && (
-                  <View style={styles.modalButtons}>
+                  <View style={styles.modalButtonContainer}>
+                  <View style={styles.topButtonRow}>
                     <TouchableOpacity
                       style={[styles.modalButton, styles.cancelButton]}
                       onPress={() => {
@@ -607,21 +610,20 @@ const MyTransactions = () => {
                     >
                       <Text style={styles.buttonText}>Hủy</Text>
                     </TouchableOpacity>
-                    {selectedTransaction && (
-                      <TouchableOpacity
-                        style={[styles.modalButton, styles.rejectButton]}
-                        onPress={() => handleReject(selectedTransaction.id)}
-                      >
-                        <Text style={styles.buttonText}>Từ chối</Text>
-                      </TouchableOpacity>
-                    )}
                     <TouchableOpacity
-                      style={[styles.modalButton, styles.verifyButton]}
-                      onPress={handleVerification}
+                      style={[styles.modalButton, styles.rejectButton]}
+                      onPress={() => handleReject(selectedTransaction.id)}
                     >
-                      <Text style={styles.buttonText}>Xác nhận giao dịch</Text>
+                      <Text style={styles.buttonText}>Từ chối</Text>
                     </TouchableOpacity>
                   </View>
+                  <TouchableOpacity
+                    style={[styles.verifyButton, styles.bottomButton]}
+                    onPress={handleVerification}
+                  >
+                    <Text style={styles.buttonText}>Xác nhận giao dịch</Text>
+                  </TouchableOpacity>
+                </View>
                 )}
             </View>
           </View>
@@ -777,17 +779,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  verifyButton: {
-    backgroundColor: Colors.orange500,
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  verifyButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -844,15 +835,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
   },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
+  modalButtonContainer: {
+    width: '100%',
+  },
+  topButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  bottomButton: {
+    width: '100%',
+    padding: 12,
+    borderRadius: 8,
   },
   modalButton: {
-    flex: 1,
-    padding: 14,
+    padding: 12,
     borderRadius: 8,
+    flex: 0.48, // For top row buttons
+  },
+  verifyButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: Colors.orange500,
+  },
+  verifyButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
   rejectButton: {
     backgroundColor: "#f00",

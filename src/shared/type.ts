@@ -182,6 +182,7 @@ export interface Notification {
   id?: string;
   type?: string;
   data: string;
+  timestamp: string | Date;
   isRead?: boolean;
   createdAt?: string | Date;
 }

@@ -3,6 +3,10 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNotificationStore } from '@/stores/notificationStore';
 import axiosInstance from '@/src/api/axiosInstance';
 import { Notification } from '@/src/shared/type';
+import { formatDate } from '@/src/shared/formatDate';
+import { useAuthCheck } from '@/src/hooks/useAuth';
+import { useNavigation } from '@/hooks/useNavigation';
+import { Alert } from 'react-native';
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications } = useNotificationStore();
@@ -10,6 +14,33 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  
+  const { isAuthenticated } = useAuthCheck();
+  const navigation = useNavigation();
+
+  const handleAuthenticatedNavigation = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu đăng nhập',
+        'Vui lòng đăng nhập để sử dụng tính năng này',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { 
+            text: 'Đăng nhập', 
+            onPress: () => {
+              try {
+                navigation.navigate('LoginScreen', undefined);
+              } catch (error) {
+                console.error('Navigation error:', error);
+                Alert.alert('Lỗi', 'Không thể chuyển đến trang đăng nhập');
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+  };
 
   const fadeIn = useCallback(() => {
     Animated.timing(fadeAnim, {
@@ -21,6 +52,10 @@ export default function NotificationsScreen() {
 
   const fetchNotifications = async () => {
     try {
+      if (!isAuthenticated) {
+        handleAuthenticatedNavigation();
+        return;
+      }
       setError(null);
       const response = await axiosInstance.get('notification/all');
       
@@ -63,7 +98,7 @@ export default function NotificationsScreen() {
 
   const renderNotification = useCallback(({ item: notification, index }: { item: Notification, index: number }) => {
     const formattedDate = notification.createdAt 
-      ? new Date(notification.createdAt).toLocaleString()
+      ? formatDate(notification.createdAt.toLocaleString())
       : 'Unknown date';
     
     const parsedData = JSON.parse(notification.data);
@@ -102,7 +137,7 @@ export default function NotificationsScreen() {
           </Text>
           
           {!notification.isRead && (
-            <Text style={styles.tapToMark}>Tap to mark as read</Text>
+            <Text style={styles.tapToMark}>Nhấn vào để đọc</Text>
           )}
         </TouchableOpacity>
       </Animated.View>
@@ -162,6 +197,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+    paddingVertical: 16
   },
   centerContainer: {
     flex: 1,
