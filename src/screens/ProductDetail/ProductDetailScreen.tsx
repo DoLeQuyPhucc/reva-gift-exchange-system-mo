@@ -22,10 +22,9 @@ import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/src/constants/Colors";
 import MediaUploadSection from "@/src/components/MediaUploadSection";
 import * as ImagePicker from "expo-image-picker";
-import { Alert } from "react-native";
-
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { useNavigation } from "@/src/hooks/useNavigation";
+import { CustomAlert } from "@/src/components/CustomAlert";
 
 type TimeSlot = {
   id: string;
@@ -42,20 +41,18 @@ export default function ProductDetailScreen() {
   const route = useRoute<ProductDetailScreenRouteProp>();
   const itemId = route.params.productId;
 
-  const { isAuthenticated, isLoading } = useAuthCheck();
+  const { isAuthenticated } = useAuthCheck();
   const navigation = useNavigation();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
-  const [errorRequestMessage, setErrorRequestMessage] = useState("");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
 
   const [moreImages, setMoreImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [userItems, setUserItems] = useState<Product[]>([]);
   const [selectedUserItem, setSelectedUserItem] = useState<Product | null>(
@@ -75,6 +72,12 @@ export default function ProductDetailScreen() {
   const [timeInputError, setTimeInputError] = useState("");
   const [startHour, setStartHour] = useState(9);
   const [endHour, setEndHour] = useState(17);
+
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [alertData, setAlertData] = useState({
+    title: "",
+    message: "",
+  });
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -124,7 +127,6 @@ export default function ProductDetailScreen() {
 
       const formData = new FormData();
 
-      // Append file with proper structure
       const fileData = {
         uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
         name: filename,
@@ -135,12 +137,8 @@ export default function ProductDetailScreen() {
       const CLOUDINARY_URL =
         "https://api.cloudinary.com/v1_1/dt4ianp80/image/upload";
 
-      console.log("FormData file object:", fileData);
       formData.append("file", fileData as any);
       formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-      console.log("Cloudinary URL:", CLOUDINARY_URL);
-      console.log("Upload preset:", CLOUDINARY_UPLOAD_PRESET);
 
       const response = await fetch(CLOUDINARY_URL, {
         method: "POST",
@@ -151,11 +149,8 @@ export default function ProductDetailScreen() {
         },
       });
 
-      console.log("Response status:", response.status);
-
       // Get detailed error message if available
       const responseData = await response.json();
-      console.log("Response data:", responseData);
 
       if (!response.ok) {
         throw new Error(
@@ -190,11 +185,18 @@ export default function ProductDetailScreen() {
 
         const imageUrl = await uploadImageToCloudinary(uri);
         setMoreImages((prev) => [...prev, imageUrl]);
-        console.log("Image uploaded successfully:", imageUrl);
+        setAlertData({
+          title: "Thành công",
+          message: "Tải hình ảnh lên thành công!",
+        });
+        setShowAlertDialog(true);
       }
     } catch (error) {
-      console.error("Image upload error:", error);
-      Alert.alert("Upload Failed", "Please try again");
+      setAlertData({
+        title: "Thất bại",
+        message: "Tải hình ảnh lên thất bại! Vui lòng thử lại.",
+      });
+      setShowAlertDialog(true);
     } finally {
       setIsUploadingImage(false);
     }
@@ -224,32 +226,32 @@ export default function ProductDetailScreen() {
       // If startHour is less than or equal to endHour, generate range normally
       if (startHour <= endHour) {
         return Array.from(
-          { length: endHour - startHour }, 
+          { length: endHour - startHour },
           (_, i) => startHour + i
         );
-      } 
-      // If startHour is greater than endHour (crossing midnight), 
+      }
+      // If startHour is greater than endHour (crossing midnight),
       // generate range that wraps around 24 hours
       else {
         return [
           ...Array.from({ length: 24 - startHour }, (_, i) => startHour + i),
-          ...Array.from({ length: endHour + 1 }, (_, i) => i)
+          ...Array.from({ length: endHour + 1 }, (_, i) => i),
         ];
       }
     }
     // Fallback to full 24-hour range if no start/end hours are set
-    return Array.from({length: 24}, (_, i) => i);
+    return Array.from({ length: 24 }, (_, i) => i);
   };
-  
+
   // Generate hour and minute arrays
   const hours = generateHourRange();
-  const minutes = Array.from({length: 60}, (_, i) => i);
+  const minutes = Array.from({ length: 60 }, (_, i) => i);
 
   // Validate time input
   const validateTimeInput = () => {
     // Check if both hour and minute are selected
     if (selectedHour === null || selectedMinute === null) {
-      setTimeInputError('Vui lòng chọn đầy đủ giờ và phút');
+      setTimeInputError("Vui lòng chọn đầy đủ giờ và phút");
       return false;
     }
 
@@ -260,7 +262,7 @@ export default function ProductDetailScreen() {
     }
 
     // Clear any previous error
-    setTimeInputError('');
+    setTimeInputError("");
     return true;
   };
 
@@ -270,27 +272,29 @@ export default function ProductDetailScreen() {
     if (!validateTimeInput()) return;
 
     if (selectedTimeSlots.length >= 3) {
-      setTimeInputError('Bạn chỉ được chọn tối đa 3 khung thời gian');
+      setTimeInputError("Bạn chỉ được chọn tối đa 3 khung thời gian");
       return;
     }
 
     // Format time with leading zeros
-    const formattedHour = selectedHour!.toString().padStart(2, '0');
-    const formattedMinute = selectedMinute!.toString().padStart(2, '0');
+    const formattedHour = selectedHour!.toString().padStart(2, "0");
+    const formattedMinute = selectedMinute!.toString().padStart(2, "0");
     const timeStr = `${formattedHour}:${formattedMinute}:00`;
 
     // Construct date time string
-    const dateStr = selectedDate.toISOString().split('T')[0];
+    const dateStr = selectedDate.toISOString().split("T")[0];
     const dateTimeStr = `${dateStr} ${timeStr}`;
 
     const newSlot: TimeSlot = {
       id: Math.random().toString(),
       dateTime: dateTimeStr,
-      displayText: `${formattedHour}:${formattedMinute} ${formatDate_DD_MM_YYYY(selectedDate.toISOString())}`,
+      displayText: `${formattedHour}:${formattedMinute} ${formatDate_DD_MM_YYYY(
+        selectedDate.toISOString()
+      )}`,
     };
 
-    setSelectedTimeSlots(prev => [...prev, newSlot]);
-    
+    setSelectedTimeSlots((prev) => [...prev, newSlot]);
+
     // Reset selections
     setSelectedHour(null);
     setSelectedMinute(null);
@@ -350,13 +354,19 @@ export default function ProductDetailScreen() {
         // Reset form
         setSelectedTimeSlots([]);
         setRequestMessage("");
-        Alert.alert("Success", "Request created successfully");
+        setAlertData({
+          title: "Thành công",
+          message: "Yêu cầu đã được tạo thành công",
+        });
+        setShowAlertDialog(true);
       }
     } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to create request"
-      );
+      setAlertData({
+        title: "Thất bại",
+        message:
+          error instanceof Error ? error.message : "Bạn không thể tạo yêu cầu",
+      });
+      setShowAlertDialog(true);
     }
   };
 
@@ -379,10 +389,10 @@ export default function ProductDetailScreen() {
 
   // Render modal for hour or minute selection
   const renderPickerModal = (
-    visible: boolean, 
-    setVisible: (show: boolean) => void, 
-    items: number[], 
-    selectedItem: number | null, 
+    visible: boolean,
+    setVisible: (show: boolean) => void,
+    items: number[],
+    selectedItem: number | null,
     setSelectedItem: (item: number) => void,
     title: string
   ) => (
@@ -401,18 +411,20 @@ export default function ProductDetailScreen() {
                 key={item}
                 style={[
                   styles.pickerItem,
-                  selectedItem === item && styles.selectedPickerItem
+                  selectedItem === item && styles.selectedPickerItem,
                 ]}
                 onPress={() => {
                   setSelectedItem(item);
                   setVisible(false);
                 }}
               >
-                <Text style={[
-                  styles.pickerItemText,
-                  selectedItem === item && styles.selectedPickerItemText
-                ]}>
-                  {item.toString().padStart(2, '0')}
+                <Text
+                  style={[
+                    styles.pickerItemText,
+                    selectedItem === item && styles.selectedPickerItemText,
+                  ]}
+                >
+                  {item.toString().padStart(2, "0")}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -446,7 +458,6 @@ export default function ProductDetailScreen() {
     return (
       <ScrollView horizontal style={styles.userItemsScroll}>
         {userItems
-          .filter((item) => !item.isGift)
           .map((item) => (
             <TouchableOpacity
               key={item.id}
@@ -506,7 +517,7 @@ export default function ProductDetailScreen() {
 
         <View style={styles.badgeContainer}>
           <View style={[styles.badge, { backgroundColor: Colors.orange500 }]}>
-            <Text style={styles.badgeText}>{product.category}</Text>
+            <Text style={styles.badgeText}>{product.subCategory.category.name}</Text>
           </View>
           <View style={[styles.badge, { backgroundColor: Colors.lightGreen }]}>
             <Text style={styles.badgeText}>{product.condition}</Text>
@@ -755,59 +766,59 @@ export default function ProductDetailScreen() {
                     )}
 
                     {/* Time Input */}
-      <View style={styles.inputContainer}>
-        <View style={styles.timeInputWrapper}>
-          <TouchableOpacity 
-            style={styles.timeInput} 
-            onPress={() => setShowHourModal(true)}
-          >
-            <Text style={styles.timeInputText}>
-              {selectedHour !== null 
-                ? selectedHour.toString().padStart(2, '0') 
-                : 'Giờ'}
-            </Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.colonText}>:</Text>
-          
-          <TouchableOpacity 
-            style={styles.timeInput} 
-            onPress={() => setShowMinuteModal(true)}
-          >
-            <Text style={styles.timeInputText}>
-              {selectedMinute !== null 
-                ? selectedMinute.toString().padStart(2, '0') 
-                : 'Phút'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={addTimeSlot}
-          >
-            <Text style={styles.addButtonText}>Thêm</Text>
-          </TouchableOpacity>
-        </View>
+                    <View style={styles.inputContainer}>
+                      <View style={styles.timeInputWrapper}>
+                        <TouchableOpacity
+                          style={styles.timeInput}
+                          onPress={() => setShowHourModal(true)}
+                        >
+                          <Text style={styles.timeInputText}>
+                            {selectedHour !== null
+                              ? selectedHour.toString().padStart(2, "0")
+                              : "Giờ"}
+                          </Text>
+                        </TouchableOpacity>
 
-         {/* Hour Modal */}
-      {renderPickerModal(
-        showHourModal, 
-        setShowHourModal, 
-        hours, 
-        selectedHour, 
-        setSelectedHour,
-        'Chọn giờ'
-      )}
+                        <Text style={styles.colonText}>:</Text>
 
-      {/* Minute Modal */}
-      {renderPickerModal(
-        showMinuteModal, 
-        setShowMinuteModal, 
-        minutes, 
-        selectedMinute, 
-        setSelectedMinute,
-        'Chọn phút'
-      )}
+                        <TouchableOpacity
+                          style={styles.timeInput}
+                          onPress={() => setShowMinuteModal(true)}
+                        >
+                          <Text style={styles.timeInputText}>
+                            {selectedMinute !== null
+                              ? selectedMinute.toString().padStart(2, "0")
+                              : "Phút"}
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.addButton}
+                          onPress={addTimeSlot}
+                        >
+                          <Text style={styles.addButtonText}>Thêm</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Hour Modal */}
+                      {renderPickerModal(
+                        showHourModal,
+                        setShowHourModal,
+                        hours,
+                        selectedHour,
+                        setSelectedHour,
+                        "Chọn giờ"
+                      )}
+
+                      {/* Minute Modal */}
+                      {renderPickerModal(
+                        showMinuteModal,
+                        setShowMinuteModal,
+                        minutes,
+                        selectedMinute,
+                        setSelectedMinute,
+                        "Chọn phút"
+                      )}
 
                       {/* Error Message */}
                       {timeInputError ? (
@@ -854,6 +865,14 @@ export default function ProductDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <CustomAlert
+        visible={showAlertDialog}
+        title={alertData.title}
+        message={alertData.message}
+        onConfirm={() => setShowAlertDialog(false)}
+        onCancel={() => setShowAlertDialog(false)}
+      />
     </ScrollView>
   );
 }
@@ -1274,35 +1293,35 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    width: '80%',
-    maxHeight: '70%',
-    backgroundColor: 'white',
+    width: "80%",
+    maxHeight: "70%",
+    backgroundColor: "white",
     borderRadius: 10,
     padding: 16,
   },
   pickerItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   selectedPickerItem: {
-    backgroundColor: '#FF5722',
+    backgroundColor: "#FF5722",
   },
   pickerItemText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
   },
   selectedPickerItemText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },
   timeInputText: {
-    color: '#777',
-    textAlign: 'center',
+    color: "#777",
+    textAlign: "center",
   },
 });

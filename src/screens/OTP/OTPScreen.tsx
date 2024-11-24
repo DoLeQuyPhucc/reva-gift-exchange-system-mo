@@ -84,26 +84,27 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           phone: phoneNumber
         });
       
-        const { token, refreshToken, userId, username, email, role, firstName, lastName, profileURL } = response.data.data;
+        const { token, refreshToken, userId, username, email, role, profileURL } = response.data.data;
       
         const user: User = {
           id: userId,
           username,
           role,
           phone: phoneNumber,
-          firstName,
-          lastName,
-          fullname: `${firstName} ${lastName}`,
-          profileURL,
+          fullname: "",
           email: email,
           profilePicture: profileURL || "",
-          address: "",
+          address: {
+            addressId: "",
+            address: "",
+            addressCoordinates: {
+              latitude: "",
+              longitude: ""
+            },
+            isDefault: false
+          },
           dob: null,
-          gender: null,
-          addressCoordinates: {
-            latitude: "",
-            longitude: ""
-          }
+          gender: null
         };
   
         const login = useAuthStore.getState().login;

@@ -16,6 +16,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { Request, User } from "@/src/shared/type";
 import { formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 import ImagesModalViewer from "@/src/components/modal/ImagesModalViewer";
+import { CustomAlert } from "@/src/components/CustomAlert";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -40,9 +41,15 @@ const MyRequests = () => {
   const [rejectMessage, setRejectMessage] = useState<string>("");
   const [showInfoUser, setShowInfoUser] = useState(false);
   const [user, setUser] = useState<User>({} as User);
-  
+
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [alertData, setAlertData] = useState({
+    title: "",
+    message: "",
+  });
 
   const handleImagePress = (listImages: string[]) => {
     setSelectedImages(listImages);
@@ -77,17 +84,18 @@ const MyRequests = () => {
       });
     };
 
-    return `${formatTime(startTime)} ${formatDate_DD_MM_YYYY(startTime.toISOString())}`;
+    return `${formatTime(startTime)} ${formatDate_DD_MM_YYYY(
+      startTime.toISOString()
+    )}`;
   };
 
   const handleApprove = async (requestId: string) => {
     if (!selectedTime) return;
+    console.log(requestId);
+    console.log(selectedTime);
     try {
       const requestResponse = await axiosInstance.post(
-        `request/approve/${requestId}`,
-        {
-          selectedTime: selectedTime,
-        }
+        `request/approve/${requestId}`
       );
 
       if (requestResponse.data.isSuccess === true) {
@@ -106,17 +114,25 @@ const MyRequests = () => {
           )
         );
 
-        const convertedDate = date.toISOString();
+        const convertedDate = date.toISOString().replace("Z", "");
         const transactionData = {
           requestId: requestId,
           appointmentDate: convertedDate,
         };
+
+        console.log(transactionData);
         await axiosInstance.post(`transaction/create`, transactionData);
       }
       fetchRequests();
       setShowTimeModal(false);
       setSelectedRequest(null);
       setSelectedTime(null);
+
+      setAlertData({
+        title: "Thành công",
+        message: "Chấp nhận yêu cầu thành công!",
+      });
+      setShowAlertDialog(true);
     } catch (error) {
       console.error("Error approving request:", error);
     }
@@ -131,18 +147,27 @@ const MyRequests = () => {
     } catch (error) {
       console.error("Error fetching user info:", error);
     }
-  }
+  };
 
   const handleReject = async (requestId: string) => {
     try {
-      const data = {reject_message: rejectMessage};
-      const response = await axiosInstance.post(`request/reject/${requestId}`, data);
+      const data = { reject_message: rejectMessage };
+      const response = await axiosInstance.post(
+        `request/reject/${requestId}`,
+        data
+      );
 
       if (response.data.isSuccess === true) {
         fetchRequests();
         setShowRejectModal(false);
         setRejectMessage("");
       }
+
+      setAlertData({
+        title: "Thành công",
+        message: "Bạn đã từ chối yêu cầu này!",
+      });
+      setShowAlertDialog(true);
     } catch (error) {
       console.error("Error rejecting request:", error);
     }
@@ -151,16 +176,17 @@ const MyRequests = () => {
   const renderRequestCard = (request: Request, showActions = false) => (
     <View style={styles.card} key={request.id}>
       <View style={styles.cardHeader}>
-      <TouchableOpacity onPress={() => handleShowInfoUser(request.requesterId)}>
-        <View style={styles.userInfo}>
-          <Image
-            source={{ uri: request.requesterImage }}
-            style={styles.avatar}
-          />
-          <Text style={styles.name}>{request.requesterName}</Text>
-        </View>
-
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleShowInfoUser(request.requester.id)}
+        >
+          <View style={styles.userInfo}>
+            <Image
+              source={{ uri: request.requester.image }}
+              style={styles.avatar}
+            />
+            <Text style={styles.name}>{request.requester.name}</Text>
+          </View>
+        </TouchableOpacity>
         <View
           style={[
             styles.statusBadge,
@@ -185,18 +211,30 @@ const MyRequests = () => {
       </View>
 
       <View style={styles.itemsContainer}>
-        {request.requesterItemId || request.requestImages.length > 0 ? (
+        {request.requesterItem?.itemId || request.requestImages.length > 0 ? (
           // Trường hợp trao đổi bình thường
           <>
             <View style={styles.itemCard}>
-            <TouchableOpacity onPress={() => handleImagePress(request.requesterItemId ? request.requesterItemImages : request.requestImages)}>
-              <Image
-                source={{ uri: request.requesterItemImages[0] || request.requestImages[0] }}
-                style={styles.itemImage}
-              />
+              <TouchableOpacity
+                onPress={() =>
+                  handleImagePress(
+                    request.requesterItem?.itemId
+                      ? request.requesterItem?.itemImages
+                      : request.requestImages
+                  )
+                }
+              >
+                <Image
+                  source={{
+                    uri:
+                      request.requesterItem?.itemImages[0] ||
+                      request.requestImages[0],
+                  }}
+                  style={styles.itemImage}
+                />
               </TouchableOpacity>
               <Text style={styles.itemName} numberOfLines={2}>
-                {request.requesterItemName}
+                {request.requesterItem?.itemName}
               </Text>
             </View>
 
@@ -205,44 +243,46 @@ const MyRequests = () => {
             </View>
 
             <View style={styles.itemCard}>
-            <TouchableOpacity onPress={() => handleImagePress(request.recipientItemImages)}>
-              <Image
-                source={{ uri: request.recipientItemImages[0] }}
-                style={styles.itemImage}
-              />
+              <TouchableOpacity
+                onPress={() => handleImagePress(request.charitarianItem.itemImages)}
+              >
+                <Image
+                  source={{ uri: request.charitarianItem.itemImages[0] }}
+                  style={styles.itemImage}
+                />
               </TouchableOpacity>
               <Text style={styles.itemName} numberOfLines={2}>
-                {request.recipientItemName}
+                {request.charitarianItem.itemName}
               </Text>
             </View>
           </>
         ) : (
           // Trường hợp đăng ký nhận
           <View style={styles.singleItemContainer}>
-            <TouchableOpacity onPress={() => handleImagePress(request.recipientItemImages)}>
-            <Image
-              source={{ uri: request.recipientItemImages[0] }}
-              style={styles.singleItemImage}
-            />
+            <TouchableOpacity
+              onPress={() => handleImagePress(request.charitarianItem.itemImages)}
+            >
+              <Image
+                source={{ uri: request.charitarianItem.itemImages[0] }}
+                style={styles.singleItemImage}
+              />
             </TouchableOpacity>
             <Text style={styles.itemName} numberOfLines={2}>
-              {request.recipientItemName}
+              {request.charitarianItem.itemName}
             </Text>
           </View>
         )}
       </View>
 
-      
       {request.requestMessage ? (
         <View style={styles.itemMessageContainer}>
           <Text>Lời nhắn: {request.requestMessage}</Text>
         </View>
-      ): (
+      ) : (
         <View style={styles.itemMessageContainer}>
           <Text>*Không có lời nhắn nào được gửi tới bạn</Text>
         </View>
       )}
-
 
       {request.rejectMessage && (
         <Text style={styles.rejectMessage}>
@@ -391,22 +431,22 @@ const MyRequests = () => {
       <Modal visible={showRejectModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Bạn muốn từ chối giao dịch này?</Text>
-            <Text style={styles.modalDescription}>
-                    Nhập lời nhắn của bạn:
-                  </Text>
-                  <TextInput
-                    style={styles.requestInput}
-                    placeholder="Nhập tin nhắn..."
-                    value={rejectMessage}
-                    onChangeText={setRejectMessage}
-                    multiline
-                  />
-                  {rejectMessage.length > 99 && (
-                    <Text style={styles.textErrorMessage}>
-                      Lời nhắn của bạn không được vượt quá 100 ký tự.
-                    </Text>
-                  )}
+            <Text style={styles.modalTitle}>
+              Bạn muốn từ chối giao dịch này?
+            </Text>
+            <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
+            <TextInput
+              style={styles.requestInput}
+              placeholder="Nhập tin nhắn..."
+              value={rejectMessage}
+              onChangeText={setRejectMessage}
+              multiline
+            />
+            {rejectMessage.length > 99 && (
+              <Text style={styles.textErrorMessage}>
+                Lời nhắn của bạn không được vượt quá 100 ký tự.
+              </Text>
+            )}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
@@ -417,10 +457,7 @@ const MyRequests = () => {
                 <Text style={styles.modalButtonText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  styles.confirmButton,
-                ]}
+                style={[styles.modalButton, styles.confirmButton]}
                 onPress={() =>
                   selectedRequest?.id && handleReject(selectedRequest.id)
                 }
@@ -432,59 +469,54 @@ const MyRequests = () => {
         </View>
       </Modal>
       <Modal visible={showInfoUser} transparent animationType="slide">
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <View style={styles.profileHeader}>
-        <Image 
-          source={{ uri: user.profilePicture }} 
-          style={styles.profilePicture}
-        />
-        <Text style={styles.userName}>{user.firstName} {user.lastName}</Text>
-      </View>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.profileHeader}>
+              <Image
+                source={{ uri: user.profilePicture }}
+                style={styles.profilePicture}
+              />
+              <Text style={styles.userName}>
+                {user.username}
+              </Text>
+            </View>
 
-      <View style={styles.infoSection}>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email:</Text>
-          <Text style={styles.infoValue}>{user.email}</Text>
+            <View style={styles.infoSection}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Điểm:</Text>
+                <Text style={styles.infoValue}>{user.point}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Là thành viên từ:</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(user.dateJoined as string).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowInfoUser(false)}
+            >
+              <Text style={styles.closeButtonText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
         </View>
+      </Modal>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Phone:</Text>
-          <Text style={styles.infoValue}>{user.phone}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Address:</Text>
-          <Text style={styles.infoValue}>{user.address}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Points:</Text>
-          <Text style={styles.infoValue}>{user.point}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Member since:</Text>
-          <Text style={styles.infoValue}>
-            {new Date(user.dateJoined as string).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.closeButton}
-        onPress={() => setShowInfoUser(false)}
-      >
-        <Text style={styles.closeButtonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-
-<ImagesModalViewer 
-        images={selectedImages} 
+      <ImagesModalViewer
+        images={selectedImages}
         isVisible={isModalVisible}
         onClose={() => setModalVisible(false)}
+      />
+
+      <CustomAlert
+        visible={showAlertDialog}
+        title={alertData.title}
+        message={alertData.message}
+        onConfirm={() => setShowAlertDialog(false)}
+        onCancel={() => setShowAlertDialog(false)}
       />
     </View>
   );
@@ -736,10 +768,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     elevation: 2,
-    width: '48%',
-    alignItems: 'center'
+    width: "48%",
+    alignItems: "center",
   },
-  
+
   cancelButton: {
     backgroundColor: "#FF3B30",
   },
@@ -780,7 +812,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 16,
   },
-  
+
   modalDescription: {
     fontSize: 16,
     marginBottom: 16,
@@ -799,7 +831,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   profileHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   profilePicture: {
@@ -810,37 +842,37 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   infoSection: {
     gap: 12,
   },
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   infoLabel: {
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
     flex: 1,
   },
   infoValue: {
     flex: 2,
-    textAlign: 'right',
+    textAlign: "right",
   },
   closeButton: {
     marginTop: 20,
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
     fontSize: 16,
   },
 });

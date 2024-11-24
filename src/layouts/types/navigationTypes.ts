@@ -28,7 +28,6 @@ export type RootStackParamList = {
     category?: Category;
     categoryId?: string;
   };
-  Notifications: undefined;
   ProductDetail: { productId: string };
   ProfileDetail: undefined;
   MyProducts: undefined;
@@ -43,6 +42,7 @@ export type RootStackParamList = {
 };
 
 export type BottomTabParamList = {
+  Notifications: undefined;
   Home: undefined;
   Orders: undefined;
   Profile: undefined;

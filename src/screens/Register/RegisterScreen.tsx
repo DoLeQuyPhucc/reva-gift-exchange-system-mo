@@ -21,8 +21,6 @@ import {
   ScrollView,
 } from "react-native-gesture-handler";
 import axiosInstance from "@/src/api/axiosInstance";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { formatDateOnlyDate } from "@/src/shared/formatDate";
 import axios from "axios";
 import MapModal from "@/src/components/Map/MapModal";
 import { LocationMap } from "@/src/shared/type";
@@ -53,15 +51,8 @@ const RegisterScreen = () => {
   const navigation = useNavigation();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [username, setUsername] = useState("");
-  const [lastName, setLastName] = useState("");
   const [otp, setOTP] = useState('');
   const [showOTP, setShowOTP] = useState(false);
-
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [gender, setGender] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Address states
@@ -77,10 +68,6 @@ const RegisterScreen = () => {
   );
   const [selectedWard, setSelectedWard] = useState<Ward | null>(null);
   const [address, setAddress] = useState("");
-
-  const [latitude, setLatitude] = useState(0);
-  const [longitude, setLongitude] = useState(0);
-
   // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<(Province | District | Ward)[]>(
@@ -96,12 +83,6 @@ const RegisterScreen = () => {
     latitude: 0,
     longitude: 0,
   });
-
-  
-  const [markerPosition, setMarkerPosition] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
 
   // Fetch provinces on component mount
   useEffect(() => {
@@ -205,14 +186,7 @@ const RegisterScreen = () => {
   const resetForm = () => {
     setPhoneNumber("");
     setUsername("");
-    setLastName("");
-    setSelectedDate(new Date());
-    setGender("");
-    setPassword("");
-    setConfirmPassword("");
     setAddress("");
-    setLatitude(0);
-    setLongitude(0);
     setOTP("");
     setShowOTP(false);
   };
@@ -307,13 +281,6 @@ const RegisterScreen = () => {
       </View>
     </Modal>
   );
-
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setSelectedDate(selectedDate);
-    }
-  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

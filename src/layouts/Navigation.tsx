@@ -39,34 +39,34 @@ const tabBarProps: TabBarProps[] = [
   {
     route: 'Home',
     component: HomeScreen,
-    tabBarLabel: 'Home',
+    tabBarLabel: 'Trang chủ',
     tabBarIconProps: {
       iconType: Ionicons,
       iconName: 'home',
     },
   },
-  // {
-  //   route: 'Favorites',
-  //   component: FavoritesScreen,
-  //   tabBarLabel: 'Favorites',
-  //   tabBarIconProps: {
-  //     iconType: Ionicons,
-  //     iconName: 'favorite',
-  //   },
-  // },
-  // {
-  //   route: 'Notifications',
-  //   component: MapScreen,
-  //   tabBarLabel: 'Notifications',
-  //   tabBarIconProps: {
-  //     iconType: Ionicons,
-  //     iconName: 'notifications',
-  //   },
-  // },
+  {
+    route: 'Favorites',
+    component: FavoritesScreen,
+    tabBarLabel: 'Yêu thích',
+    tabBarIconProps: {
+      iconType: Ionicons,
+      iconName: 'favorite',
+    },
+  },
+  {
+    route: 'Notifications',
+    component: NotificationsScreen,
+    tabBarLabel: 'Thông báo',
+    tabBarIconProps: {
+      iconType: Ionicons,
+      iconName: 'notifications',
+    },
+  },
   {
     route: 'Profile',
     component: ProfileScreen,
-    tabBarLabel: 'Profile',
+    tabBarLabel: 'Cá nhân',
     tabBarIconProps: {
       iconType: Ionicons,
       iconName: 'person',
@@ -107,7 +107,7 @@ export default function Navigation() {
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
+          {/* <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} /> */}
           <Stack.Screen name="OTPScreen" component={OTPScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
           <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Thông tin cá nhân' }} />

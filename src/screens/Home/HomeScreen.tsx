@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,48 +11,49 @@ import {
   Dimensions,
   TextInput,
   Modal,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import axiosInstance from '@/src/api/axiosInstance';
-import Colors from '@/src/constants/Colors';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@/src/hooks/useNavigation';
-import { Product } from '@/src/shared/type';
-import { useRefreshControl } from '@/src/hooks/useRefreshControl';
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import axiosInstance from "@/src/api/axiosInstance";
+import Colors from "@/src/constants/Colors";
+import { useNavigation } from "@/src/hooks/useNavigation";
+import { Product } from "@/src/shared/type";
+import { useRefreshControl } from "@/src/hooks/useRefreshControl";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 interface SortOption {
-  value: 'createdAt' | 'name' | 'condition';
+  value: "createdAt" | "name" | "condition";
   label: string;
 }
 
 const sortOptions: SortOption[] = [
-  { value: 'createdAt', label: 'Mới nhất' },
-  { value: 'name', label: 'Tên' },
-  { value: 'condition', label: 'Tình trạng' },
+  { value: "createdAt", label: "Mới nhất" },
+  { value: "name", label: "Tên" },
+  { value: "condition", label: "Tình trạng" },
 ];
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 const HomeScreen: React.FC = () => {
-
   const navigation = useNavigation();
-  const [userId, setUserId] = useState('');
+  const userId = useAuthCheck().userData.userId;
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'name' | 'condition' | 'createdAt'>('createdAt');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"name" | "condition" | "createdAt">(
+    "createdAt"
+  );
   const [showSortModal, setShowSortModal] = useState(false);
 
   const fetchProducts = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      setUserId(userId || '');
-      const response = await axiosInstance.get('/items');
+      const response = await axiosInstance.get("items");
       const productsData = response.data.data;
       setProducts(productsData);
+      getFilterProducts(productsData);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
     }
@@ -64,32 +65,53 @@ const HomeScreen: React.FC = () => {
 
   const { refreshing, refreshControl } = useRefreshControl(fetchProducts);
 
-  const categories = [...new Set(products.map((product) => product.category))];
+  const categories = [
+    ...new Set(products.map((product) => product.subCategory.category.name)),
+  ];
 
-  const filteredProducts = products
-    .filter((product) => product.owner_id.toLowerCase().trim() !== userId.toLowerCase().trim())
-    .filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((product) => (selectedCategory ? product.category === selectedCategory : true))
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'condition':
-          return a.condition.localeCompare(b.condition);
-        case 'createdAt':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        default:
-          return 0;
-      }
-    });
+  const getFilterProducts = (products: Product[]) => {
+    const filteredProducts =
+      userId === ""
+        ? products
+        : products
+            .filter((product) => product.owner_id !== userId)
+            .filter((product) => product.available === true)
+            .filter(
+              (product) =>
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.description
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase())
+            )
+            .filter((product) =>
+              selectedCategory
+                ? product.subCategory.category.name === selectedCategory
+                : true
+            )
+            .sort((a, b) => {
+              switch (sortBy) {
+                case "name":
+                  return a.name.localeCompare(b.name);
+                case "condition":
+                  return a.condition.localeCompare(b.condition);
+                case "createdAt":
+                  return (
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                  );
+                default:
+                  return 0;
+              }
+            });
+    setFilteredProducts(filteredProducts);
+  };
 
   const renderProductCard = ({ item: product }: { item: Product }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+      onPress={() =>
+        navigation.navigate("ProductDetail", { productId: product.id })
+      }
     >
       <View style={styles.imageContainer}>
         <Image
@@ -116,21 +138,21 @@ const HomeScreen: React.FC = () => {
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{product.condition}</Text>
           </View>
-        {product.isGift && (
+          {product.isGift && (
             <View>
               <Icon name="card-giftcard" size={24} color={Colors.orange500} />
-              
             </View>
           )}
           <View style={[styles.badge, styles.outlineBadge]}>
-            <Text style={styles.outlineBadgeText}>{product.category}</Text>
+            <Text style={styles.outlineBadgeText}>
+              {product.subCategory.category.name}
+            </Text>
           </View>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  
   const renderSortModal = () => (
     <Modal
       visible={showSortModal}
@@ -154,10 +176,12 @@ const HomeScreen: React.FC = () => {
                 setShowSortModal(false);
               }}
             >
-              <Text style={[
-                styles.sortOptionText,
-                sortBy === option.value && styles.sortOptionTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.sortOptionText,
+                  sortBy === option.value && styles.sortOptionTextSelected,
+                ]}
+              >
                 {option.label}
               </Text>
               {sortBy === option.value && (
@@ -173,10 +197,18 @@ const HomeScreen: React.FC = () => {
   const renderHeader = () => (
     <View style={styles.header}>
       <View style={styles.searchContainer}>
-        <TextInput style={styles.searchInput} placeholder="Search..." />
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-          <Icon name="notifications" size={24} color={Colors.text} />
-        </TouchableOpacity>
+        <Icon name="search" size={20} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm sản phẩm..."
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+        />
+        {searchTerm ? (
+          <TouchableOpacity onPress={() => setSearchTerm("")}>
+            <Icon name="close" size={20} />
+          </TouchableOpacity>
+        ) : null}
       </View>
       <View style={styles.filterHeader}>
         <View style={styles.filterTitleContainer}>
@@ -190,7 +222,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.sortButtonContent}>
             <Icon name="sort" size={20} />
             <Text style={styles.sortButtonText}>
-              {sortOptions.find(option => option.value === sortBy)?.label}
+              {sortOptions.find((option) => option.value === sortBy)?.label}
             </Text>
             <Icon name="arrow-drop-down" size={20} />
           </View>
@@ -204,14 +236,14 @@ const HomeScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.categoryButton,
-            selectedCategory === '' && styles.selectedCategoryButton,
+            selectedCategory === "" && styles.selectedCategoryButton,
           ]}
-          onPress={() => setSelectedCategory('')}
+          onPress={() => setSelectedCategory("")}
         >
           <Text
             style={[
               styles.categoryButtonText,
-              selectedCategory === '' && styles.selectedCategoryButtonText,
+              selectedCategory === "" && styles.selectedCategoryButtonText,
             ]}
           >
             Tất cả
@@ -229,7 +261,8 @@ const HomeScreen: React.FC = () => {
             <Text
               style={[
                 styles.categoryButtonText,
-                selectedCategory === category && styles.selectedCategoryButtonText,
+                selectedCategory === category &&
+                  styles.selectedCategoryButtonText,
               ]}
             >
               {category}
@@ -254,46 +287,51 @@ const HomeScreen: React.FC = () => {
 
   return (
     <>
-    <FlatList
-      data={filteredProducts}
-      renderItem={renderProductCard}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={renderHeader}
-      numColumns={2}
-      columnWrapperStyle={styles.columnWrapper}
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshing={refreshing}
-      onRefresh={fetchProducts}
-    />
-    {renderSortModal()}
-  </>
+      <FlatList
+        data={filteredProducts}
+        renderItem={renderProductCard}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={fetchProducts}
+      />
+      {renderSortModal()}
+    </>
   );
-}
+};
 
 const styles = StyleSheet.create({
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    borderRadius: 8,
     marginBottom: 16,
+    elevation: 2,
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    borderColor: Colors.text,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingLeft: 8,
+    fontSize: 16,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchBar: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#D3D3D3',
+    borderColor: "#D3D3D3",
     borderRadius: 12,
     fontSize: 18,
     marginVertical: 16,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: "#F8F8F8",
   },
   container: {
     padding: 16,
@@ -301,26 +339,26 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
-    marginBottom: 16,
+    marginVertical: 16,
   },
   filterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   filterTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   filterTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   categoryScroll: {
     marginBottom: 16,
@@ -330,32 +368,32 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     marginRight: 8,
   },
   selectedCategoryButton: {
-    backgroundColor: '#f97316',
-    borderColor: '#f97316',
+    backgroundColor: "#f97316",
+    borderColor: "#f97316",
   },
   categoryButtonText: {
-    color: '#000',
+    color: "#000",
   },
   selectedCategoryButtonText: {
-    color: '#fff',
+    color: "#fff",
   },
   resultCount: {
-    color: '#666',
+    color: "#666",
     marginBottom: 16,
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   card: {
     width: (width - 48) / 2,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -368,36 +406,36 @@ const styles = StyleSheet.create({
     height: 150,
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
     padding: 8,
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   unavailableOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardContent: {
     padding: 12,
   },
   productName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
-    color: Colors.orange600
+    color: Colors.orange600,
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 8,
   },
   badgeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   badge: {
     paddingHorizontal: 8,
@@ -409,44 +447,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
-    backgroundColor: '#ef4444',
+    backgroundColor: "#ef4444",
   },
   outlineBadge: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
   badgeText: {
     fontSize: 12,
-    color: '#000',
+    color: "#000",
   },
   outlineBadgeText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   sortButton: {
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
+    borderColor: "#ccc",
+    backgroundColor: "#fff",
   },
   sortButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   sortButtonText: {
-    color: '#000',
-    fontWeight: '500',
+    color: "#000",
+    fontWeight: "500",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 16,
@@ -454,25 +492,25 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   sortOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   sortOptionText: {
     fontSize: 16,
-    color: '#000',
+    color: "#000",
   },
   sortOptionTextSelected: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 

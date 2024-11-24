@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, Button, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import axios from 'axios';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import axiosInstance from '@/src/api/axiosInstance';
 import Colors from '@/src/constants/Colors';
 import { Product } from '@/src/shared/type';
@@ -81,7 +80,7 @@ const MyProducts = () => {
             </View>
             <View style={styles.detailItem}>
               <Icon name="category" size={20} color={Colors.orange500} />
-              <Text style={styles.detailText}>Category: {item.category}</Text>
+              <Text style={styles.detailText}>Danh mục: {item.subCategory.category.name}</Text>
             </View>
             <View style={styles.detailItem}>
               <Icon name="now-widgets" size={20} color={Colors.orange500}/>

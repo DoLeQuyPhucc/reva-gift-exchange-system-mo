@@ -2,10 +2,25 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  category: string;
+  subCategory: {
+    id: string;
+    subCategoryName: string;
+    category: {
+      id: string;
+      name: string;
+    };
+  };
+  desiredSubCategory: {
+    id: string;
+    subCategoryName: string;
+    category: {
+      id: string;
+      name: string;
+    };
+  };
   condition: string;
   isGift: boolean;
-  point: number;
+  availableTime: string;
   owner_Name: string;
   owner_id: string;
   profilePicture: string;
@@ -17,94 +32,80 @@ export interface Product {
   quantity: number;
   dateRemaining: number;
   status: string;
-  availableTime: string;
+  address?: SubInfoAddress;
+}
+
+interface SubInfoAddress {
+  addressId: string;
+  address: string;
+  addressCoordinates: AddressCoordinates;
 }
 
 export interface User {
   id: string;
   username: string;
-  role: string;
-  profileURL: string;
-  fullname: string;
-  firstName: string;
-  lastName: string;
   email: string;
   phone: string;
   profilePicture: string;
-  address: string;
+  point?: number;
+  address: AddressData;
+  dateJoined?: string;
+
+  role: string;
+  fullname: string;
   dob: string | null;
   gender: string | null;
-  point?: number;
-  addressCoordinates: AddressCoordinates;
-  dateJoined?: string;
 }
 
 export interface Request {
   id: string;
   status: "Pending" | "Approved" | "Rejected";
-  requestMessage: string;
+  requestMessage: string | null;
   rejectMessage: string | null;
   createdAt: string;
   updatedAt: string;
 
-  // Recipient details
-  recipientId: string;
-  recipientName: string;
-  recipientImage: string;
-  recipientItemId: string;
-  recipientItemName: string;
-  recipientItemImages: string[];
-  recipientItemQuantity: number;
+  charitarianItem: SubInfoItem;
+  charitarian: SubInfoUser;
 
-  // Requester details
-  requesterId: string;
-  requesterName: string;
-  requesterImage: string;
-  requesterItemId: string | null;
-  requesterItemName: string | null;
-  requesterItemImages: string[];
-  requesterItemQuantity: number | null;
+  requester: SubInfoUser;
+  requesterItem: SubInfoItem | null;
+
   requestImages: string[];
-
-  // Appointment
   appointmentDate: string[];
+}
+
+interface SubInfoUser {
+  id: string;
+  name: string;
+  image: string;
+}
+interface SubInfoItem {
+  itemId: string;
+  itemName: string;
+  itemImages: string[];
+  itemQuantity: number;
 }
 
 export interface Transaction {
   id: string;
   status: string;
   requestId: string;
-  quantity: number;
 
-  // Sender details
-  senderId: string;
-  senderName: string;
-  senderProfileUrl: string;
-  senderItemId: string;
-  senderItemName: string;
-  senderItemImage: string[];
-  senderItemQuantity: number;
-  senderItemPoint: number;
-  senderAddress: string;
-  senderAddressCoordinates: AddressCoordinates;
-  senderPhone: string;
+  requester: SubInfoUser;
+  requesterItem: SubInfoItem | null;
 
-  // Recipient details
-  recipientId: string;
-  recipientName: string;
-  recipientProfileUrl: string;
-  recipientItemId: string;
-  recipientItemName: string;
-  recipientItemImage: string[];
-  recipientItemQuantity: number;
-  recipientItemPoint: number;
-  recipientAddress: string;
-  recipientAddressCoordinates: AddressCoordinates;
-  recipientPhone: string;
+  charitarian: SubInfoUser;
+  charitarianItem: SubInfoItem;
 
-  // Timestamps
   createdAt: string;
   appointmentDate: string;
+
+  charitarianAddress: SubInfoAddress;
+  charitarianPhone: string;
+
+  requesterAddress: SubInfoAddress;
+  requesterPhone: string;
 
   rating: number | null;
   ratingComment: string | null;
@@ -178,11 +179,12 @@ export interface LocationMap {
 }
 
 export interface Notification {
-  id: string;
-  type: string;
+  id?: string;
+  type?: string;
   data: string;
-  read: boolean;
-  createdAt: string;
+  timestamp: string | Date;
+  isRead?: boolean;
+  createdAt?: string | Date;
 }
 
 export interface NotificationGlobal {
