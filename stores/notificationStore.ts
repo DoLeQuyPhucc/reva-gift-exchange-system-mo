@@ -10,7 +10,7 @@ export interface Notification {
   createdAt?: string | Date;
 }
 
-const SIGNALR_URL = "http://10.0.3.2:6969/notificationsHub";
+const SIGNALR_URL = "http://10.0.3.2:6900/notificationsHub";
 const MAX_NOTIFICATIONS = 100; // Giới hạn số lượng thông báo để tránh memory leaks
 
 interface NotificationState {
