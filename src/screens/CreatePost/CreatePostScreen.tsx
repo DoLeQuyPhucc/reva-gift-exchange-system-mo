@@ -26,8 +26,7 @@ import useCategories from '@/src/hooks/useCategories';
 import useCreatePost from '@/src/hooks/useCreatePost';
 import { useCategoryStore } from '@/src/stores/categoryStore';
 import Colors from '@/src/constants/Colors';
-import DateTimePicker from 'react-native-modal-datetime-picker';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { CustomTimeSection } from '@/src/components/CustomTimeSection';
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, 'CreatePost'>;
@@ -112,10 +111,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [timePreference, setTimePreference] = useState<string>('all_day');
   const [customStartTime, setCustomStartTime] = useState<string>('09:00');
   const [customEndTime, setCustomEndTime] = useState<string>('21:00');
-  const [startDay, setStartDay] = useState<Date | null>(null);
-  const [endDay, setEndDay] = useState<Date | null>(null);
-  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
-  const [datePickerMode, setDatePickerMode] = useState<'start' | 'end'>('start');
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   useEffect(() => {
     if (addressData.length > 0) {
@@ -141,27 +137,22 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     { id: ItemCondition.USED, name: 'Đã sử dụng' },
   ];
 
-  const formatDateOnly = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
+  const WEEKDAYS = [
+    { label: "Thứ 2", value: "mon" },
+    { label: "Thứ 3", value: "tue" },
+    { label: "Thứ 4", value: "wed" },
+    { label: "Thứ 5", value: "thu" },
+    { label: "Thứ 6", value: "fri" },
+    { label: "Thứ 7", value: "sat" },
+    { label: "Chủ nhật", value: "sun" },
+  ];
 
-  const showDatePicker = (mode: 'start' | 'end') => {
-    setDatePickerMode(mode);
-    setDatePickerVisible(true);
-  };
-
-  const hideDatePicker = () => {
-    setDatePickerVisible(false);
-  };
-  
-
-  const handleDateConfirm = (date: Date) => {
-    if (datePickerMode === "start") {
-        setStartDay(date);
-    } else {
-        setEndDay(date);
-    }
-    setDatePickerVisible(false);
+  const handleDayToggle = (day: string) => {
+    setSelectedDays(prev => 
+      prev.includes(day) 
+        ? prev.filter(d => d !== day)
+        : [...prev, day]
+    );
   };
 
   const handlePostTypeChange = (type: 'exchange' | 'gift') => {
@@ -201,11 +192,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       case 'evening':
         return 'evening 17:00_21:00';
       case 'custom':
-        if (startDay && endDay && customStartTime && customEndTime) {
-          const daysOfWeek = formatDaysOfWeek(startDay, endDay);
-          return `custom ${customStartTime}_${customEndTime}_${daysOfWeek}`;
-        }
-        return "custom Invalid_Dates";
+        return `custom ${customStartTime}_${customEndTime}_${selectedDays.sort().join('_')}`;
       default:
         return '';
     }
@@ -645,75 +632,16 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           </RadioButton.Group>
 
           {timePreference === 'custom' && (
-            <View style={styles.customTimeContainer}>
-              <View style={styles.timePickerContainer}>
-                <Text>Từ:</Text>
-                <Picker
-                  selectedValue={customStartTime}
-                  style={styles.timePicker}
-                  onValueChange={(value) => setCustomStartTime(value)}
-                >
-                  {TIME_SLOTS.map((slot) => (
-                    <Picker.Item
-                      key={slot.value}
-                      label={slot.label}
-                      value={slot.value}
-                    />
-                  ))}
-                </Picker>
-              </View>
-              
-              <View style={styles.timePickerContainer}>
-                <Text>Đến:</Text>
-                <Picker
-                  selectedValue={customEndTime}
-                  style={styles.timePicker}
-                  onValueChange={(value) => setCustomEndTime(value)}
-                >
-                  {TIME_SLOTS.map((slot) => (
-                    <Picker.Item
-                      key={slot.value}
-                      label={slot.label}
-                      value={slot.value}
-                    />
-                  ))}
-                </Picker>
-              </View>
-
-              {timePreference === 'custom' && (
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => showDatePicker('start')}
-                  >
-                    <Text style={styles.buttonText}>
-                      {startDay ? `Ngày rảnh từ: ${startDay.toLocaleDateString()}` : "Chọn ngày rảnh"}
-                    </Text>
-                    <Icon name="calendar-outline" size={20} color="#fff" style={{ marginLeft: 4}}/>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => showDatePicker('end')}
-                  >
-                    <Text style={styles.buttonText}>
-                      {endDay ? `Đến: ${endDay.toLocaleDateString()}` : "Chọn ngày rảnh"}
-                    </Text>
-                    <Icon name="calendar-outline" size={20} color="#fff" style={{ marginLeft: 4}}/>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {isDatePickerVisible && (
-                <DateTimePicker
-                  isVisible={isDatePickerVisible}
-                  mode="date"
-                  onConfirm={handleDateConfirm}
-                  onCancel={hideDatePicker}
-                  minimumDate={new Date()}
-                  date={datePickerMode === 'start' ? (startDay || new Date()) : (endDay || new Date())}
-                />
-              )}
-            </View>
+            <CustomTimeSection
+              customStartTime={customStartTime}
+              setCustomStartTime={setCustomStartTime}
+              customEndTime={customEndTime}
+              setCustomEndTime={setCustomEndTime}
+              selectedDays={selectedDays}
+              handleDayToggle={handleDayToggle}
+              TIME_SLOTS={TIME_SLOTS}
+              WEEKDAYS={WEEKDAYS}
+            />
           )}
         </View>
 
@@ -917,12 +845,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
-  customTimeContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-  },
   timePickerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1006,6 +928,44 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     flex: 1,
     marginHorizontal: 5,
+  },
+  customTimeContainer: {
+    gap: 16,
+    marginTop: 16,
+  },
+  timeSection: {
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  weekdaySection: {
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  timePickersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  timePickerWrapper: {
+    flex: 1,
+  },
+  timeLabel: {
+    marginBottom: 8,
+  },
+  enhancedTimePicker: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    height: 48,
+  },
+  weekdayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  weekdayChip: {
+    marginBottom: 8,
   },
 });
 
