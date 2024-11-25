@@ -25,6 +25,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { CustomAlert } from "@/src/components/CustomAlert";
+import DateTimePickerCustom, { convertDayOfWeek } from "@/src/components/modal/DateTimePickerCustom";
 
 type TimeSlot = {
   id: string;
@@ -72,6 +73,7 @@ export default function ProductDetailScreen() {
   const [timeInputError, setTimeInputError] = useState("");
   const [startHour, setStartHour] = useState(9);
   const [endHour, setEndHour] = useState(17);
+  const [daysOnly, setDaysOnly] = useState("mon_tue_wed_thu_fri_sat_sun");
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [alertData, setAlertData] = useState({
@@ -208,10 +210,11 @@ export default function ProductDetailScreen() {
   };
 
   const setStartEndHours = (range: string) => {
-    const [type, hours] = range.split(" ");
+    const [type, hours, daysOnly] = range.split(" ");
     const [start, end] = hours.split("_").map((hour) => parseInt(hour));
     setStartHour(start);
     setEndHour(end);
+    setDaysOnly(daysOnly);
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -716,6 +719,10 @@ export default function ProductDetailScreen() {
                     Vui lòng chọn khung thời gian theo thời gian rãnh của chủ
                     sản phẩm
                   </Text>
+                  
+                  <Text style={styles.description}>
+                      {`Khung giờ: từ ${startHour}:00 - ${endHour - 1}:59, ${convertDayOfWeek(daysOnly)}`}
+                    </Text>
                   <Text style={styles.modalDescriptionSub}>
                     Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp
                     hành trao đổi. Bạn có thể chọn tối đa 3 khung giờ.
@@ -738,12 +745,6 @@ export default function ProductDetailScreen() {
                   </View>
 
                   <View style={styles.container}>
-                    <Text style={styles.description}>
-                      {`Khung giờ rãnh là các ngày trong tuần từ ${startHour}:00 - ${
-                        endHour - 1
-                      }:59`}
-                    </Text>
-
                     {/* Date Picker */}
                     <TouchableOpacity
                       style={styles.datePickerButton}
@@ -756,12 +757,19 @@ export default function ProductDetailScreen() {
                     </TouchableOpacity>
 
                     {showDatePicker && (
-                      <DateTimePicker
-                        value={selectedDate}
-                        mode="date"
-                        display="default"
-                        onChange={handleDateChange}
-                        minimumDate={new Date()}
+                      // <DateTimePicker
+                      //   value={selectedDate}
+                      //   mode="date"
+                      //   display="default"
+                      //   onChange={handleDateChange}
+                      //   minimumDate={new Date()}
+                      // />
+
+                      <DateTimePickerCustom
+                        date={selectedDate}
+                        setDate={setSelectedDate}
+                        allowedDays={daysOnly}
+                        onClose={() => setShowDatePicker(false)}
                       />
                     )}
 
@@ -927,10 +935,10 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     color: "#666",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   detailsContainer: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   detailItem: {
     flexDirection: "row",
