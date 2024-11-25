@@ -19,7 +19,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import axiosInstance from "@/src/api/axiosInstance";
 import { User } from "@/src/shared/type";
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 
 type OTPScreenProps = NativeStackScreenProps<RootStackParamList, 'OTPScreen'>;
 

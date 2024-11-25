@@ -4,8 +4,8 @@ import Navigation from "@/src/layouts/Navigation";
 import fonts from "@/src/config/fonts";
 import Toast from "react-native-toast-message";
 import { StripeProvider } from "@stripe/stripe-react-native";
-import { useNotificationStore } from "@/stores/notificationStore";
-import { useAuthStore } from "@/stores/authStore";
+import { useNotificationStore } from "@/src/stores/notificationStore";
+import { useAuthStore } from "@/src/stores/authStore";
 
 const STRIPE_KEY =
   'pk_test_51QG1BCFZYtuiwMkRanQqBx1ybBgNqkztXRBPBda7ETS0kE5o5rJmnzxx94u3EZg8GMlLOXMBZK7K23P9zlZKDVXo00gWFlfPc0';

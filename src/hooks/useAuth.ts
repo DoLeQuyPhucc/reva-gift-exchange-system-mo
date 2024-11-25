@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuthStore } from "@/src/stores/authStore";
 
 export const useAuthCheck = () => {
   const [isLoading, setIsLoading] = useState(true);

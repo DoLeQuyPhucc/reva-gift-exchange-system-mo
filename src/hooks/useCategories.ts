@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "@/api/axiosInstance";
-import { Category } from "@/shared/type";
+import { Category, SubCategory } from "@/shared/type";
 
-// Custom hook for fetching and managing categories
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +12,7 @@ export const useCategories = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axiosInstance.get("/category");
+      const response = await axiosInstance.get("category");
       setCategories(response.data.data);
     } catch (err) {
       setError("Failed to fetch categories");
@@ -22,20 +22,35 @@ export const useCategories = () => {
     }
   };
 
+  const getSubCategories = async (categoryId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await axiosInstance.get(`category/${categoryId}`);
+      setSubCategories(response.data.data.subCategories);
+    } catch (err) {
+      setError("Failed to fetch sub-categories");
+      console.error("Error fetching sub-categories:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     getCategories();
   }, []);
 
-  // Force refresh categories
   const refreshCategories = () => {
     getCategories();
   };
 
   return {
     categories,
+    subCategories,
     isLoading,
     error,
     refreshCategories,
+    getSubCategories,
   };
 };
 

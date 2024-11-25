@@ -40,7 +40,7 @@ const useCreatePost = () => {
       const response = await axiosInstance.post("/items", postData);
 
       if (response.data.isSuccess) {
-        return response.data.data;
+        return response.data.isSuccess;
       } else {
         throw new Error(response.data.message);
       }

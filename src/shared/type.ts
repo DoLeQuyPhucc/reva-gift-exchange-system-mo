@@ -127,7 +127,16 @@ export interface TransactionReportType {
 export interface Category {
   id: string;
   name: string;
+  status: string;
+  subCategories: SubCategory[];
 }
+
+export interface SubCategory {
+  id: string;
+  categoryId: string;
+  subCategoryName: string;
+}
+
 export interface CategoryContextType {
   selectedCategory: Category | null;
   setSelectedCategory: (category: Category | null) => void;
@@ -155,12 +164,13 @@ export interface AddressResponse {
 export interface CreatePostData {
   name: string;
   description: string;
-  categoryId: string;
+  subCategoryId: string;
   isGift: boolean;
   quantity: number;
   condition: string;
   images: string[];
   addressId: string;
+  desiredSubCategoryId: string | null;
 }
 
 export enum ItemCondition {
