@@ -186,13 +186,13 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const getAvailableTimeString = (timePreference: string) => {
     switch (timePreference) {
       case 'allDay':
-        return 'allDay 09:00_21:00';
+        return 'allDay 09:00_21:00 mon_tue_wed_thu_fri_sat_sun';
       case 'officeHours':
-        return 'officeHours 09:00_17:00';
+        return 'officeHours 09:00_17:00 mon_tue_wed_thu_fri';
       case 'evening':
-        return 'evening 17:00_21:00';
+        return 'evening 17:00_21:00 mon_tue_wed_thu_fri_sat_sun';
       case 'custom':
-        return `custom ${customStartTime}_${customEndTime}_${selectedDays.sort().join('_')}`;
+        return `custom ${customStartTime}_${customEndTime} ${selectedDays.sort().join('_')}`;
       default:
         return '';
     }
