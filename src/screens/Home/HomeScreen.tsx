@@ -61,7 +61,7 @@ const HomeScreen: React.FC = () => {
   // Initial fetch on mount
   useEffect(() => {
     fetchProducts();
-  }, [userId]);
+  }, [userId, sortBy, selectedCategory]);
 
   const { refreshing, refreshControl } = useRefreshControl(fetchProducts);
 
