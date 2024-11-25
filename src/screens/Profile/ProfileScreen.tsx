@@ -8,7 +8,7 @@ import Colors from '@/src/constants/Colors';
 import { useAuthCheck } from '@/src/hooks/useAuth';
 import { Alert } from 'react-native';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 
 const userDataSelector = (state: ReturnType<typeof useAuthStore.getState>) => state.userData;
 const setUserDataSelector = (state: ReturnType<typeof useAuthStore.getState>) => state.setUserData;

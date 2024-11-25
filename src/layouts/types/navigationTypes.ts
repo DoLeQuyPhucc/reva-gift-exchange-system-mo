@@ -1,4 +1,4 @@
-import { Category, Product } from "@/src/shared/type";
+import { Category, Product, SubCategory } from "@/src/shared/type";
 
 export type RootStackParamList = {
   Main: {
@@ -27,6 +27,8 @@ export type RootStackParamList = {
   CreatePost: {
     category?: Category;
     categoryId?: string;
+    subCategory?: SubCategory;
+    subCategoryId?: string;
   };
   ProductDetail: { productId: string };
   ProfileDetail: undefined;

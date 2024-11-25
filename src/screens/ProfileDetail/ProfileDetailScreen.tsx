@@ -16,7 +16,7 @@ import Colors from '@/src/constants/Colors';
 import { User } from '@/src/shared/type';
 
 import { useProfile } from '@/src/hooks/useProfile';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 
 const DEFAULT_PROFILE_PICTURE = 'https://res.cloudinary.com/djh9baokn/image/upload/v1731336465/png-clipart-man-wearing-blue-shirt-illustration-computer-icons-avatar-user-login-avatar-blue-child_ijzlxf.png';
 

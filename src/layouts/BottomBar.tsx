@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import { View, Modal, TouchableOpacity, Text, StyleSheet, Animated, Dimensions, Alert } from 'react-native';
 import { BottomTabParamList } from '@/src/layouts/types/navigationTypes';
 import Colors from '@/constants/Colors';
+import { Category, SubCategory } from '@/shared/type';
+
 import { useNavigation } from '@/hooks/useNavigation';
-import { Category } from '@/shared/type';
+import { useCategoryStore } from '@/src/stores/categoryStore';
 import useCategories from '@/hooks/useCategories';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 
 const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -25,25 +27,22 @@ export interface TabBarProps {
 const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userEmail = useAuthStore(state => state.email);
-  const { categories, isLoading } = useCategories();
+  const { categories, subCategories, getSubCategories, isLoading } = useCategories();
   const [modalVisible, setModalVisible] = useState(false);
+  const [subCategoryModalVisible, setSubCategoryModalVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const slideAnim = React.useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const subCategorySlideAnim = React.useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const navigation = useNavigation();
-
+  
   const showModal = () => {
     if (!isAuthenticated) {
       Alert.alert(
         "Đăng nhập",
         "Bạn cần phải đăng nhập trước khi thực hiện hành động này",
         [
-          {
-            text: "Hủy",
-            style: "cancel"
-          },
-          {
-            text: "Đăng nhập",
-            onPress: () => navigation.navigate('LoginScreen')
-          }
+          { text: "Hủy", style: "cancel" },
+          { text: "Đăng nhập", onPress: () => navigation.navigate('LoginScreen') }
         ]
       );
       return;
@@ -54,14 +53,8 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
         "Cập nhật thông tin",
         "Vui lòng cập nhật email trước khi thực hiện hành động này",
         [
-          {
-            text: "Hủy",
-            style: "cancel"
-          },
-          {
-            text: "Cập nhật",
-            onPress: () => navigation.navigate('ProfileDetail')
-          }
+          { text: "Hủy", style: "cancel" },
+          { text: "Cập nhật", onPress: () => navigation.navigate('ProfileDetail') }
         ]
       );
       return;
@@ -86,12 +79,40 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
     });
   };
 
-  const handleCategorySelect = (category: Category) => {
+  const showSubCategoryModal = async (category: Category) => {
+    setSelectedCategory(category);
+    await getSubCategories(category.id);
     hideModal();
-    navigation.navigate('CreatePost', { 
-      category,
-      categoryId: category.id 
+    
+    setSubCategoryModalVisible(true);
+    Animated.spring(subCategorySlideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 8
+    }).start();
+  };
+
+  const hideSubCategoryModal = () => {
+    Animated.timing(subCategorySlideAnim, {
+      toValue: SCREEN_HEIGHT,
+      duration: 300,
+      useNativeDriver: true
+    }).start(() => {
+      setSubCategoryModalVisible(false);
     });
+  };
+
+  const handleSubCategorySelect = (subCategory: SubCategory) => {
+    hideSubCategoryModal();
+    if (selectedCategory) {
+      navigation.navigate('CreatePost', {
+        category: selectedCategory,
+        categoryId: selectedCategory.id,
+        subCategory,
+        subCategoryId: subCategory.id
+      });
+    }
   };
 
   const CategoryModal = () => (
@@ -111,9 +132,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
             style={[
               styles.modalContent,
               {
-                transform: [{
-                  translateY: slideAnim
-                }]
+                transform: [{ translateY: slideAnim }]
               }
             ]}
           >
@@ -125,9 +144,51 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
               <TouchableOpacity
                 key={category.id}
                 style={styles.categoryItem}
-                onPress={() => handleCategorySelect(category)}
+                onPress={() => showSubCategoryModal(category)}
               >
                 <Text style={styles.categoryText}>{category.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+
+  const SubCategoryModal = () => (
+    <Modal
+      animationType="none"
+      transparent={true}
+      visible={subCategoryModalVisible}
+      onRequestClose={hideSubCategoryModal}
+    >
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={hideSubCategoryModal}
+        >
+          <Animated.View 
+            style={[
+              styles.modalContent,
+              {
+                transform: [{ translateY: subCategorySlideAnim }]
+              }
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIndicator} />
+            </View>
+            <Text style={styles.modalTitle}>
+              Chọn danh mục phụ cho {selectedCategory?.name}
+            </Text>
+            {subCategories.map((subCategory) => (
+              <TouchableOpacity
+                key={subCategory.id}
+                style={styles.categoryItem}
+                onPress={() => handleSubCategorySelect(subCategory)}
+              >
+                <Text style={styles.categoryText}>{subCategory.subCategoryName}</Text>
               </TouchableOpacity>
             ))}
           </Animated.View>
@@ -169,7 +230,6 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
         ))}
       </Tab.Navigator>
 
-      {/* Centered Floating Action Button */}
       <View style={styles.fabContainer}>
         <TouchableOpacity
           style={styles.fab}
@@ -180,6 +240,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
       </View>
 
       <CategoryModal />
+      <SubCategoryModal />
     </View>
   );
 };

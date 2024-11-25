@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  Button,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Checkbox, RadioButton } from 'react-native-paper';
@@ -15,13 +16,18 @@ import { Picker } from '@react-native-picker/picker';
 import { RouteProp, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import * as ImagePicker from 'expo-image-picker';
+import { CustomAlert } from '@/src/components/CustomAlert';
+import { getDayOfWeek, formatDaysOfWeek } from '@/src/utils/dateUtils';
 
 import MediaUploadSection from '@/src/components/MediaUploadSection';
-import { Category, ConditionOption, ItemCondition } from '@/src/shared/type';
+import { Category, ConditionOption, ItemCondition, SubCategory } from '@/src/shared/type';
 
 import useCategories from '@/src/hooks/useCategories';
 import useCreatePost from '@/src/hooks/useCreatePost';
+import { useCategoryStore } from '@/src/stores/categoryStore';
 import Colors from '@/src/constants/Colors';
+import DateTimePicker from 'react-native-modal-datetime-picker';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, 'CreatePost'>;
@@ -43,7 +49,6 @@ const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
   };
 });
 
-
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, 'CreatePost'>;
   navigation: NavigationProp<RootStackParamList>;
@@ -52,19 +57,41 @@ interface CreatePostScreenProps {
 const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }) => {
   const initialCategory = route.params?.category;
   const initialCategoryId = route.params?.categoryId;
-  const { categories } = useCategories();
-  const { addressData, loading, submitPost } = useCreatePost();  
+  const initialSubCategory = route.params?.subCategory;
+  const initialSubCategoryId = route.params?.subCategoryId;
+  
+  const { categories, subCategories, getSubCategories } = useCategories();
+  const { addressData, loading, submitPost } = useCreatePost();
+  const setCategoryStore = useCategoryStore(state => state.setCategory);
+  const setSubCategoryStore = useCategoryStore(state => state.setSubCategory);
+  
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(() => {
-    if (initialCategory) return initialCategory;
+    if (initialCategory) {
+      setCategoryStore(initialCategory);
+      return initialCategory;
+    }
     if (initialCategoryId) {
-      return categories.find(cat => cat.id === initialCategoryId) || null;
+      const category = categories.find(cat => cat.id === initialCategoryId);
+      if (category) setCategoryStore(category);
+      return category || null;
+    }
+    return null;
+  });
+
+  const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(() => {
+    if (initialSubCategory) {
+      setSubCategoryStore(initialSubCategory);
+      return initialSubCategory;
+    }
+    if (initialSubCategoryId) {
+      const subCategory = subCategories.find(subCat => subCat.id === initialSubCategoryId);
+      if (subCategory) setSubCategoryStore(subCategory);
+      return subCategory || null;
     }
     return null;
   });
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
-  const [selectedCategorySwap, setSelectedCategorySwap] = useState('');
-  const [selectedSubcategorySwap, setSelectedSubcategorySwap] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string>('');
   const [condition, setCondition] = useState<ItemCondition | ''>('');
@@ -78,16 +105,17 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [description, setDescription] = useState<string>('');
   const [showTitleHint, setShowTitleHint] = useState<boolean>(false);
   const [showDescriptionHint, setShowDescriptionHint] = useState<boolean>(false);
+  const [desiredCategoryId, setDesiredCategoryId] = useState<string>('');
+  const [desiredSubCategoryId, setDesiredSubCategoryId] = useState<string | null>(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const [timePreference, setTimePreference] = useState<string>('all_day');
   const [customStartTime, setCustomStartTime] = useState<string>('09:00');
   const [customEndTime, setCustomEndTime] = useState<string>('21:00');
-
-  const categoriesSwap = [
-    { name: 'Điện tử', subcategories: ['Điện thoại', 'Máy tính', 'Máy ảnh'] },
-    { name: 'Nội thất', subcategories: ['Bàn', 'Ghế', 'Giường'] },
-    { name: 'Quần áo', subcategories: ['Nam', 'Nữ', 'Trẻ em'] },
-  ];
+  const [startDay, setStartDay] = useState<Date | null>(null);
+  const [endDay, setEndDay] = useState<Date | null>(null);
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [datePickerMode, setDatePickerMode] = useState<'start' | 'end'>('start');
 
   useEffect(() => {
     if (addressData.length > 0) {
@@ -96,10 +124,45 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
   }, [addressData]);
 
+  useEffect(() => {
+    if (desiredCategoryId) {
+      getSubCategories(desiredCategoryId);
+    }
+  }, [desiredCategoryId]);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      getSubCategories(selectedCategory.id);
+    }
+  }, [selectedCategory]);
+
   const conditions: ConditionOption[] = [
     { id: ItemCondition.NEW, name: 'Mới' },
     { id: ItemCondition.USED, name: 'Đã sử dụng' },
   ];
+
+  const formatDateOnly = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const showDatePicker = (mode: 'start' | 'end') => {
+    setDatePickerMode(mode);
+    setDatePickerVisible(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisible(false);
+  };
+  
+
+  const handleDateConfirm = (date: Date) => {
+    if (datePickerMode === "start") {
+        setStartDay(date);
+    } else {
+        setEndDay(date);
+    }
+    setDatePickerVisible(false);
+  };
 
   const handlePostTypeChange = (type: 'exchange' | 'gift') => {
     if (type === 'exchange') {
@@ -108,6 +171,24 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     } else {
       setIsExchange(false);
       setIsGift(true);
+    }
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    setSelectedCategory(category || null);
+    setSelectedSubCategory(null);
+    if (category) {
+      setCategoryStore(category);
+      setSubCategoryStore(null);
+    }
+  };
+
+  const handleSubCategoryChange = (subCategoryId: string) => {
+    const subCategory = subCategories.find(subCat => subCat.id === subCategoryId);
+    setSelectedSubCategory(subCategory || null);
+    if (subCategory) {
+      setSubCategoryStore(subCategory);
     }
   };
 
@@ -120,7 +201,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       case 'evening':
         return 'evening 17:00_21:00';
       case 'custom':
-        return `custom ${customStartTime}_${customEndTime}`;
+        if (startDay && endDay && customStartTime && customEndTime) {
+          const daysOfWeek = formatDaysOfWeek(startDay, endDay);
+          return `custom ${customStartTime}_${customEndTime}_${daysOfWeek}`;
+        }
+        return "custom Invalid_Dates";
       default:
         return '';
     }
@@ -128,27 +213,31 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 
   const validateForm = () => {
     if (!title.trim()) {
-      Alert.alert('Error', 'Please enter a title');
+      Alert.alert('Error', 'Vui lòng nhập tiêu đề tin đăng');
       return false;
     }
     if (!description.trim()) {
-      Alert.alert('Error', 'Please enter a description');
+      Alert.alert('Error', 'Vui lòng nhập mô tả chi tiết');
       return false;
     }
     if (!selectedCategory) {
-      Alert.alert('Error', 'Please select a category');
+      Alert.alert('Error', 'Vui lòng chọn danh mục');
       return false;
     }
     if (!condition) {
-      Alert.alert('Error', 'Please select condition');
+      Alert.alert('Error', 'Vui lòng chọn tình trạng sản phẩm');
       return false;
     }
     if (images.length === 0) {
-      Alert.alert('Error', 'Please upload at least one image');
+      Alert.alert('Error', 'Vui lòng tải lên ít nhất 1 ảnh');
       return false;
     }
     if (!timePreference) {
-      Alert.alert('Error', 'Please select available time');
+      Alert.alert('Error', 'Vui lòng chọn giờ nhận');
+      return false;
+    }
+    if (!desiredCategoryId && isExchange) {
+      Alert.alert('Error', 'Vui lòng chọn sản phẩm mong muốn trao đổi');
       return false;
     }
     return true;
@@ -268,6 +357,13 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     setVideo('');
   };
 
+  const handleAlertConfirm = () => {
+    setShowSuccessAlert(false);
+    navigation.navigate('Main' , {
+      screen: 'Home'
+    });
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -280,24 +376,26 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       const postData = {
         name: title.trim(),
         description: description.trim(),
-        categoryId: selectedCategory!.id,
+        subCategoryId: selectedSubCategory!.id,
         isGift: isFreeGift,
         quantity: 1,
         condition: condition,
         images,
         availableTime: getAvailableTimeString(timePreference),
-        addressId: selectedAddressId
+        addressId: selectedAddressId,
+        desiredSubCategoryId: desiredSubCategoryId
       };
 
       console.log("Form Data: ", postData);
   
-      // const result = await submitPost(postData);
-      
-      // if (result) {
-      //   Alert.alert('Success', 'Post created successfully');
-      // }
+      const response = await submitPost(postData);
 
-      // navigation.goBack();
+      console.log('Submit response:', response);
+      
+      
+      if (response === true) {
+        setShowSuccessAlert(true);
+      }
   
     } catch (error) {
       Alert.alert('Error', 'Failed to create post');
@@ -322,23 +420,48 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         {/* Category Selector */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Danh Mục</Text>
-          <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedCategory?.id || ''}
-            onValueChange={(value) => {
-              const category = categories.find(cat => cat.id === value);
-              setSelectedCategory(category || null);
-            }}
-          >
-              <Picker.Item label="Chọn danh mục" value="" />
-              {categories.map((category) => (
-                <Picker.Item
-                  key={category.id}
-                  label={category.name}
-                  value={category.id}
-                />
-              ))}
-            </Picker>
+          <View style={styles.categoryContainer}>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedCategory?.id || ''}
+                onValueChange={handleCategoryChange}
+              >
+                <Picker.Item label="Chọn danh mục" value="" />
+                {categories.map((category) => (
+                  <Picker.Item
+                    key={category.id}
+                    label={category.name}
+                    value={category.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            {selectedCategory && (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedSubCategory?.id || ''}
+                  onValueChange={handleSubCategoryChange}
+                >
+                  <Picker.Item label="Chọn danh mục phụ" value="" />
+                  {subCategories.map((subCategory) => (
+                    <Picker.Item
+                      key={subCategory.id}
+                      label={subCategory.subCategoryName}
+                      value={subCategory.id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            )}
+
+            {selectedCategory && selectedSubCategory && (
+              <View style={styles.selectedCategoryDisplay}>
+                <Text style={styles.selectedCategoryText}>
+                  Danh mục đã chọn: {selectedCategory.name} - {selectedSubCategory.subCategoryName}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -372,14 +495,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
               ))}
             </Picker>
           </View>
-
-          {/* <View style={styles.checkboxContainer}>
-            <Checkbox
-              status={isFreeGift ? 'checked' : 'unchecked'}
-              onPress={() => setIsFreeGift(!isFreeGift)}
-            />
-            <Text>Tôi muốn cho tặng miễn phí</Text>
-          </View> */}
         </View>
 
         {/* Post Type Selection */}
@@ -415,37 +530,46 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         </View>
 
         {/* New section for categories and subcategories */}
-        <View style={styles.section}>
+        {isExchange && (
+          <View style={styles.section}>
           <Text style={styles.sectionTitle}>Danh mục muốn trao đổi</Text>
           
           <Picker
-            selectedValue={selectedCategorySwap}
+            selectedValue={desiredCategoryId}
             onValueChange={(itemValue) => {
-              setSelectedCategorySwap(itemValue);
-              setSelectedSubcategorySwap(''); // Reset subcategory when category changes
+              setDesiredCategoryId(itemValue);
+              setDesiredSubCategoryId('');
             }}
             style={styles.picker}
           >
             <Picker.Item label="Chọn danh mục" value="" />
-            {categoriesSwap.map((category, index) => (
-              <Picker.Item key={index} label={category.name} value={category.name} />
+            {categories.map((category) => (
+              <Picker.Item 
+                key={category.id} 
+                label={category.name} 
+                value={category.id} 
+              />
             ))}
           </Picker>
 
-          {selectedCategorySwap && (
+          {desiredCategoryId && (
             <Picker
-              selectedValue={selectedSubcategorySwap}
-              onValueChange={(itemValue) => setSelectedSubcategorySwap(itemValue)}
+              selectedValue={desiredSubCategoryId}
+              onValueChange={(itemValue) => setDesiredSubCategoryId(itemValue)}
               style={styles.picker}
             >
               <Picker.Item label="Chọn danh mục phụ" value="" />
-              {categoriesSwap
-                .find((category) => category.name === selectedCategorySwap)?.subcategories.map((subcategory, index) => (
-                  <Picker.Item key={index} label={subcategory} value={subcategory} />
-                ))}
+              {subCategories.map((subCategory) => (
+                <Picker.Item
+                  key={subCategory.id}
+                  label={subCategory.subCategoryName}
+                  value={subCategory.id}
+                />
+              ))}
             </Picker>
           )}
         </View>
+        )}
 
         {/* Title and Description */}
         <View style={styles.section}>
@@ -481,17 +605,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
               Không được phép ghi thông tin liên hệ trong mô tả
             </Text>
           )}
-
-          {/* {!isFreeGift && (
-            <TextInput
-            style={styles.input}
-            placeholder="Points"
-            value={point}
-            onChangeText={setPoint}
-            keyboardType="numeric"
-            editable={!isFreeGift}
-          />
-          )} */}
         </View>
 
         {/* Time Availability Section */}
@@ -566,6 +679,40 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
                   ))}
                 </Picker>
               </View>
+
+              {timePreference === 'custom' && (
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => showDatePicker('start')}
+                  >
+                    <Text style={styles.buttonText}>
+                      {startDay ? `Ngày rảnh từ: ${startDay.toLocaleDateString()}` : "Chọn ngày rảnh"}
+                    </Text>
+                    <Icon name="calendar-outline" size={20} color="#fff" style={{ marginLeft: 4}}/>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => showDatePicker('end')}
+                  >
+                    <Text style={styles.buttonText}>
+                      {endDay ? `Đến: ${endDay.toLocaleDateString()}` : "Chọn ngày rảnh"}
+                    </Text>
+                    <Icon name="calendar-outline" size={20} color="#fff" style={{ marginLeft: 4}}/>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {isDatePickerVisible && (
+                <DateTimePicker
+                  isVisible={isDatePickerVisible}
+                  mode="date"
+                  onConfirm={handleDateConfirm}
+                  onCancel={hideDatePicker}
+                  minimumDate={new Date()}
+                  date={datePickerMode === 'start' ? (startDay || new Date()) : (endDay || new Date())}
+                />
+              )}
             </View>
           )}
         </View>
@@ -622,6 +769,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           <Text style={styles.buttonText}>Đăng bài</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Alert */}
+      <CustomAlert
+        visible={showSuccessAlert}
+        title="Thành công"
+        message="Bài đăng của bạn đã được tạo thành công!"
+        onConfirm={handleAlertConfirm}
+      />
     </SafeAreaView>
   );
 };
@@ -824,6 +979,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.orange500,
     marginTop: 4,
+  },
+  categoryContainer: {
+    gap: 12,
+  },
+  selectedCategoryDisplay: {
+    backgroundColor: Colors.orange50,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  selectedCategoryText: {
+    color: Colors.orange600,
+    fontWeight: '500',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1ABC9C',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginHorizontal: 5,
   },
 });
 

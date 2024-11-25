@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, RefreshControl, ScrollView, ActivityIndicator, Animated } from 'react-native';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Notification, useNotificationStore } from '@/stores/notificationStore';
+import { Notification, useNotificationStore } from '@/src/stores/notificationStore';
 import axiosInstance from '@/src/api/axiosInstance';
 import { formatDate } from '@/src/shared/formatDate';
 import { useAuthCheck } from '@/src/hooks/useAuth';
