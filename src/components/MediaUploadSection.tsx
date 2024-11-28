@@ -122,7 +122,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
         >
           <Icon name="videocam" size={32} color="#f97314" />
           <Text style={styles.uploadText}>ĐĂNG TỐI ĐA 01 VIDEO</Text>
-          <Text style={styles.subText}>BẠN ĐÃ ĐĂNG 0/20 VIDEO TRONG THÁNG</Text>
+          <Text style={styles.subText}>BẠN ĐÃ ĐĂNG 0/5 VIDEO TRONG THÁNG</Text>
         </TouchableOpacity>
       )}
     </View>

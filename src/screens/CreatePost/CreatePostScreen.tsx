@@ -318,30 +318,107 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
   };
 
+    const uploadVideoToCloudinary = async (uri: string): Promise<string> => {
+    try {
+      console.log('Starting video upload process with URI:', uri);
+  
+      const filename = uri.split('/').pop() || 'video.mp4';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `video/${match[1]}` : 'video/mp4';
+  
+      console.log('Video file details:', {
+        filename,
+        type
+      });
+  
+      const formData = new FormData();
+  
+      const fileData = {
+        uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+        name: filename,
+        type: type,
+      };
+  
+      const CLOUDINARY_UPLOAD_PRESET = 'gift_system';
+      const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dt4ianp80/video/upload';
+  
+      console.log('FormData video object:', fileData);
+      formData.append('file', fileData as any);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  
+      console.log('Sending video upload request to Cloudinary...');
+      console.log('Cloudinary URL:', CLOUDINARY_URL);
+  
+      const response = await fetch(CLOUDINARY_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      console.log('Video upload response status:', response.status);
+  
+      const responseData = await response.json();
+      console.log('Video upload response data:', responseData);
+  
+      if (!response.ok) {
+        throw new Error(`Video upload failed: ${response.status} - ${JSON.stringify(responseData)}`);
+      }
+  
+      return responseData.secure_url;
+    } catch (error: any) {
+      console.error('Detailed video upload error:', {
+        message: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
+  };
+  
   const pickVideo = async () => {
     try {
+      console.log('Starting video picker...');
+  
+      setIsUploadingImage(true);
+  
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 1,
+        videoMaxDuration: 60,
       });
-
+  
+      console.log('Video picker result:', result);
+  
       if (!result.canceled) {
-        setVideo(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        console.log('Selected video URI:', uri);
+  
+        const videoUrl = await uploadVideoToCloudinary(uri);
+        console.log('Video uploaded successfully to Cloudinary:', videoUrl);
+
+        setVideo(videoUrl);
       }
     } catch (error) {
-      console.error('Error picking video:', error);
+      console.error('Error in video picking/upload process:', error);
+      Alert.alert('Upload Failed', 'Failed to upload video. Please try again');
+    } finally {
+      setIsUploadingImage(false);
     }
+  };
+  
+  // Update the removeVideo function to log the action
+  const removeVideo = () => {
+    console.log('Removing video from state');
+    setVideo('');
   };
 
   const removeImage = (index: number) => {
     const newImages = images.filter((_, idx) => idx !== index);
     setImages(newImages);
-  };
-
-  const removeVideo = () => {
-    setVideo('');
   };
 
   const handleAlertConfirm = () => {
