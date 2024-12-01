@@ -37,8 +37,9 @@ const MyRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [rejectMessage, setRejectMessage] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [approveMessage, setApproveMessage] = useState<string>("");
   const [showInfoUser, setShowInfoUser] = useState(false);
   const [user, setUser] = useState<User>({} as User);
 
@@ -95,7 +96,7 @@ const MyRequests = () => {
     console.log(selectedTime);
     try {
       const requestResponse = await axiosInstance.post(
-        `request/approve/${requestId}`
+        `request/approve/${requestId}`, { message: approveMessage }
       );
 
       if (requestResponse.data.isSuccess === true) {
@@ -127,6 +128,7 @@ const MyRequests = () => {
       setShowTimeModal(false);
       setSelectedRequest(null);
       setSelectedTime(null);
+      setApproveMessage("");
 
       setAlertData({
         title: "Thành công",
@@ -291,7 +293,7 @@ const MyRequests = () => {
       )}
 
       <View style={styles.timeSection}>
-        <Text style={styles.timeTitle}>Thời gian đề xuất:</Text>
+        <Text style={styles.timeTitle}>Thời gian mong muốn:</Text>
         <View style={styles.timeSlotList}>
           {request.appointmentDate.map((time: string, index: number) => (
             <View key={index} style={styles.timeSlotChip}>
@@ -317,6 +319,7 @@ const MyRequests = () => {
             onPress={() => {
               setSelectedRequest(request);
               setShowTimeModal(true);
+              setSelectedTime(request.appointmentDate[0]);
             }}
           >
             <Text style={styles.buttonText}>Chấp nhận</Text>
@@ -364,28 +367,36 @@ const MyRequests = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        {activeTab === "myRequests" &&
-          myRequests.map((request) => renderRequestCard(request))}
-        {activeTab === "requestsForMe" &&
-          requestsForMe.map((request) => renderRequestCard(request, true))}
+        {activeTab === "myRequests" && (
+          <>
+          
+          <Text style={styles.resultCount}>
+            Hiển thị {myRequests.length} yêu cầu
+          </Text>
+          {myRequests.map((request) => renderRequestCard(request))}
+          </>
+        )
+          }
+        {activeTab === "requestsForMe" && (
+          <>
+          
+          <Text style={styles.resultCount}>
+            Hiển thị {requestsForMe.length} yêu cầu
+          </Text>
+          {requestsForMe.map((request) => renderRequestCard(request))}
+          </>
+
+        )}
       </ScrollView>
 
       <Modal visible={showTimeModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Chọn thời gian phù hợp</Text>
+            <Text style={[styles.modalTitle, styles.textCenter]}>Bạn muốn xác nhận giao dịch này</Text>
 
             <ScrollView style={styles.timeSlotScrollView}>
               {selectedRequest?.appointmentDate.map(
                 (time: string, index: number) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.modalTimeSlot,
-                      selectedTime === time && styles.selectedTimeSlot,
-                    ]}
-                    onPress={() => setSelectedTime(time)}
-                  >
                     <Text
                       style={[
                         styles.modalTimeSlotText,
@@ -394,10 +405,24 @@ const MyRequests = () => {
                     >
                       {formatTimeSlot(time)}
                     </Text>
-                  </TouchableOpacity>
                 )
               )}
             </ScrollView>
+
+            
+            <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
+            <TextInput
+              style={styles.requestInput}
+              placeholder="Nhập tin nhắn..."
+              value={approveMessage}
+              onChangeText={setApproveMessage}
+              multiline
+            />
+            {approveMessage.length > 99 && (
+              <Text style={styles.textErrorMessage}>
+                Lời nhắn của bạn không được vượt quá 100 ký tự.
+              </Text>
+            )}
 
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -406,6 +431,7 @@ const MyRequests = () => {
                   setShowTimeModal(false);
                   setSelectedRequest(null);
                   setSelectedTime(null);
+                  setApproveMessage("");
                 }}
               >
                 <Text style={styles.modalButtonText}>Hủy</Text>
@@ -431,7 +457,7 @@ const MyRequests = () => {
       <Modal visible={showRejectModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, styles.textCenter]}>
               Bạn muốn từ chối giao dịch này?
             </Text>
             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
@@ -526,6 +552,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  resultCount: {
+    color: "#666",
+    marginBottom: 16,
   },
   tabContainer: {
     flexDirection: "row",
@@ -725,6 +755,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 15,
+  },
+  textCenter: {
+    textAlign: "center",
   },
   timeSlot: {
     padding: 10,
