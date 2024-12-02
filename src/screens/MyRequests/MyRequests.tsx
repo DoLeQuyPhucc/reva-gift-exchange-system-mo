@@ -96,7 +96,7 @@ const MyRequests = () => {
     console.log(selectedTime);
     try {
       const requestResponse = await axiosInstance.post(
-        `request/approve/${requestId}`, { message: approveMessage }
+        `request/approve/${requestId}`, approveMessage
       );
 
       if (requestResponse.data.isSuccess === true) {
@@ -288,7 +288,7 @@ const MyRequests = () => {
 
       {request.rejectMessage && (
         <Text style={styles.rejectMessage}>
-          Lời nhắn của bạn đã từ chối: {request.rejectMessage}
+          Từ chối: {request.rejectMessage}
         </Text>
       )}
 
@@ -383,7 +383,7 @@ const MyRequests = () => {
           <Text style={styles.resultCount}>
             Hiển thị {requestsForMe.length} yêu cầu
           </Text>
-          {requestsForMe.map((request) => renderRequestCard(request))}
+          {requestsForMe.map((request) => renderRequestCard(request, true))}
           </>
 
         )}
@@ -845,7 +845,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 16,
   },
-
   modalDescription: {
     fontSize: 16,
     marginBottom: 16,

@@ -62,6 +62,7 @@ export interface Request {
   status: "Pending" | "Approved" | "Rejected";
   requestMessage: string | null;
   rejectMessage: string | null;
+  note: string | null;
   createdAt: string;
   updatedAt: string;
 
@@ -91,6 +92,8 @@ export interface Transaction {
   id: string;
   status: string;
   requestId: string;
+  requestNote: string | null;
+  rejectMessage: string | null;
 
   requester: SubInfoUser;
   requesterItem: SubInfoItem | null;
