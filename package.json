@@ -26,6 +26,7 @@
     "axios": "^1.7.7",
     "buffer": "^6.0.3",
     "expo": "~51.0.28",
+    "expo-av": "^15.0.1",
     "expo-image-picker": "~15.0.7",
     "expo-router": "^3.5.23",
     "expo-splash-screen": "^0.27.6",

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import Video from 'react-native-video';
 
 interface MediaUploadSectionProps {
   images: string[];
@@ -19,6 +20,7 @@ interface MediaUploadSectionProps {
   onRemoveImage: (index: number) => void;
   onRemoveVideo: () => void;
   isLoading?: boolean;
+  isVideoLoading?: boolean;
   canUploadVideo?: boolean;
 }
 
@@ -30,6 +32,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
   onRemoveImage,
   onRemoveVideo,
   isLoading = false,
+  isVideoLoading = false,
   canUploadVideo = true
 }) => {
   const screenWidth = Dimensions.get('window').width;
@@ -69,6 +72,57 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
         <Text style={styles.uploadText}>Thêm hình ảnh</Text>
         <Text style={styles.imageCount}>{images.length}/5</Text>
       </>
+    );
+  };
+
+  const renderVideoSection = () => {
+    if (isVideoLoading) {
+      return (
+        <View style={styles.videoLoadingContainer}>
+          <ActivityIndicator size="large" color="#f97314" />
+          <Text style={[styles.uploadText, { marginTop: 8 }]}>Đang tải video...</Text>
+        </View>
+      );
+    }
+
+    if (video) {
+      // Extract video ID from Cloudinary URL
+      const videoId = video.split('/').pop()?.split('.')[0];
+      const thumbnailUrl = `https://res.cloudinary.com/dt4ianp80/video/upload/c_thumb,w_400,h_200/${videoId}.jpg`;
+
+      return (
+        <View style={styles.videoContainer}>
+          {/* Show thumbnail */}
+          <Image 
+            source={{ uri: thumbnailUrl }} 
+            style={styles.videoPreview} 
+            resizeMode="cover"
+          />
+          {/* Add play icon overlay */}
+          <View style={styles.playIconContainer}>
+            <Icon name="play-circle-outline" size={50} color="#fff" />
+          </View>
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={onRemoveVideo}
+            disabled={isVideoLoading}
+          >
+            <Icon name="close" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <TouchableOpacity 
+        style={styles.videoUploadBox} 
+        onPress={onPickVideo}
+        disabled={video !== '' || isVideoLoading}
+      >
+        <Icon name="videocam" size={32} color="#f97314" />
+        <Text style={styles.uploadText}>ĐĂNG TỐI ĐA 01 VIDEO</Text>
+        <Text style={styles.subText}>BẠN ĐÃ ĐĂNG 0/5 VIDEO TRONG THÁNG</Text>
+      </TouchableOpacity>
     );
   };
 
@@ -115,15 +169,9 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
       
       {/* Video Upload Section */}
       {canUploadVideo && (
-        <TouchableOpacity 
-          style={styles.videoUploadBox} 
-          onPress={onPickVideo}
-          disabled={video !== '' || isLoading}
-        >
-          <Icon name="videocam" size={32} color="#f97314" />
-          <Text style={styles.uploadText}>ĐĂNG TỐI ĐA 01 VIDEO</Text>
-          <Text style={styles.subText}>BẠN ĐÃ ĐĂNG 0/20 VIDEO TRONG THÁNG</Text>
-        </TouchableOpacity>
+        <View style={styles.videoSection}>
+        {renderVideoSection()}
+      </View>
       )}
     </View>
   );
@@ -211,6 +259,40 @@ const styles = StyleSheet.create({
   },
   spinner: {
     transform: [{ scale: 1.2 }]
+  },
+  videoSection: {
+    marginTop: 12,
+  },
+  videoContainer: {
+    position: 'relative',
+    borderRadius: 8,
+    overflow: 'hidden',
+    height: 200,
+  },
+  videoPreview: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f5f5f5',
+  },
+  playIconContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  videoLoadingContainer: {
+    height: 200,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#ddd',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
