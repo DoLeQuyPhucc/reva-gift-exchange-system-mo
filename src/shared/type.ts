@@ -29,6 +29,7 @@ export interface Product {
   expiresAt: string;
   updatedAt: string;
   images: string[];
+  video: string;
   quantity: number;
   dateRemaining: number;
   status: string;
@@ -84,6 +85,7 @@ interface SubInfoUser {
 interface SubInfoItem {
   itemId: string;
   itemName: string;
+  itemVideo: string;
   itemImages: string[];
   itemQuantity: number;
 }
