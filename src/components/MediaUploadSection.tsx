@@ -13,7 +13,7 @@ import Video from 'react-native-video';
 
 interface MediaUploadSectionProps {
   images: string[];
-  video: string;
+  video: string | null;
   selectedImage: string | null;
   onPickImage: () => void;
   onPickVideo: () => void;

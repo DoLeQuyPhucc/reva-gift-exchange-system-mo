@@ -97,7 +97,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [images, setImages] = useState<string[]>([]);
-  const [video, setVideo] = useState<string>('');
+  const [video, setVideo] = useState<string | null>(null);
   const [condition, setCondition] = useState<ItemCondition | ''>('');
   const [isExchange, setIsExchange] = useState<boolean>(false);
   const [isGift, setIsGift] = useState<boolean>(false);
@@ -160,6 +160,15 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       return;
     }
   
+    if (selectedDayForFrame === 'all') {
+      setDayTimeFrames([{
+        day: 'all',
+        startTime: frameStartTime,
+        endTime: frameEndTime
+      }]);
+      return;
+    }
+  
     if (dayTimeFrames.some(frame => frame.day === selectedDayForFrame)) {
       Alert.alert('Lỗi!', 'Ngày này đã có giờ');
       return;
@@ -180,18 +189,24 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         endTime: frameEndTime
       }
     ]);
-
+  
     console.log('Day time frames:', dayTimeFrames);
     
     setSelectedDayForFrame('');
   };
   
   const handleRemoveTimeFrame = (day: string) => {
+    setSelectedDayForFrame('');
     setDayTimeFrames(prev => prev.filter(frame => frame.day !== day));
   };
   
   const getCustomPerDayTimeString = (): string => {
     if (dayTimeFrames.length === 0) return '';
+  
+    if (dayTimeFrames.some(frame => frame.day === 'all')) {
+      const frame = dayTimeFrames.find(frame => frame.day === 'all');
+      return `custom ${frame?.startTime}_${frame?.endTime} mon_tue_wed_thu_fri_sat_sun`;
+    }
     
     const frames = dayTimeFrames
       .map(frame => `${frame.startTime}_${frame.endTime} ${frame.day}`)
@@ -522,9 +537,25 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   
         {/* Day Selection Grid */}
         <View style={styles.daySelectionGrid}>
+          <TouchableOpacity
+            style={[
+              styles.dayChip,
+              selectedDayForFrame === 'all' && styles.dayChipSelected,
+            ]}
+            onPress={() => setSelectedDayForFrame('all')}
+          >
+            <Text
+              style={[
+                styles.dayChipText,
+                selectedDayForFrame === 'all' && styles.dayChipTextSelected,
+              ]}
+            >
+              Tất cả các ngày
+            </Text>
+          </TouchableOpacity>
           {WEEKDAYS.map(day => {
             const isSelected = day.value === selectedDayForFrame;
-            const isDisabled = dayTimeFrames.some(frame => frame.day === day.value);
+            const isDisabled = dayTimeFrames.some(frame => frame.day === day.value) || selectedDayForFrame === 'all';
             
             return (
               <TouchableOpacity
@@ -555,7 +586,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         {selectedDayForFrame && (
           <View style={styles.timePickerContainer}>
             <Text style={styles.timeFrameLabel}>
-              Chọn giờ có thể nhận cho {WEEKDAYS.find(d => d.value === selectedDayForFrame)?.label}
+              Chọn giờ có thể nhận cho {selectedDayForFrame === 'all' ? 'tất cả các ngày' : WEEKDAYS.find(d => d.value === selectedDayForFrame)?.label}
             </Text>
             
             <View style={styles.timePickersRow}>
@@ -603,7 +634,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
               <View key={frame.day} style={styles.selectedFrameCard}>
                 <View style={styles.frameInfo}>
                   <Text style={styles.frameDayText}>
-                    {WEEKDAYS.find(d => d.value === frame.day)?.label}
+                    {frame.day === 'all' ? 'Tất cả các ngày' : WEEKDAYS.find(d => d.value === frame.day)?.label}
                   </Text>
                   <Text style={styles.frameTimeText}>
                     {frame.startTime} - {frame.endTime}
