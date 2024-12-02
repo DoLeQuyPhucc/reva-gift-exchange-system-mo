@@ -9,7 +9,6 @@ const white = "#fff";
 const black = "#000";
 const dark = "#626262";
 const blue = "#1F41BB";
-const gray = "#ECECEC";
 
 const orange50 = "#fff7ed";
 const orange100 = "#ffedd5";
@@ -21,6 +20,18 @@ const orange700 = "#c2410c";
 const lightRed = "#cc0000";
 const lightGreen = "#1ABC9C";
 const pink = "#FF69B4";
+
+const gray = "#ECECEC";
+const gray50 = "#f9fafb";
+const gray100 = "#f3f4f6";
+const gray200 = "#e5e7eb";
+const gray300 = "#d1d5db";
+const gray400 = "#9ca3af";
+const gray500 = "#6b7280";
+const gray600 = "#4b5563";
+const gray700 = "#374151";
+const gray800 = "#1f2937";
+const gray900 = "#111827";
 
 export const Colors = {
   light: {
@@ -60,4 +71,14 @@ export default {
   orange700: orange700,
   lightGreen: lightGreen,
   pink: pink,
+  gray50: gray50,
+  gray100: gray100,
+  gray200: gray200,
+  gray300: gray300,
+  gray400: gray400,
+  gray500: gray500,
+  gray600: gray600,
+  gray700: gray700,
+  gray800: gray800,
+  gray900: gray900,
 };

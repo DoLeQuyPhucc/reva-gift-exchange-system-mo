@@ -17,7 +17,6 @@ import { RouteProp, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import * as ImagePicker from 'expo-image-picker';
 import { CustomAlert } from '@/src/components/CustomAlert';
-import { getDayOfWeek, formatDaysOfWeek } from '@/src/utils/dateUtils';
 
 import MediaUploadSection from '@/src/components/MediaUploadSection';
 import { Category, ConditionOption, ItemCondition, SubCategory } from '@/src/shared/type';
@@ -36,6 +35,12 @@ interface CreatePostScreenProps {
 type TimeSlot = {
   label: string;
   value: string;
+};
+
+type DayTimeFrame = {
+  day: string;
+  startTime: string;
+  endTime: string;
 };
 
 const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
@@ -98,6 +103,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [isGift, setIsGift] = useState<boolean>(false);
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [title, setTitle] = useState<string>('');
@@ -109,9 +115,10 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const [timePreference, setTimePreference] = useState<string>('all_day');
-  const [customStartTime, setCustomStartTime] = useState<string>('09:00');
-  const [customEndTime, setCustomEndTime] = useState<string>('21:00');
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [dayTimeFrames, setDayTimeFrames] = useState<DayTimeFrame[]>([]);
+  const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>('');
+  const [frameStartTime, setFrameStartTime] = useState<string>('09:00');
+  const [frameEndTime, setFrameEndTime] = useState<string>('21:00');
 
   useEffect(() => {
     if (addressData.length > 0) {
@@ -147,12 +154,50 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     { label: "Chủ nhật", value: "sun" },
   ];
 
-  const handleDayToggle = (day: string) => {
-    setSelectedDays(prev => 
-      prev.includes(day) 
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
-    );
+  const handleAddTimeFrame = () => {
+    if (!selectedDayForFrame) {
+      Alert.alert('Lỗi!', 'Vui lòng chọn ngày');
+      return;
+    }
+  
+    if (dayTimeFrames.some(frame => frame.day === selectedDayForFrame)) {
+      Alert.alert('Lỗi!', 'Ngày này đã có giờ');
+      return;
+    }
+  
+    const start = parseInt(frameStartTime.replace(':', ''));
+    const end = parseInt(frameEndTime.replace(':', ''));
+    if (start >= end) {
+      Alert.alert('Lỗi!', 'Giờ kết thúc phải sau giờ bắt đầu');
+      return;
+    }
+  
+    setDayTimeFrames(prev => [
+      ...prev,
+      {
+        day: selectedDayForFrame,
+        startTime: frameStartTime,
+        endTime: frameEndTime
+      }
+    ]);
+
+    console.log('Day time frames:', dayTimeFrames);
+    
+    setSelectedDayForFrame('');
+  };
+  
+  const handleRemoveTimeFrame = (day: string) => {
+    setDayTimeFrames(prev => prev.filter(frame => frame.day !== day));
+  };
+  
+  const getCustomPerDayTimeString = (): string => {
+    if (dayTimeFrames.length === 0) return '';
+    
+    const frames = dayTimeFrames
+      .map(frame => `${frame.startTime}_${frame.endTime} ${frame.day}`)
+      .join(' | ');
+    
+    return `customPerDay ${frames}`;
   };
 
   const handlePostTypeChange = (type: 'exchange' | 'gift') => {
@@ -192,7 +237,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       case 'evening':
         return 'evening 17:00_21:00 mon_tue_wed_thu_fri_sat_sun';
       case 'custom':
-        return `custom ${customStartTime}_${customEndTime} ${selectedDays.sort().join('_')}`;
+        return getCustomPerDayTimeString();
       default:
         return '';
     }
@@ -381,7 +426,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     try {
       console.log('Starting video picker...');
   
-      setIsUploadingImage(true);
+      setIsUploadingVideo(true);
   
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
@@ -406,7 +451,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
       console.error('Error in video picking/upload process:', error);
       Alert.alert('Upload Failed', 'Failed to upload video. Please try again');
     } finally {
-      setIsUploadingImage(false);
+      setIsUploadingVideo(false);
     }
   };
   
@@ -445,6 +490,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         quantity: 1,
         condition: condition,
         images,
+        video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId,
         desiredSubCategoryId: desiredSubCategoryId
@@ -467,6 +513,114 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const CustomPerDayTimeSection = () => {
+    return (
+      <View style={styles.customPerDayContainer}>
+        <Text style={styles.timeSelectionHeader}>Chọn thời gian có thể nhận</Text>
+  
+        {/* Day Selection Grid */}
+        <View style={styles.daySelectionGrid}>
+          {WEEKDAYS.map(day => {
+            const isSelected = day.value === selectedDayForFrame;
+            const isDisabled = dayTimeFrames.some(frame => frame.day === day.value);
+            
+            return (
+              <TouchableOpacity
+                key={day.value}
+                style={[
+                  styles.dayChip,
+                  isSelected && styles.dayChipSelected,
+                  isDisabled && styles.dayChipDisabled,
+                ]}
+                onPress={() => setSelectedDayForFrame(day.value)}
+                disabled={isDisabled}
+              >
+                <Text
+                  style={[
+                    styles.dayChipText,
+                    isSelected && styles.dayChipTextSelected,
+                    isDisabled && styles.dayChipTextDisabled,
+                  ]}
+                >
+                  {day.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+  
+        {/* Time Selection */}
+        {selectedDayForFrame && (
+          <View style={styles.timePickerContainer}>
+            <Text style={styles.timeFrameLabel}>
+              Chọn giờ có thể nhận cho {WEEKDAYS.find(d => d.value === selectedDayForFrame)?.label}
+            </Text>
+            
+            <View style={styles.timePickersRow}>
+              <View style={styles.timePickerWrapper}>
+                <Text style={styles.timeLabel}>Từ</Text>
+                <Picker
+                  selectedValue={frameStartTime}
+                  onValueChange={setFrameStartTime}
+                  style={styles.enhancedTimePicker}
+                >
+                  {TIME_SLOTS.map(slot => (
+                    <Picker.Item key={slot.value} label={slot.label} value={slot.value} />
+                  ))}
+                </Picker>
+              </View>
+  
+              <View style={styles.timePickerWrapper}>
+                <Text style={styles.timeLabel}>Đến</Text>
+                <Picker
+                  selectedValue={frameEndTime}
+                  onValueChange={setFrameEndTime}
+                  style={styles.enhancedTimePicker}
+                >
+                  {TIME_SLOTS.map(slot => (
+                    <Picker.Item key={slot.value} label={slot.label} value={slot.value} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+  
+            <TouchableOpacity 
+              style={styles.addFrameButton}
+              onPress={handleAddTimeFrame}
+            >
+              <Text style={styles.addFrameButtonText}>Thêm thời gian</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+  
+        {/* Selected Time Frames */}
+        {dayTimeFrames.length > 0 && (
+          <View style={styles.selectedFramesContainer}>
+            <Text style={styles.selectedFramesTitle}>Thời gian đã chọn:</Text>
+            {dayTimeFrames.map(frame => (
+              <View key={frame.day} style={styles.selectedFrameCard}>
+                <View style={styles.frameInfo}>
+                  <Text style={styles.frameDayText}>
+                    {WEEKDAYS.find(d => d.value === frame.day)?.label}
+                  </Text>
+                  <Text style={styles.frameTimeText}>
+                    {frame.startTime} - {frame.endTime}
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => handleRemoveTimeFrame(frame.day)}
+                  style={styles.removeButton}
+                >
+                  <Text style={styles.removeIcon}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
   };
 
   return (
@@ -538,6 +692,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             video={video}
             selectedImage={selectedImage}
             isLoading={isUploadingImage}
+            isVideoLoading={isUploadingVideo}
             onPickImage={handleImageUpload}
             onPickVideo={pickVideo}
             onRemoveImage={removeImage}
@@ -708,18 +863,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             </View>
           </RadioButton.Group>
 
-          {timePreference === 'custom' && (
-            <CustomTimeSection
-              customStartTime={customStartTime}
-              setCustomStartTime={setCustomStartTime}
-              customEndTime={customEndTime}
-              setCustomEndTime={setCustomEndTime}
-              selectedDays={selectedDays}
-              handleDayToggle={handleDayToggle}
-              TIME_SLOTS={TIME_SLOTS}
-              WEEKDAYS={WEEKDAYS}
-            />
-          )}
+          {timePreference === 'custom' && <CustomPerDayTimeSection />}
         </View>
 
         {/* Address Section */}
@@ -922,11 +1066,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
-  timePickerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   timePicker: {
     flex: 1,
     marginLeft: 8,
@@ -1043,6 +1182,141 @@ const styles = StyleSheet.create({
   },
   weekdayChip: {
     marginBottom: 8,
+  },
+  customPerDayContainer: {
+    marginTop: 16,
+    gap: 16,
+  },
+  timeFrameSelectionContainer: {
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  timeFrameLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  addFrameButton: {
+    backgroundColor: Colors.orange500,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  addFrameButtonText: {
+    color: 'white',
+    fontWeight: '500',
+  },
+  selectedFramesContainer: {
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    borderRadius: 12,
+  },
+  selectedFramesTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  timeFrameItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  timeFrameText: {
+    flex: 1,
+  },
+  removeFrameButton: {
+    padding: 4,
+  },
+  removeFrameButtonText: {
+    color: Colors.orange500,
+    fontSize: 16,
+  },
+  timeSelectionHeader: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: Colors.gray800
+  },
+  daySelectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  dayChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.orange300,
+  },
+  dayChipSelected: {
+    backgroundColor: Colors.orange500,
+  },
+  dayChipDisabled: {
+    borderColor: Colors.gray300,
+    backgroundColor: Colors.gray100,
+  },
+  dayChipText: {
+    color: Colors.orange500,
+    fontSize: 14,
+  },
+  dayChipTextSelected: {
+    color: 'white',
+  },
+  dayChipTextDisabled: {
+    color: Colors.gray400,
+  },
+  timePickerContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectedFrameCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  frameInfo: {
+    flex: 1,
+  },
+  frameDayText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.gray800,
+    marginBottom: 4,
+  },
+  frameTimeText: {
+    fontSize: 14,
+    color: Colors.gray600,
+  },
+  removeButton: {
+    padding: 8,
+  },
+  removeIcon: {
+    color: Colors.lightRed,
+    fontSize: 20,
   },
 });
 
