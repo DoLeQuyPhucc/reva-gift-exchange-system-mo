@@ -307,6 +307,9 @@ const MyTransactions = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.resultCount}>
+        Hiển thị {transactions.length} giao dịch
+      </Text>
       <ScrollView showsVerticalScrollIndicator={false}>
         {transactions.map((transaction) => (
           <View key={transaction.id} style={styles.card}>
@@ -672,6 +675,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#f5f5f5",
+  },
+  resultCount: {
+    color: "#666",
+    marginBottom: 16,
   },
   card: {
     backgroundColor: "white",
