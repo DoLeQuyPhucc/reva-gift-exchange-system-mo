@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   Image,
+  TextInput,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -24,7 +25,7 @@ import { Buffer } from "buffer";
 import UserReportModal from "@/src/components/modal/UserReportModal";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { TouchableWithoutFeedback } from "react-native";
-import { formatDate } from "@/src/shared/formatDate";
+import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -43,6 +44,9 @@ const MyTransactions = () => {
   const userId = useAuthCheck().userData.userId;
 
   const [isConfirm, setIsConfirm] = useState(false);
+
+  const [showInputRejectMessage, setShowInputRejectMessage] = useState(false);
+  const [rejectMessage, setRejectMessage] = useState<string>("");
 
   useEffect(() => {
     fetchTransactions();
@@ -63,7 +67,10 @@ const MyTransactions = () => {
       }
       const transactionsList = await Promise.all(
         response.data.data.map(async (transaction: Transaction) => {
-          if (transaction.status === "Completed") {
+          if (
+            transaction.status === "Completed" ||
+            transaction.status === "Not_Completed"
+          ) {
             const rating = await axiosInstance.get(
               `rating/transaction/${transaction.id}`
             );
@@ -111,27 +118,30 @@ const MyTransactions = () => {
   };
 
   const handleReject = (transactionId: string) => {
-    Alert.alert("Lưu ý", "Bạn có chắc chắn muốn từ chối giao dịch?", [
-      {
-        text: "Hủy",
-        style: "cancel",
-      },
-      {
-        text: "Xác nhận",
-        onPress: async () => {
-          const res = await axiosInstance.put(
-            `transaction/update-status/${transactionId}`,
-            "Not_Completed"
-          );
-          if (res.data.isSuccess === true) {
-            Alert.alert("Thành công", "Bạn đã từ chối giao dịch.");
-            setShowModal(false);
-            setVerificationInput("");
-            setIsConfirm(!isConfirm);
-          }
+    Alert.alert(
+      "Bạn có chắc chắn muốn từ chối giao dịch?",
+      `Lí do: ${rejectMessage}`,
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: "Xác nhận",
+          onPress: async () => {
+            const res = await axiosInstance.put(
+              `transaction/reject/${transactionId}?message=${rejectMessage}`
+            );
+            if (res.data.isSuccess === true) {
+              Alert.alert("Thành công", "Bạn đã từ chối giao dịch.");
+              setShowModal(false);
+              setVerificationInput("");
+              setIsConfirm(!isConfirm);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatTimeRange = (dateString: string) => {
@@ -147,22 +157,24 @@ const MyTransactions = () => {
       });
     };
 
-    const formatDate = (d: Date) => {
-      return d.toLocaleDateString("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-      });
-    };
-
-    return `${formatTime(startTime)} - ${formatTime(endTime)} ${formatDate(date)}`;
+    return `${formatTime(startTime)} - ${formatTime(
+      endTime
+    )} ${formatDate_DD_MM_YYYY(date.toISOString())}`;
   };
 
   const getTransactionTitle = (transaction: Transaction) => {
     if (!transaction.requesterItem?.itemName) {
-      return `Giao dịch đăng ký nhận từ ${checkRole(transaction) === 'requester' ? 'bạn' :  transaction.requester.name}`;
+      return `Giao dịch đăng ký nhận từ ${
+        checkRole(transaction) === "requester"
+          ? "bạn"
+          : transaction.requester.name
+      }`;
     }
-    return `Giao dịch giữa bạn và ${checkRole(transaction) === 'charitarian' ? transaction.requester.name :  transaction.charitarian.name}`;
+    return `Giao dịch giữa bạn và ${
+      checkRole(transaction) === "charitarian"
+        ? transaction.requester.name
+        : transaction.charitarian.name
+    }`;
   };
   interface RatingResponse {
     isSuccess: boolean;
@@ -288,7 +300,7 @@ const MyTransactions = () => {
   const fetchQRCode = async (transactionId: string) => {
     try {
       const response = await axiosInstance.get(
-        `qr/generateinfor?transactionId=${transactionId}`,
+        `qr/generate?transactionId=${transactionId}`,
         {
           responseType: "arraybuffer",
         }
@@ -340,15 +352,16 @@ const MyTransactions = () => {
                 <View style={styles.productCard}>
                   <Image
                     source={{
-                      uri:
-                        transaction.requesterItem?.itemImages[0]
+                      uri: transaction.requesterItem?.itemImages[0],
                     }}
                     style={styles.productImage}
                   />
                   <Text style={styles.productName} numberOfLines={2}>
                     {transaction.requesterItem?.itemName}
                   </Text>
-                  <Text style={styles.ownerName}>{transaction.requester.name}</Text>
+                  <Text style={styles.ownerName}>
+                    {transaction.requester.name}
+                  </Text>
                 </View>
 
                 <View style={styles.exchangeContainer}>
@@ -359,8 +372,7 @@ const MyTransactions = () => {
                 <View style={styles.productCard}>
                   <Image
                     source={{
-                      uri:
-                        transaction.charitarianItem.itemImages[0]
+                      uri: transaction.charitarianItem.itemImages[0],
                     }}
                     style={styles.productImage}
                   />
@@ -376,8 +388,7 @@ const MyTransactions = () => {
               <View style={styles.productCard}>
                 <Image
                   source={{
-                    uri:
-                      transaction.charitarianItem.itemImages[0]
+                    uri: transaction.charitarianItem.itemImages[0],
                   }}
                   style={styles.productImage}
                 />
@@ -404,13 +415,32 @@ const MyTransactions = () => {
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.dateInfo}>
               <Text>
-              Lưu ý: Bạn nên tới vào lúc {formatTimeRange(transaction.appointmentDate)} để có thể thấy được mã xác nhận và hoàn thành giao dịch.
+                <Icon
+                  name="question-answer"
+                  size={18}
+                  color={Colors.orange500}
+                />{" "}
+                Lời nhắn từ người cho: {transaction.requestNote}
               </Text>
-
             </View>
+
+            <View style={styles.dateInfo}>
+              <Text>
+                <Icon name="info" size={18} color={Colors.orange500} /> Lưu ý:
+                Bạn nên tới vào lúc{" "}
+                {formatTimeRange(transaction.appointmentDate)} để có thể thấy
+                được mã xác nhận và hoàn thành giao dịch.
+              </Text>
+            </View>
+
+            {transaction.rejectMessage && (
+              <Text style={styles.rejectMessage}>
+                Từ chối: {transaction.rejectMessage}
+              </Text>
+            )}
 
             {transaction.status === "Pending" &&
               checkRole(transaction) === "requester" && (
@@ -433,10 +463,12 @@ const MyTransactions = () => {
                     onPress={() => {
                       const data: LocationMap = {
                         latitude: parseFloat(
-                          transaction.charitarianAddress.addressCoordinates.latitude
+                          transaction.charitarianAddress.addressCoordinates
+                            .latitude
                         ),
                         longitude: parseFloat(
-                          transaction.charitarianAddress.addressCoordinates.longitude
+                          transaction.charitarianAddress.addressCoordinates
+                            .longitude
                         ),
                       };
                       setLocation(data);
@@ -493,61 +525,62 @@ const MyTransactions = () => {
                 </>
               )}
 
-            {transaction.status === "Completed" || transaction.status === "Not_Completed" && (
-              <>
-                <TouchableOpacity
-                  style={[styles.verifyButton, { opacity: 0.5 }]}
-                  disabled={true}
-                >
-                  <Text style={styles.verifyButtonText}>Đã xác thực</Text>
-                </TouchableOpacity>
-                {transaction.rating === null ? (
+            {transaction.status === "Completed" ||
+              (transaction.status === "Not_Completed" && (
+                <>
                   <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => handleOpenRatingModal(transaction)}
+                    style={[styles.verifyButton, { opacity: 0.5 }]}
+                    disabled={true}
                   >
-                    <View style={styles.detailsButtonContent}>
-                      <Icon
-                        name="drive-file-rename-outline"
-                        size={20}
-                        color={Colors.orange500}
-                      />
-                      <Text style={styles.detailsButtonText}>Đánh giá</Text>
-                    </View>
+                    <Text style={styles.verifyButtonText}>Đã xác thực</Text>
                   </TouchableOpacity>
-                ) : (
-                  <>
-                    <View style={styles.starContainer}>
-                      <Text style={styles.titleText}>Đánh giá giao dịch</Text>
-                      <View style={styles.ratingContainer}>
-                        <Text style={styles.labelText}>Chất lượng: </Text>
-                        <Text style={styles.starText}>
-                          {renderStars(transaction.rating || 0)}
-                        </Text>
+                  {transaction.rating === null || transaction.rating === 0 ? (
+                    <TouchableOpacity
+                      style={styles.detailsButton}
+                      onPress={() => handleOpenRatingModal(transaction)}
+                    >
+                      <View style={styles.detailsButtonContent}>
+                        <Icon
+                          name="drive-file-rename-outline"
+                          size={20}
+                          color={Colors.orange500}
+                        />
+                        <Text style={styles.detailsButtonText}>Đánh giá</Text>
                       </View>
-                      {transaction.ratingComment && (
-                        <View style={styles.commentContainer}>
-                          <Text style={styles.labelText}>Nhận xét: </Text>
-                          <Text style={styles.commentText}>
-                            {transaction.ratingComment}
+                    </TouchableOpacity>
+                  ) : (
+                    <>
+                      <View style={styles.starContainer}>
+                        <Text style={styles.titleText}>Đánh giá giao dịch</Text>
+                        <View style={styles.ratingContainer}>
+                          <Text style={styles.labelText}>Chất lượng: </Text>
+                          <Text style={styles.starText}>
+                            {renderStars(transaction.rating || 0)}
                           </Text>
                         </View>
-                      )}
-                    </View>
-                  </>
-                )}
+                        {transaction.ratingComment && (
+                          <View style={styles.commentContainer}>
+                            <Text style={styles.labelText}>Nhận xét: </Text>
+                            <Text style={styles.commentText}>
+                              {transaction.ratingComment}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </>
+                  )}
 
-                <TouchableOpacity
-                  style={styles.detailsButton}
-                  onPress={() => handleOpenReportModal(transaction)}
-                >
-                  <View style={styles.detailsButtonContent}>
-                    <Icon name="report" size={20} color={Colors.orange500} />
-                    <Text style={styles.detailsButtonText}>Báo cáo</Text>
-                  </View>
-                </TouchableOpacity>
-              </>
-            )}
+                  <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => handleOpenReportModal(transaction)}
+                  >
+                    <View style={styles.detailsButtonContent}>
+                      <Icon name="report" size={20} color={Colors.orange500} />
+                      <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                    </View>
+                  </TouchableOpacity>
+                </>
+              ))}
           </View>
         ))}
       </ScrollView>
@@ -575,58 +608,85 @@ const MyTransactions = () => {
                   )}
                 </View>
               )}
-              {/* 
-            <View style={styles.idContainer}>
-              {showTransactionId && selectedTransaction && (
-                <View style={styles.transactionIdBox}>
-                  <Text style={styles.transactionIdText}>
-                    {selectedTransaction.id}
-                  </Text>
-                </View>
-              )}
-              <TouchableOpacity
-                style={styles.showIdButton}
-                onPress={() => setShowTransactionId(!showTransactionId)}
-              >
-                <Text style={styles.showIdButtonText}>
-                  {showTransactionId ? "Ẩn mã" : "Xem mã"}
-                </Text>
-              </TouchableOpacity>
-            </View>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập mã định danh"
-              value={verificationInput}
-              onChangeText={setVerificationInput}
-            /> */}
               {selectedTransaction &&
                 checkRole(selectedTransaction) === "charitarian" && (
-                  <View style={styles.modalButtonContainer}>
-                  <View style={styles.topButtonRow}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => {
-                        setShowModal(false);
-                        setVerificationInput("");
-                      }}
-                    >
-                      <Text style={styles.buttonText}>Hủy</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.rejectButton]}
-                      onPress={() => handleReject(selectedTransaction.id)}
-                    >
-                      <Text style={styles.buttonText}>Từ chối</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.verifyButton, styles.bottomButton]}
-                    onPress={handleVerification}
-                  >
-                    <Text style={styles.buttonText}>Xác nhận giao dịch</Text>
-                  </TouchableOpacity>
-                </View>
+                  <>
+                    {showInputRejectMessage && (
+                      <>
+                        <Text style={styles.modalDescription}>
+                          Vui lòng nhập lý do từ chối:
+                        </Text>
+                        <TextInput
+                          style={styles.requestInput}
+                          placeholder="Nhập tin nhắn..."
+                          value={rejectMessage}
+                          onChangeText={setRejectMessage}
+                          multiline
+                        />
+                        {rejectMessage.length > 99 && (
+                          <Text style={styles.textErrorMessage}>
+                            Lời nhắn của bạn không được vượt quá 100 ký tự.
+                          </Text>
+                        )}
+                        {rejectMessage.length === 0 && (
+                          <Text style={styles.textErrorMessage}>
+                            Bạn phải nhập lí do từ chối
+                          </Text>
+                        )}
+                      </>
+                    )}
+
+                    <View style={styles.modalButtonContainer}>
+                      <View style={styles.topButtonRow}>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.cancelButton]}
+                          onPress={() => {
+                            setShowModal(false);
+                            setVerificationInput("");
+                          }}
+                        >
+                          <Text style={styles.buttonText}>Hủy</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.modalButton,
+                            styles.rejectButton,
+                            rejectMessage.length === 0 &&
+                              showInputRejectMessage &&
+                              styles.disabledButton,
+                          ]}
+                          disabled={
+                            rejectMessage.length === 0 && showInputRejectMessage
+                          }
+                          onPress={
+                            showInputRejectMessage
+                              ? () => handleReject(selectedTransaction.id)
+                              : () => setShowInputRejectMessage(true)
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.buttonText,
+                              rejectMessage.length === 0 &&
+                                showInputRejectMessage &&
+                                styles.disabledButtonText,
+                            ]}
+                          >
+                            Từ chối
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.verifyButton, styles.bottomButton]}
+                        onPress={handleVerification}
+                      >
+                        <Text style={styles.buttonText}>
+                          Xác nhận giao dịch
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
                 )}
             </View>
           </View>
@@ -843,15 +903,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalButtonContainer: {
-    width: '100%',
+    marginTop: 16,
+    width: "100%",
   },
   topButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   bottomButton: {
-    width: '100%',
+    width: "100%",
     padding: 12,
     borderRadius: 8,
   },
@@ -863,7 +924,7 @@ const styles = StyleSheet.create({
   verifyButton: {
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Colors.orange500,
   },
   verifyButtonText: {
@@ -887,7 +948,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 8,
     borderRadius: 8,
-    backgroundColor: "#f8f8f8",
+    borderColor: Colors.orange500,
+    borderWidth: 1,
   },
   detailsButtonContent: {
     flexDirection: "row",
@@ -899,6 +961,13 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontSize: 14,
     fontWeight: "500",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
+    opacity: 0.5,
+  },
+  disabledButtonText: {
+    color: "#666",
   },
   starContainer: {
     marginVertical: 10,
@@ -921,7 +990,7 @@ const styles = StyleSheet.create({
   },
   starText: {
     fontSize: 18,
-    color: "#FFD700", // Gold color for stars
+    color: "#FFD700",
   },
   commentContainer: {
     backgroundColor: "#f0f0f0",
@@ -932,6 +1001,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
     fontStyle: "italic",
+  },
+  requestInput: {
+    backgroundColor: "#f2f2f2",
+    borderRadius: 8,
+    padding: 12,
+    textAlignVertical: "top",
+    width: "100%",
+  },
+  textErrorMessage: {
+    color: "#e53e3e",
+    marginBottom: 16,
+  },
+  modalDescription: {
+    fontSize: 16,
+    marginBottom: 16,
+    fontWeight: "bold",
+    textAlign: "left",
+  },
+  rejectMessage: {
+    backgroundColor: "#ffe3e3",
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 16,
   },
 });
 
