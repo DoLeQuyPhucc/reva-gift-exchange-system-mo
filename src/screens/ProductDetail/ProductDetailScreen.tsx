@@ -25,7 +25,9 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { CustomAlert } from "@/src/components/CustomAlert";
-import DateTimePickerCustom, { convertDayOfWeek } from "@/src/components/modal/DateTimePickerCustom";
+import DateTimePickerCustom, {
+  convertDayOfWeek,
+} from "@/src/components/modal/DateTimePickerCustom";
 
 type TimeSlot = {
   id: string;
@@ -94,6 +96,7 @@ export default function ProductDetailScreen() {
         const response = await axiosInstance.get(`/items/${itemId}`);
 
         if (response.data.isSuccess && response.data.data) {
+          console.log("Product:", response.data.data);
           setProduct(response.data.data);
           setStartEndHours(
             response.data.data?.availableTime || "officeHours 9:00_17:00"
@@ -274,8 +277,8 @@ export default function ProductDetailScreen() {
     // Validate input before adding
     if (!validateTimeInput()) return;
 
-    if (selectedTimeSlots.length >= 3) {
-      setTimeInputError("Bạn chỉ được chọn tối đa 3 khung thời gian");
+    if (selectedTimeSlots.length >= 1) {
+      setTimeInputError("Bạn chỉ được chọn tối đa 1 khung thời gian");
       return;
     }
 
@@ -460,25 +463,24 @@ export default function ProductDetailScreen() {
 
     return (
       <ScrollView horizontal style={styles.userItemsScroll}>
-        {userItems
-          .map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.userItemCard,
-                selectedUserItem?.id === item.id && styles.selectedUserItemCard,
-              ]}
-              onPress={() => handleItemPress(item)}
-            >
-              <Image
-                source={{ uri: item.images[0] }}
-                style={styles.userItemImage}
-              />
-              <Text style={styles.userItemName} numberOfLines={1}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {userItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[
+              styles.userItemCard,
+              selectedUserItem?.id === item.id && styles.selectedUserItemCard,
+            ]}
+            onPress={() => handleItemPress(item)}
+          >
+            <Image
+              source={{ uri: item.images[0] }}
+              style={styles.userItemImage}
+            />
+            <Text style={styles.userItemName} numberOfLines={1}>
+              {item.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     );
   };
@@ -520,7 +522,9 @@ export default function ProductDetailScreen() {
 
         <View style={styles.badgeContainer}>
           <View style={[styles.badge, { backgroundColor: Colors.orange500 }]}>
-            <Text style={styles.badgeText}>{product.subCategory.category.name}</Text>
+            <Text style={styles.badgeText}>
+              {product.subCategory.category.name}
+            </Text>
           </View>
           <View style={[styles.badge, { backgroundColor: Colors.lightGreen }]}>
             <Text style={styles.badgeText}>{product.condition}</Text>
@@ -553,6 +557,21 @@ export default function ProductDetailScreen() {
             <Icon name="loop" size={20} />
             <Text style={styles.detailText}>
               Tình trạng: {product.condition}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Icon name="access-time" size={20} />
+            <Text style={styles.detailText}>
+              {`Khung giờ: từ ${startHour}:00 - ${
+                endHour - 1
+              }:59, ${convertDayOfWeek(daysOnly)}`}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Icon name="compare-arrows" size={20} />
+            <Text style={styles.detailText}>
+              Mong muốn trao đổi với: {product.desiredSubCategory.category.name}
+              , {product.desiredSubCategory.subCategoryName}
             </Text>
           </View>
           {product.isGift && (
@@ -611,6 +630,11 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   </View>
+                  <Text style={styles.detailText}>
+                    Mong muốn trao đổi với:{" "}
+                    {product.desiredSubCategory.category.name},{" "}
+                    {product.desiredSubCategory.subCategoryName}
+                  </Text>
                 </>
               ) : (
                 <>
@@ -627,6 +651,11 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   </View>
+                  <Text style={styles.detailText}>
+                    Mong muốn trao đổi với:{" "}
+                    {product.desiredSubCategory.category.name},{" "}
+                    {product.desiredSubCategory.subCategoryName}
+                  </Text>
                 </>
               )}
 
@@ -683,7 +712,7 @@ export default function ProductDetailScreen() {
 
               {!isTrue ? (
                 <TouchableOpacity onPress={() => handleWannaExchange()}>
-                  <Text style={styles.requestText}>
+                  <Text style={[styles.requestText, styles.marginTop_16_Botttom_12]}>
                     Tôi muốn trao đổi với đồ của tôi.
                   </Text>
                 </TouchableOpacity>
@@ -716,16 +745,17 @@ export default function ProductDetailScreen() {
                   )}
 
                   <Text style={styles.modalDescription}>
-                    Vui lòng chọn khung thời gian theo thời gian rãnh của chủ
-                    sản phẩm
+                    Vui lòng chọn thời gian bạn sẽ tời nhận sản phẩm:
                   </Text>
-                  
+
                   <Text style={styles.description}>
-                      {`Khung giờ: từ ${startHour}:00 - ${endHour - 1}:59, ${convertDayOfWeek(daysOnly)}`}
-                    </Text>
+                    {`Khung giờ: từ ${startHour}:00 - ${
+                      endHour - 1
+                    }:59, ${convertDayOfWeek(daysOnly)}`}
+                  </Text>
                   <Text style={styles.modalDescriptionSub}>
                     Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp
-                    hành trao đổi. Bạn có thể chọn tối đa 3 khung giờ.
+                    hành trao đổi.
                   </Text>
 
                   {/* Selected Time Slots */}
@@ -743,101 +773,103 @@ export default function ProductDetailScreen() {
                       </View>
                     ))}
                   </View>
-
-                  <View style={styles.container}>
-                    {/* Date Picker */}
-                    <TouchableOpacity
-                      style={styles.datePickerButton}
-                      onPress={() => setShowDatePicker(true)}
-                    >
-                      <Text style={styles.datePickerButtonText}>
-                        Chọn ngày:{" "}
-                        {formatDate_DD_MM_YYYY(selectedDate.toISOString())}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {showDatePicker && (
-                      // <DateTimePicker
-                      //   value={selectedDate}
-                      //   mode="date"
-                      //   display="default"
-                      //   onChange={handleDateChange}
-                      //   minimumDate={new Date()}
-                      // />
-
-                      <DateTimePickerCustom
-                        date={selectedDate}
-                        setDate={setSelectedDate}
-                        allowedDays={daysOnly}
-                        onClose={() => setShowDatePicker(false)}
-                      />
-                    )}
-
-                    {/* Time Input */}
-                    <View style={styles.inputContainer}>
-                      <View style={styles.timeInputWrapper}>
+                    {selectedTimeSlots.length === 0 && (
+                      <View style={styles.container}>
+                        {/* Date Picker */}
                         <TouchableOpacity
-                          style={styles.timeInput}
-                          onPress={() => setShowHourModal(true)}
+                          style={styles.datePickerButton}
+                          onPress={() => setShowDatePicker(true)}
                         >
-                          <Text style={styles.timeInputText}>
-                            {selectedHour !== null
-                              ? selectedHour.toString().padStart(2, "0")
-                              : "Giờ"}
+                          <Text style={styles.datePickerButtonText}>
+                            Chọn ngày:{" "}
+                            {formatDate_DD_MM_YYYY(selectedDate.toISOString())}
                           </Text>
                         </TouchableOpacity>
 
-                        <Text style={styles.colonText}>:</Text>
+                        {showDatePicker && (
+                          // <DateTimePicker
+                          //   value={selectedDate}
+                          //   mode="date"
+                          //   display="default"
+                          //   onChange={handleDateChange}
+                          //   minimumDate={new Date()}
+                          // />
 
-                        <TouchableOpacity
-                          style={styles.timeInput}
-                          onPress={() => setShowMinuteModal(true)}
-                        >
-                          <Text style={styles.timeInputText}>
-                            {selectedMinute !== null
-                              ? selectedMinute.toString().padStart(2, "0")
-                              : "Phút"}
-                          </Text>
-                        </TouchableOpacity>
+                          <DateTimePickerCustom
+                            date={selectedDate}
+                            setDate={setSelectedDate}
+                            allowedDays={daysOnly}
+                            onClose={() => setShowDatePicker(false)}
+                          />
+                        )}
 
-                        <TouchableOpacity
-                          style={styles.addButton}
-                          onPress={addTimeSlot}
-                        >
-                          <Text style={styles.addButtonText}>Thêm</Text>
-                        </TouchableOpacity>
+                        {/* Time Input */}
+                        <View style={styles.inputContainer}>
+                          <View style={styles.timeInputWrapper}>
+                            <TouchableOpacity
+                              style={styles.timeInput}
+                              onPress={() => setShowHourModal(true)}
+                            >
+                              <Text style={styles.timeInputText}>
+                                {selectedHour !== null
+                                  ? selectedHour.toString().padStart(2, "0")
+                                  : "Giờ"}
+                              </Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.colonText}>:</Text>
+
+                            <TouchableOpacity
+                              style={styles.timeInput}
+                              onPress={() => setShowMinuteModal(true)}
+                            >
+                              <Text style={styles.timeInputText}>
+                                {selectedMinute !== null
+                                  ? selectedMinute.toString().padStart(2, "0")
+                                  : "Phút"}
+                              </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              style={styles.addButton}
+                              onPress={addTimeSlot}
+                            >
+                              <Text style={styles.addButtonText}>Chọn</Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          {/* Hour Modal */}
+                          {renderPickerModal(
+                            showHourModal,
+                            setShowHourModal,
+                            hours,
+                            selectedHour,
+                            setSelectedHour,
+                            "Chọn giờ"
+                          )}
+
+                          {/* Minute Modal */}
+                          {renderPickerModal(
+                            showMinuteModal,
+                            setShowMinuteModal,
+                            minutes,
+                            selectedMinute,
+                            setSelectedMinute,
+                            "Chọn phút"
+                          )}
+
+                          {/* Error Message */}
+                          {timeInputError ? (
+                            <View style={styles.timeInputWrapper}>
+                              <Text style={styles.errorTimeText}>
+                                {timeInputError}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
 
-                      {/* Hour Modal */}
-                      {renderPickerModal(
-                        showHourModal,
-                        setShowHourModal,
-                        hours,
-                        selectedHour,
-                        setSelectedHour,
-                        "Chọn giờ"
-                      )}
-
-                      {/* Minute Modal */}
-                      {renderPickerModal(
-                        showMinuteModal,
-                        setShowMinuteModal,
-                        minutes,
-                        selectedMinute,
-                        setSelectedMinute,
-                        "Chọn phút"
-                      )}
-
-                      {/* Error Message */}
-                      {timeInputError ? (
-                        <View style={styles.timeInputWrapper}>
-                          <Text style={styles.errorTimeText}>
-                            {timeInputError}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
+                    )}
                 </>
               )}
             </ScrollView>
@@ -1055,7 +1087,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   timeSlotBadge: {
     flexDirection: "row",
@@ -1204,8 +1236,12 @@ const styles = StyleSheet.create({
   requestText: {
     color: Colors.orange500,
     fontSize: 14,
-    marginVertical: 16,
+    marginBottom: 12,
     textDecorationLine: "underline",
+  },
+  marginTop_16_Botttom_12: {
+    marginTop: 16,
+    marginBottom: 12,
   },
   loadingText: {
     textAlign: "center",

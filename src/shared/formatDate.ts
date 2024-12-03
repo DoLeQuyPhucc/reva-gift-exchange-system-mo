@@ -5,6 +5,7 @@ export const formatDate = (dateString: string): string => {
   const time = new Intl.DateTimeFormat("vi", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   }).format(date);
 
