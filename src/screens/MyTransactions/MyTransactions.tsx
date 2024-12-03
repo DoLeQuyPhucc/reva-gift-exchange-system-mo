@@ -22,10 +22,10 @@ import {
 import MapModal from "@/src/components/Map/MapModal";
 import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
 import { Buffer } from "buffer";
-import UserReportModal from "@/src/components/modal/UserReportModal";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { TouchableWithoutFeedback } from "react-native";
 import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
+import ReportModal from "@/src/components/ReportModal";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -709,11 +709,28 @@ const MyTransactions = () => {
           transactionId: selectedTransaction?.id || "",
         }}
       />
-
+      {/* 
       <UserReportModal
         isVisible={isReportModalVisible}
         onClose={() => setIsReportModalVisible(false)}
         onSubmitRating={handleReport}
+        userTransactionToRate={{
+          userId:
+            userId === selectedTransaction?.charitarian.id
+              ? selectedTransaction?.requester.id
+              : selectedTransaction?.charitarian.id || "",
+          userName:
+            userId === selectedTransaction?.charitarian.id
+              ? selectedTransaction?.requester.name || ""
+              : selectedTransaction?.charitarian.name || "",
+          transactionId: selectedTransaction?.id || "",
+        }}
+      /> */}
+
+      <ReportModal
+        isVisible={isReportModalVisible}
+        onClose={() => setIsReportModalVisible(false)}
+        onSubmit={handleReport}
         userTransactionToRate={{
           userId:
             userId === selectedTransaction?.charitarian.id
