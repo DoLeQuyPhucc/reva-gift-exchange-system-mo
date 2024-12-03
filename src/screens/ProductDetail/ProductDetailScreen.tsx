@@ -14,7 +14,7 @@ import {
 import { RouteProp, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Product } from "@/src/shared/type";
+import { DayTimeRange, Product } from "@/src/shared/type";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Button } from "react-native";
 import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
@@ -76,6 +76,7 @@ export default function ProductDetailScreen() {
   const [startHour, setStartHour] = useState(9);
   const [endHour, setEndHour] = useState(17);
   const [daysOnly, setDaysOnly] = useState("mon_tue_wed_thu_fri_sat_sun");
+  const [timeRanges, setTimeRanges] = useState<DayTimeRange[]>([]);
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [alertData, setAlertData] = useState({
@@ -98,7 +99,7 @@ export default function ProductDetailScreen() {
         if (response.data.isSuccess && response.data.data) {
           console.log("Product:", response.data.data);
           setProduct(response.data.data);
-          setStartEndHours(
+          setCustomTimeRanges(
             response.data.data?.availableTime || "officeHours 9:00_17:00"
           );
           console.log("Product:", response.data.data);
@@ -211,14 +212,45 @@ export default function ProductDetailScreen() {
     const newImages = moreImages.filter((_, idx) => idx !== index);
     setMoreImages(newImages);
   };
-
-  const setStartEndHours = (range: string) => {
-    const [type, hours, daysOnly] = range.split(" ");
-    const [start, end] = hours.split("_").map((hour) => parseInt(hour));
-    setStartHour(start);
-    setEndHour(end);
-    setDaysOnly(daysOnly);
+  const parseCustomPerDay = (rangeString: string): DayTimeRange[] => {
+    const [type, ...dayRanges] = rangeString.split(" ");
+    
+    if (type !== "customPerDay") return [];
+    
+    return dayRanges.join(" ").split("|").map(dayRange => {
+      const [hours, day] = dayRange.trim().split(" ");
+      const [start, end] = hours.split("_").map(hour => {
+        // Chuyển đổi format "HH:mm" thành số
+        const [h] = hour.split(":");
+        return parseInt(h);
+      });
+      
+      return {
+        day: day,
+        startHour: start,
+        endHour: end
+      };
+    });
   };
+  
+  const setCustomTimeRanges = (range: string) => {
+    const [type] = range.split(" ");
+    
+    if (type === "customPerDay") {
+      const timeRanges = parseCustomPerDay(range);
+      console.log("Time ranges:", timeRanges);
+      setTimeRanges(timeRanges); // Thêm state mới để lưu timeRanges
+      setDaysOnly(timeRanges.map(r => r.day).join("_"));
+    } else {
+      // Logic cũ cho officeHours
+      const [, hours, daysOnly] = range.split(" ");
+      const [start, end] = hours.split("_").map((hour) => parseInt(hour));
+      setStartHour(start);
+      setEndHour(end);
+      setDaysOnly(daysOnly);
+    }
+  };
+  
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -227,51 +259,93 @@ export default function ProductDetailScreen() {
     }
   };
 
-  const generateHourRange = () => {
-    if (startHour !== undefined && endHour !== undefined) {
-      // If startHour is less than or equal to endHour, generate range normally
-      if (startHour <= endHour) {
-        return Array.from(
-          { length: endHour - startHour },
-          (_, i) => startHour + i
-        );
-      }
-      // If startHour is greater than endHour (crossing midnight),
-      // generate range that wraps around 24 hours
-      else {
-        return [
-          ...Array.from({ length: 24 - startHour }, (_, i) => startHour + i),
-          ...Array.from({ length: endHour + 1 }, (_, i) => i),
-        ];
-      }
-    }
-    // Fallback to full 24-hour range if no start/end hours are set
-    return Array.from({ length: 24 }, (_, i) => i);
+  const getTimeRangeForSelectedDate = (date: Date): { start: number; end: number } | null => {
+  const dayIndex = date.getDay();
+  const dayMap: { [key: string]: number } = {
+    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
   };
+
+  if (timeRanges.length > 0) {
+    const dayName = Object.keys(dayMap).find(key => dayMap[key] === dayIndex);
+    const timeRange = timeRanges.find(range => range.day.toLowerCase() === dayName);
+    
+    if (timeRange) {
+      return {
+        start: timeRange.startHour,
+        end: timeRange.endHour
+      };
+    }
+    return null;
+  } else {
+    return {
+      start: startHour,
+      end: endHour
+    };
+  }
+};
+
+const generateHourRange = () => {
+  const timeRange = getTimeRangeForSelectedDate(selectedDate);
+  
+  if (!timeRange) return []; // Trả về mảng rỗng nếu không có khung giờ hợp lệ
+
+  const { start, end } = timeRange;
+
+  // Nếu start <= end, tạo range bình thường
+  if (start <= end) {
+    return Array.from({ length: end - start }, (_, i) => start + i);
+  }
+  // Nếu start > end (qua nửa đêm), tạo range bao quanh 24h
+  else {
+    return [
+      ...Array.from({ length: 24 - start }, (_, i) => start + i),
+      ...Array.from({ length: end + 1 }, (_, i) => i),
+    ];
+  }
+};
+const formatTimeRanges = (timeRanges: DayTimeRange[]): string => {
+  if (!timeRanges || timeRanges.length === 0) {
+    return `từ ${startHour}:00 - ${endHour - 1}:59, ${convertDayOfWeek(daysOnly)}`;
+  }
+
+  return timeRanges
+    .map(range => {
+      const dayName = convertDayOfWeek(range.day);
+      return `${range.startHour}:00-${range.endHour - 1}:59 ${dayName}`;
+    })
+    .join(', ');
+};
+
 
   // Generate hour and minute arrays
   const hours = generateHourRange();
   const minutes = Array.from({ length: 60 }, (_, i) => i);
-
-  // Validate time input
   const validateTimeInput = () => {
-    // Check if both hour and minute are selected
+    // Kiểm tra xem đã chọn cả giờ và phút chưa
     if (selectedHour === null || selectedMinute === null) {
       setTimeInputError("Vui lòng chọn đầy đủ giờ và phút");
       return false;
     }
-
-    // Check hour range
-    if (selectedHour < startHour || selectedHour >= endHour) {
-      setTimeInputError(`Giờ phải từ ${startHour} đến ${endHour - 1}`);
+  
+    const timeRange = getTimeRangeForSelectedDate(selectedDate);
+    if (!timeRange) {
+      setTimeInputError("Ngày này không có khung giờ hợp lệ");
       return false;
     }
-
-    // Clear any previous error
+  
+    const { start, end } = timeRange;
+  
+    // Kiểm tra giờ có nằm trong khung giờ cho phép không
+    if (selectedHour < start || selectedHour >= end) {
+      setTimeInputError(`Giờ phải từ ${start}:00 đến ${end - 1}:59`);
+      return false;
+    }
+  
+    // Xóa lỗi nếu có
     setTimeInputError("");
     return true;
   };
-
+  
   // Add time slot
   const addTimeSlot = () => {
     // Validate input before adding
@@ -562,9 +636,7 @@ export default function ProductDetailScreen() {
           <View style={styles.detailItem}>
             <Icon name="access-time" size={20} />
             <Text style={styles.detailText}>
-              {`Khung giờ: từ ${startHour}:00 - ${
-                endHour - 1
-              }:59, ${convertDayOfWeek(daysOnly)}`}
+            Khung giờ: {formatTimeRanges(timeRanges)}
             </Text>
           </View>
           <View style={styles.detailItem}>
@@ -743,20 +815,18 @@ export default function ProductDetailScreen() {
                       tự.
                     </Text>
                   )}
+<Text style={styles.modalDescription}>
+  Vui lòng chọn thời gian bạn sẽ tời nhận sản phẩm:
+</Text>
 
-                  <Text style={styles.modalDescription}>
-                    Vui lòng chọn thời gian bạn sẽ tời nhận sản phẩm:
-                  </Text>
+<Text style={styles.description}>
+  Khung giờ: {formatTimeRanges(timeRanges)}
+</Text>
 
-                  <Text style={styles.description}>
-                    {`Khung giờ: từ ${startHour}:00 - ${
-                      endHour - 1
-                    }:59, ${convertDayOfWeek(daysOnly)}`}
-                  </Text>
-                  <Text style={styles.modalDescriptionSub}>
-                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp
-                    hành trao đổi.
-                  </Text>
+<Text style={styles.modalDescriptionSub}>
+  Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp hành trao đổi.
+</Text>
+
 
                   {/* Selected Time Slots */}
                   <View style={styles.selectedSlotsContainer}>
@@ -796,11 +866,13 @@ export default function ProductDetailScreen() {
                           // />
 
                           <DateTimePickerCustom
-                            date={selectedDate}
-                            setDate={setSelectedDate}
-                            allowedDays={daysOnly}
-                            onClose={() => setShowDatePicker(false)}
-                          />
+  date={selectedDate}
+  setDate={setSelectedDate}
+  allowedDays={daysOnly}
+  timeRanges={timeRanges} // Thêm prop mới
+  onClose={() => setShowDatePicker(false)}
+/>
+
                         )}
 
                         {/* Time Input */}
@@ -867,6 +939,20 @@ export default function ProductDetailScreen() {
                             </View>
                           ) : null}
                         </View>
+
+                        {/* Hiển thị khung giờ cho ngày đã chọn */}
+{selectedDate && (
+  <Text style={styles.timeRangeText}>
+    {(() => {
+      const timeRange = getTimeRangeForSelectedDate(selectedDate);
+      if (timeRange) {
+        return `Khung giờ cho phép: ${timeRange.start}:00 - ${timeRange.end - 1}:59`;
+      }
+      return "Không có khung giờ cho phép trong ngày này";
+    })()}
+  </Text>
+)}
+
                       </View>
 
                     )}
@@ -1367,5 +1453,11 @@ const styles = StyleSheet.create({
   timeInputText: {
     color: "#777",
     textAlign: "center",
+  },
+  timeRangeText: {
+    marginTop: 8,
+    marginBottom: 8,
+    color: Colors.orange500,
+    fontSize: 14,
   },
 });

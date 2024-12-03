@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Alert } from 'react-native';
+import { DayTimeRange } from '@/src/shared/type';
 
 interface DateTimePickerCustomProps {
   date: Date;
   setDate: (date: Date) => void;
   allowedDays: string;
+  timeRanges?: DayTimeRange[]; // Thêm prop mới
   onClose: () => void;
 }
 
@@ -39,48 +41,80 @@ export const convertDayOfWeek = (allowedDays: string): string => {
       .join(', ');
   };
 
-const DateTimePickerCustom: React.FC<DateTimePickerCustomProps> = ({ date, setDate, allowedDays, onClose }) => {
 
-  // Map of day names to their corresponding day index
-  const dayMap: { [key: string]: number } = {
-    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
-  };
+const DateTimePickerCustom: React.FC<DateTimePickerCustomProps> = ({ 
+    date, 
+    setDate, 
+    allowedDays, 
+    timeRanges,
+    onClose 
+  }) => {
+    const dayMap: { [key: string]: number } = {
+      sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
+    };
 
-  // Convert input string to allowed day indices
-  const allowedDayIndices = allowedDays.split('_')
-    .map(day => dayMap[day.toLowerCase()])
-    .filter(index => index !== undefined);
+    const getTimeRangeForDay = (dayIndex: number): DayTimeRange | undefined => {
+      if (!timeRanges) return undefined;
+      
+      const dayName = Object.keys(dayMap).find(key => dayMap[key] === dayIndex);
+      return timeRanges.find(range => range.day.toLowerCase() === dayName);
+    };
 
-  const getNextAllowedDate = (currentDate: Date) => {
-    let nextDate = new Date(currentDate);
-    while (!allowedDayIndices.includes(nextDate.getDay())) {
-      nextDate.setDate(nextDate.getDate() + 1);
-    }
-    return nextDate;
-  };
-
-  const initialAllowedDate = getNextAllowedDate(new Date());
-
-  return (
-    <DateTimePicker
-      mode="date"
-      value={date}
-      minimumDate={initialAllowedDate}
-      maximumDate={getNextAllowedDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000))}
-      onChange={(event, selectedDate) => {
-        if (selectedDate) {
-          const dayOfWeek = selectedDate.getDay();
-          if (allowedDayIndices.includes(dayOfWeek)) {  
-            setDate(selectedDate);
-            onClose();
-          } else {
-            onClose();
-            Alert.alert('Lỗi', `Chỉ được chọn các ngày: ${convertDayOfWeek(allowedDays)}`);
+    const isDateAllowed = (testDate: Date): boolean => {
+      const dayIndex = testDate.getDay();
+      
+      if (timeRanges) {
+        // Chỉ kiểm tra ngày, không kiểm tra giờ khi chọn date
+        const timeRange = getTimeRangeForDay(dayIndex);
+        return timeRange !== undefined;
+      } else {
+        // Logic cũ cho officeHours
+        return allowedDays.split('_')
+          .map(day => dayMap[day.toLowerCase()])
+          .includes(dayIndex);
+      }
+    };
+    
+    const getNextAllowedDate = (currentDate: Date) => {
+      let nextDate = new Date(currentDate);
+      while (!isDateAllowed(nextDate)) {
+        nextDate.setDate(nextDate.getDate() + 1);
+      }
+      return nextDate;
+    };
+  
+    const initialAllowedDate = getNextAllowedDate(new Date());
+  
+    return (
+      <DateTimePicker
+        mode="date"
+        value={date}
+        minimumDate={initialAllowedDate}
+        maximumDate={getNextAllowedDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000))}
+        onChange={(event, selectedDate) => {
+          if (selectedDate) {
+            if (isDateAllowed(selectedDate)) {
+              setDate(selectedDate);
+              onClose();
+            } else {
+              onClose();
+              if (timeRanges) {
+                const dayRange = getTimeRangeForDay(selectedDate.getDay());
+                if (dayRange) {
+                  Alert.alert('Lỗi', 
+                    `Ngày ${convertDayOfWeek(dayRange.day)} chỉ được chọn từ ${dayRange.startHour}:00 đến ${dayRange.endHour}:00`
+                  );
+                } else {
+                  Alert.alert('Lỗi', 'Ngày này không được phép chọn');
+                }
+              } else {
+                Alert.alert('Lỗi', `Chỉ được chọn các ngày: ${convertDayOfWeek(allowedDays)}`);
+              }
+            }
           }
-        }
-      }}
-    />
-  );
-};
+        }}
+      />
+    );
+  };
 
 export default DateTimePickerCustom;
