@@ -10,7 +10,7 @@ export interface Notification {
   createdAt?: string | Date;
 }
 
-const SIGNALR_URL = "http://10.0.3.2:6900/notificationsHub";
+const SIGNALR_URL = "http://103.142.139.142:6900/notificationsHub";
 const MAX_NOTIFICATIONS = 100; // Giới hạn số lượng thông báo để tránh memory leaks
 
 interface NotificationState {
@@ -28,12 +28,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const userId = useAuthStore.getState().userId;
     if (!userId) return;
     const newConnection = new HubConnectionBuilder()
-    .withUrl(SIGNALR_URL, {
-      // Add access token if needed
-      accessTokenFactory: () => useAuthStore.getState().accessToken || "",
-    })
-    .withAutomaticReconnect([0, 2000, 5000, 10000, 20000]) // Retry strategy
-    .build();
+      .withUrl(SIGNALR_URL, {
+        // Add access token if needed
+        accessTokenFactory: () => useAuthStore.getState().accessToken || "",
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 20000]) // Retry strategy
+      .build();
     try {
       await newConnection.start();
       console.log("SignalR Connected!");
@@ -63,7 +63,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   setNotifications: (notifications) => set({ notifications }),
   addNotification: (notification) =>
     set((state) => ({
-      notifications: [notification, ...state.notifications].slice(0, MAX_NOTIFICATIONS),
+      notifications: [notification, ...state.notifications].slice(
+        0,
+        MAX_NOTIFICATIONS
+      ),
     })),
 
   clearNotifications: () => set({ notifications: [] }),

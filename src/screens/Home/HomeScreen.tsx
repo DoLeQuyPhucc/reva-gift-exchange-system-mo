@@ -65,9 +65,7 @@ const HomeScreen: React.FC = () => {
 
   const { refreshing, refreshControl } = useRefreshControl(fetchProducts);
 
-  const categories = [
-    ...new Set(products.map((product) => product.subCategory.category.name)),
-  ];
+  const categories = [...new Set(products.map((product) => product.category.name))];
 
   const getFilterProducts = (products: Product[]) => {
     const filteredProducts =
@@ -79,13 +77,11 @@ const HomeScreen: React.FC = () => {
             .filter(
               (product) =>
                 product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.description
-                  .toLowerCase()
-                  .includes(searchTerm.toLowerCase())
+                product.description.toLowerCase().includes(searchTerm.toLowerCase())
             )
             .filter((product) =>
               selectedCategory
-                ? product.subCategory.category.name === selectedCategory
+                ? product.category.name === selectedCategory 
                 : true
             )
             .sort((a, b) => {
@@ -145,7 +141,7 @@ const HomeScreen: React.FC = () => {
           )}
           <View style={[styles.badge, styles.outlineBadge]}>
             <Text style={styles.outlineBadgeText}>
-              {product.subCategory.category.name}
+              {product.category.name}
             </Text>
           </View>
         </View>
