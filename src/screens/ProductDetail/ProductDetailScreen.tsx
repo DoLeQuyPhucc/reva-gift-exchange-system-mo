@@ -14,7 +14,7 @@ import {
 import { RouteProp, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Product } from "@/src/shared/type";
+import { DayTimeRange, Product } from "@/src/shared/type";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Button } from "react-native";
 import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
@@ -25,7 +25,9 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { CustomAlert } from "@/src/components/CustomAlert";
-import DateTimePickerCustom, { convertDayOfWeek } from "@/src/components/modal/DateTimePickerCustom";
+import DateTimePickerCustom, {
+  convertDayOfWeek,
+} from "@/src/components/modal/DateTimePickerCustom";
 
 type TimeSlot = {
   id: string;
@@ -74,6 +76,7 @@ export default function ProductDetailScreen() {
   const [startHour, setStartHour] = useState(9);
   const [endHour, setEndHour] = useState(17);
   const [daysOnly, setDaysOnly] = useState("mon_tue_wed_thu_fri_sat_sun");
+  const [timeRanges, setTimeRanges] = useState<DayTimeRange[]>([]);
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [alertData, setAlertData] = useState({
@@ -94,8 +97,9 @@ export default function ProductDetailScreen() {
         const response = await axiosInstance.get(`/items/${itemId}`);
 
         if (response.data.isSuccess && response.data.data) {
+          console.log("Product:", response.data.data);
           setProduct(response.data.data);
-          setStartEndHours(
+          setCustomTimeRanges(
             response.data.data?.availableTime || "officeHours 9:00_17:00"
           );
           console.log("Product:", response.data.data);
@@ -208,14 +212,45 @@ export default function ProductDetailScreen() {
     const newImages = moreImages.filter((_, idx) => idx !== index);
     setMoreImages(newImages);
   };
-
-  const setStartEndHours = (range: string) => {
-    const [type, hours, daysOnly] = range.split(" ");
-    const [start, end] = hours.split("_").map((hour) => parseInt(hour));
-    setStartHour(start);
-    setEndHour(end);
-    setDaysOnly(daysOnly);
+  const parseCustomPerDay = (rangeString: string): DayTimeRange[] => {
+    const [type, ...dayRanges] = rangeString.split(" ");
+    
+    if (type !== "customPerDay") return [];
+    
+    return dayRanges.join(" ").split("|").map(dayRange => {
+      const [hours, day] = dayRange.trim().split(" ");
+      const [start, end] = hours.split("_").map(hour => {
+        // Chuyển đổi format "HH:mm" thành số
+        const [h] = hour.split(":");
+        return parseInt(h);
+      });
+      
+      return {
+        day: day,
+        startHour: start,
+        endHour: end
+      };
+    });
   };
+  
+  const setCustomTimeRanges = (range: string) => {
+    const [type] = range.split(" ");
+    
+    if (type === "customPerDay") {
+      const timeRanges = parseCustomPerDay(range);
+      console.log("Time ranges:", timeRanges);
+      setTimeRanges(timeRanges); // Thêm state mới để lưu timeRanges
+      setDaysOnly(timeRanges.map(r => r.day).join("_"));
+    } else {
+      // Logic cũ cho officeHours
+      const [, hours, daysOnly] = range.split(" ");
+      const [start, end] = hours.split("_").map((hour) => parseInt(hour));
+      setStartHour(start);
+      setEndHour(end);
+      setDaysOnly(daysOnly);
+    }
+  };
+  
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -224,58 +259,100 @@ export default function ProductDetailScreen() {
     }
   };
 
-  const generateHourRange = () => {
-    if (startHour !== undefined && endHour !== undefined) {
-      // If startHour is less than or equal to endHour, generate range normally
-      if (startHour <= endHour) {
-        return Array.from(
-          { length: endHour - startHour },
-          (_, i) => startHour + i
-        );
-      }
-      // If startHour is greater than endHour (crossing midnight),
-      // generate range that wraps around 24 hours
-      else {
-        return [
-          ...Array.from({ length: 24 - startHour }, (_, i) => startHour + i),
-          ...Array.from({ length: endHour + 1 }, (_, i) => i),
-        ];
-      }
-    }
-    // Fallback to full 24-hour range if no start/end hours are set
-    return Array.from({ length: 24 }, (_, i) => i);
+  const getTimeRangeForSelectedDate = (date: Date): { start: number; end: number } | null => {
+  const dayIndex = date.getDay();
+  const dayMap: { [key: string]: number } = {
+    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
   };
+
+  if (timeRanges.length > 0) {
+    const dayName = Object.keys(dayMap).find(key => dayMap[key] === dayIndex);
+    const timeRange = timeRanges.find(range => range.day.toLowerCase() === dayName);
+    
+    if (timeRange) {
+      return {
+        start: timeRange.startHour,
+        end: timeRange.endHour
+      };
+    }
+    return null;
+  } else {
+    return {
+      start: startHour,
+      end: endHour
+    };
+  }
+};
+
+const generateHourRange = () => {
+  const timeRange = getTimeRangeForSelectedDate(selectedDate);
+  
+  if (!timeRange) return []; // Trả về mảng rỗng nếu không có khung giờ hợp lệ
+
+  const { start, end } = timeRange;
+
+  // Nếu start <= end, tạo range bình thường
+  if (start <= end) {
+    return Array.from({ length: end - start }, (_, i) => start + i);
+  }
+  // Nếu start > end (qua nửa đêm), tạo range bao quanh 24h
+  else {
+    return [
+      ...Array.from({ length: 24 - start }, (_, i) => start + i),
+      ...Array.from({ length: end + 1 }, (_, i) => i),
+    ];
+  }
+};
+const formatTimeRanges = (timeRanges: DayTimeRange[]): string => {
+  if (!timeRanges || timeRanges.length === 0) {
+    return `từ ${startHour}:00 - ${endHour - 1}:59, ${convertDayOfWeek(daysOnly)}`;
+  }
+
+  return timeRanges
+    .map(range => {
+      const dayName = convertDayOfWeek(range.day);
+      return `${range.startHour}:00-${range.endHour - 1}:59 ${dayName}`;
+    })
+    .join(', ');
+};
+
 
   // Generate hour and minute arrays
   const hours = generateHourRange();
   const minutes = Array.from({ length: 60 }, (_, i) => i);
-
-  // Validate time input
   const validateTimeInput = () => {
-    // Check if both hour and minute are selected
+    // Kiểm tra xem đã chọn cả giờ và phút chưa
     if (selectedHour === null || selectedMinute === null) {
       setTimeInputError("Vui lòng chọn đầy đủ giờ và phút");
       return false;
     }
-
-    // Check hour range
-    if (selectedHour < startHour || selectedHour >= endHour) {
-      setTimeInputError(`Giờ phải từ ${startHour} đến ${endHour - 1}`);
+  
+    const timeRange = getTimeRangeForSelectedDate(selectedDate);
+    if (!timeRange) {
+      setTimeInputError("Ngày này không có khung giờ hợp lệ");
       return false;
     }
-
-    // Clear any previous error
+  
+    const { start, end } = timeRange;
+  
+    // Kiểm tra giờ có nằm trong khung giờ cho phép không
+    if (selectedHour < start || selectedHour >= end) {
+      setTimeInputError(`Giờ phải từ ${start}:00 đến ${end - 1}:59`);
+      return false;
+    }
+  
+    // Xóa lỗi nếu có
     setTimeInputError("");
     return true;
   };
-
+  
   // Add time slot
   const addTimeSlot = () => {
     // Validate input before adding
     if (!validateTimeInput()) return;
 
-    if (selectedTimeSlots.length >= 3) {
-      setTimeInputError("Bạn chỉ được chọn tối đa 3 khung thời gian");
+    if (selectedTimeSlots.length >= 1) {
+      setTimeInputError("Bạn chỉ được chọn tối đa 1 khung thời gian");
       return;
     }
 
@@ -460,25 +537,24 @@ export default function ProductDetailScreen() {
 
     return (
       <ScrollView horizontal style={styles.userItemsScroll}>
-        {userItems
-          .map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.userItemCard,
-                selectedUserItem?.id === item.id && styles.selectedUserItemCard,
-              ]}
-              onPress={() => handleItemPress(item)}
-            >
-              <Image
-                source={{ uri: item.images[0] }}
-                style={styles.userItemImage}
-              />
-              <Text style={styles.userItemName} numberOfLines={1}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {userItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[
+              styles.userItemCard,
+              selectedUserItem?.id === item.id && styles.selectedUserItemCard,
+            ]}
+            onPress={() => handleItemPress(item)}
+          >
+            <Image
+              source={{ uri: item.images[0] }}
+              style={styles.userItemImage}
+            />
+            <Text style={styles.userItemName} numberOfLines={1}>
+              {item.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     );
   };
@@ -520,7 +596,9 @@ export default function ProductDetailScreen() {
 
         <View style={styles.badgeContainer}>
           <View style={[styles.badge, { backgroundColor: Colors.orange500 }]}>
-            <Text style={styles.badgeText}>{product.subCategory.category.name}</Text>
+            <Text style={styles.badgeText}>
+              {product.subCategory.category.name}
+            </Text>
           </View>
           <View style={[styles.badge, { backgroundColor: Colors.lightGreen }]}>
             <Text style={styles.badgeText}>{product.condition}</Text>
@@ -553,6 +631,19 @@ export default function ProductDetailScreen() {
             <Icon name="loop" size={20} />
             <Text style={styles.detailText}>
               Tình trạng: {product.condition}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Icon name="access-time" size={20} />
+            <Text style={styles.detailText}>
+            Khung giờ: {formatTimeRanges(timeRanges)}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Icon name="compare-arrows" size={20} />
+            <Text style={styles.detailText}>
+              Mong muốn trao đổi với: {product.desiredSubCategory.category.name}
+              , {product.desiredSubCategory.subCategoryName}
             </Text>
           </View>
           {product.isGift && (
@@ -611,6 +702,11 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   </View>
+                  <Text style={styles.detailText}>
+                    Mong muốn trao đổi với:{" "}
+                    {product.desiredSubCategory.category.name},{" "}
+                    {product.desiredSubCategory.subCategoryName}
+                  </Text>
                 </>
               ) : (
                 <>
@@ -627,6 +723,11 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   </View>
+                  <Text style={styles.detailText}>
+                    Mong muốn trao đổi với:{" "}
+                    {product.desiredSubCategory.category.name},{" "}
+                    {product.desiredSubCategory.subCategoryName}
+                  </Text>
                 </>
               )}
 
@@ -683,7 +784,7 @@ export default function ProductDetailScreen() {
 
               {!isTrue ? (
                 <TouchableOpacity onPress={() => handleWannaExchange()}>
-                  <Text style={styles.requestText}>
+                  <Text style={[styles.requestText, styles.marginTop_16_Botttom_12]}>
                     Tôi muốn trao đổi với đồ của tôi.
                   </Text>
                 </TouchableOpacity>
@@ -714,19 +815,18 @@ export default function ProductDetailScreen() {
                       tự.
                     </Text>
                   )}
+<Text style={styles.modalDescription}>
+  Vui lòng chọn thời gian bạn sẽ tời nhận sản phẩm:
+</Text>
 
-                  <Text style={styles.modalDescription}>
-                    Vui lòng chọn khung thời gian theo thời gian rãnh của chủ
-                    sản phẩm
-                  </Text>
-                  
-                  <Text style={styles.description}>
-                      {`Khung giờ: từ ${startHour}:00 - ${endHour - 1}:59, ${convertDayOfWeek(daysOnly)}`}
-                    </Text>
-                  <Text style={styles.modalDescriptionSub}>
-                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp
-                    hành trao đổi. Bạn có thể chọn tối đa 3 khung giờ.
-                  </Text>
+<Text style={styles.description}>
+  Khung giờ: {formatTimeRanges(timeRanges)}
+</Text>
+
+<Text style={styles.modalDescriptionSub}>
+  Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp hành trao đổi.
+</Text>
+
 
                   {/* Selected Time Slots */}
                   <View style={styles.selectedSlotsContainer}>
@@ -743,101 +843,119 @@ export default function ProductDetailScreen() {
                       </View>
                     ))}
                   </View>
-
-                  <View style={styles.container}>
-                    {/* Date Picker */}
-                    <TouchableOpacity
-                      style={styles.datePickerButton}
-                      onPress={() => setShowDatePicker(true)}
-                    >
-                      <Text style={styles.datePickerButtonText}>
-                        Chọn ngày:{" "}
-                        {formatDate_DD_MM_YYYY(selectedDate.toISOString())}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {showDatePicker && (
-                      // <DateTimePicker
-                      //   value={selectedDate}
-                      //   mode="date"
-                      //   display="default"
-                      //   onChange={handleDateChange}
-                      //   minimumDate={new Date()}
-                      // />
-
-                      <DateTimePickerCustom
-                        date={selectedDate}
-                        setDate={setSelectedDate}
-                        allowedDays={daysOnly}
-                        onClose={() => setShowDatePicker(false)}
-                      />
-                    )}
-
-                    {/* Time Input */}
-                    <View style={styles.inputContainer}>
-                      <View style={styles.timeInputWrapper}>
+                    {selectedTimeSlots.length === 0 && (
+                      <View style={styles.container}>
+                        {/* Date Picker */}
                         <TouchableOpacity
-                          style={styles.timeInput}
-                          onPress={() => setShowHourModal(true)}
+                          style={styles.datePickerButton}
+                          onPress={() => setShowDatePicker(true)}
                         >
-                          <Text style={styles.timeInputText}>
-                            {selectedHour !== null
-                              ? selectedHour.toString().padStart(2, "0")
-                              : "Giờ"}
+                          <Text style={styles.datePickerButtonText}>
+                            Chọn ngày:{" "}
+                            {formatDate_DD_MM_YYYY(selectedDate.toISOString())}
                           </Text>
                         </TouchableOpacity>
 
-                        <Text style={styles.colonText}>:</Text>
+                        {showDatePicker && (
+                          // <DateTimePicker
+                          //   value={selectedDate}
+                          //   mode="date"
+                          //   display="default"
+                          //   onChange={handleDateChange}
+                          //   minimumDate={new Date()}
+                          // />
 
-                        <TouchableOpacity
-                          style={styles.timeInput}
-                          onPress={() => setShowMinuteModal(true)}
-                        >
-                          <Text style={styles.timeInputText}>
-                            {selectedMinute !== null
-                              ? selectedMinute.toString().padStart(2, "0")
-                              : "Phút"}
-                          </Text>
-                        </TouchableOpacity>
+                          <DateTimePickerCustom
+  date={selectedDate}
+  setDate={setSelectedDate}
+  allowedDays={daysOnly}
+  timeRanges={timeRanges} // Thêm prop mới
+  onClose={() => setShowDatePicker(false)}
+/>
 
-                        <TouchableOpacity
-                          style={styles.addButton}
-                          onPress={addTimeSlot}
-                        >
-                          <Text style={styles.addButtonText}>Thêm</Text>
-                        </TouchableOpacity>
+                        )}
+
+                        {/* Time Input */}
+                        <View style={styles.inputContainer}>
+                          <View style={styles.timeInputWrapper}>
+                            <TouchableOpacity
+                              style={styles.timeInput}
+                              onPress={() => setShowHourModal(true)}
+                            >
+                              <Text style={styles.timeInputText}>
+                                {selectedHour !== null
+                                  ? selectedHour.toString().padStart(2, "0")
+                                  : "Giờ"}
+                              </Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.colonText}>:</Text>
+
+                            <TouchableOpacity
+                              style={styles.timeInput}
+                              onPress={() => setShowMinuteModal(true)}
+                            >
+                              <Text style={styles.timeInputText}>
+                                {selectedMinute !== null
+                                  ? selectedMinute.toString().padStart(2, "0")
+                                  : "Phút"}
+                              </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              style={styles.addButton}
+                              onPress={addTimeSlot}
+                            >
+                              <Text style={styles.addButtonText}>Chọn</Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          {/* Hour Modal */}
+                          {renderPickerModal(
+                            showHourModal,
+                            setShowHourModal,
+                            hours,
+                            selectedHour,
+                            setSelectedHour,
+                            "Chọn giờ"
+                          )}
+
+                          {/* Minute Modal */}
+                          {renderPickerModal(
+                            showMinuteModal,
+                            setShowMinuteModal,
+                            minutes,
+                            selectedMinute,
+                            setSelectedMinute,
+                            "Chọn phút"
+                          )}
+
+                          {/* Error Message */}
+                          {timeInputError ? (
+                            <View style={styles.timeInputWrapper}>
+                              <Text style={styles.errorTimeText}>
+                                {timeInputError}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+
+                        {/* Hiển thị khung giờ cho ngày đã chọn */}
+{selectedDate && (
+  <Text style={styles.timeRangeText}>
+    {(() => {
+      const timeRange = getTimeRangeForSelectedDate(selectedDate);
+      if (timeRange) {
+        return `Khung giờ cho phép: ${timeRange.start}:00 - ${timeRange.end - 1}:59`;
+      }
+      return "Không có khung giờ cho phép trong ngày này";
+    })()}
+  </Text>
+)}
+
                       </View>
 
-                      {/* Hour Modal */}
-                      {renderPickerModal(
-                        showHourModal,
-                        setShowHourModal,
-                        hours,
-                        selectedHour,
-                        setSelectedHour,
-                        "Chọn giờ"
-                      )}
-
-                      {/* Minute Modal */}
-                      {renderPickerModal(
-                        showMinuteModal,
-                        setShowMinuteModal,
-                        minutes,
-                        selectedMinute,
-                        setSelectedMinute,
-                        "Chọn phút"
-                      )}
-
-                      {/* Error Message */}
-                      {timeInputError ? (
-                        <View style={styles.timeInputWrapper}>
-                          <Text style={styles.errorTimeText}>
-                            {timeInputError}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
+                    )}
                 </>
               )}
             </ScrollView>
@@ -1055,7 +1173,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   timeSlotBadge: {
     flexDirection: "row",
@@ -1204,8 +1322,12 @@ const styles = StyleSheet.create({
   requestText: {
     color: Colors.orange500,
     fontSize: 14,
-    marginVertical: 16,
+    marginBottom: 12,
     textDecorationLine: "underline",
+  },
+  marginTop_16_Botttom_12: {
+    marginTop: 16,
+    marginBottom: 12,
   },
   loadingText: {
     textAlign: "center",
@@ -1331,5 +1453,11 @@ const styles = StyleSheet.create({
   timeInputText: {
     color: "#777",
     textAlign: "center",
+  },
+  timeRangeText: {
+    marginTop: 8,
+    marginBottom: 8,
+    color: Colors.orange500,
+    fontSize: 14,
   },
 });
