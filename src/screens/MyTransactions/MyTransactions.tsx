@@ -273,7 +273,7 @@ const MyTransactions = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "In_Progress":
         return "Đang diễn ra";
       case "Completed":
         return "Hoàn thành";
@@ -286,7 +286,7 @@ const MyTransactions = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "In_Progress":
         return Colors.orange500;
       case "Completed":
         return Colors.lightGreen;

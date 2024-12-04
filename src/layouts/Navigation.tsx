@@ -18,18 +18,18 @@ import WelcomeScreen from '@/screens/Welcome/WelcomeScreen';
 import LoginScreen from '@/screens/Login/LoginScreen';
 import RegisterScreen from '@/screens/Register/RegisterScreen';
 import HomeScreen from '@/screens/Home/HomeScreen';
-import PostScreen from '@/screens/Post/PostScreen';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
 import NotificationsScreen from '@/screens/Notifications/Notifications';
 import FavoritesScreen from '@/screens/Favorites/FavoritesScreen';
 import ProductDetailScreen from '@/screens/ProductDetail/ProductDetailScreen';
 import CreatePostScreen from '@/screens/CreatePost/CreatePostScreen';
 import MyProducts from '../screens/MyProducts/MyProducts';
-import MyRequests from '../screens/MyRequests/MyRequests';
 import MyTransactions from '../screens/MyTransactions/MyTransactions';
 import ProfileDetailScreen from '../screens/ProfileDetail/ProfileDetailScreen';
 import OTPScreen from '../screens/OTP/OTPScreen';
 import MapScreen from '../components/Map/MapScreen';
+import MyRequestsScreen from '../screens/Request/MyRequests/MyRequests';
+import RequestSubActionScreen from '../screens/Request/RequestSubAction/RequestSubAction';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -112,7 +112,8 @@ export default function Navigation() {
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
           <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Thông tin cá nhân' }} />
           <Stack.Screen name="MyProducts" component={MyProducts} options={{ title: 'Sản phẩm của tôi' }} />
-          <Stack.Screen name="MyRequests" component={MyRequests} options={{ title: 'Quản lí các yêu cầu của tôi' }} />
+          <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ title: 'Quản lí các yêu cầu của tôi' }} />
+          <Stack.Screen name="RequestSubAction" component={RequestSubActionScreen} options={{ title: 'Quản lí các yêu cầu của tôi' }} />
           <Stack.Screen name="MyTransactions" component={MyTransactions} options={{ title: 'Quản lí giao dịch của tôi' }} />
         </Stack.Navigator>
     </NavigationContainer>
