@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,26 +9,31 @@ import {
   Platform,
   Alert,
   Button,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, Checkbox, RadioButton } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
-import { RouteProp, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
-import * as ImagePicker from 'expo-image-picker';
-import { CustomAlert } from '@/src/components/CustomAlert';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Checkbox, RadioButton } from "react-native-paper";
+import { Picker } from "@react-native-picker/picker";
+import { RouteProp, NavigationProp } from "@react-navigation/native";
+import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
+import * as ImagePicker from "expo-image-picker";
+import { CustomAlert } from "@/src/components/CustomAlert";
 
-import MediaUploadSection from '@/src/components/MediaUploadSection';
-import { Category, ConditionOption, ItemCondition, SubCategory } from '@/src/shared/type';
+import MediaUploadSection from "@/src/components/MediaUploadSection";
+import {
+  Category,
+  ConditionOption,
+  ItemCondition,
+  SubCategory,
+} from "@/src/shared/type";
 
-import useCategories from '@/src/hooks/useCategories';
-import useCreatePost from '@/src/hooks/useCreatePost';
-import { useCategoryStore } from '@/src/stores/categoryStore';
-import Colors from '@/src/constants/Colors';
-import { CustomTimeSection } from '@/src/components/CustomTimeSection';
+import useCategories from "@/src/hooks/useCategories";
+import useCreatePost from "@/src/hooks/useCreatePost";
+import { useCategoryStore } from "@/src/stores/categoryStore";
+import Colors from "@/src/constants/Colors";
+import { CustomTimeSection } from "@/src/components/CustomTimeSection";
 
 interface CreatePostScreenProps {
-  route: RouteProp<RootStackParamList, 'CreatePost'>;
+  route: RouteProp<RootStackParamList, "CreatePost">;
   navigation: NavigationProp<RootStackParamList>;
 }
 
@@ -45,8 +50,8 @@ type DayTimeFrame = {
 
 const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
   const hour = Math.floor(idx / 2) + 9;
-  const minute = idx % 2 === 0 ? '00' : '30';
-  const time = `${hour.toString().padStart(2, '0')}:${minute}`;
+  const minute = idx % 2 === 0 ? "00" : "30";
+  const time = `${hour.toString().padStart(2, "0")}:${minute}`;
   return {
     label: time,
     value: time,
@@ -54,51 +59,59 @@ const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
 });
 
 interface CreatePostScreenProps {
-  route: RouteProp<RootStackParamList, 'CreatePost'>;
+  route: RouteProp<RootStackParamList, "CreatePost">;
   navigation: NavigationProp<RootStackParamList>;
 }
 
-const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }) => {
+const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
+  navigation,
+  route,
+}) => {
   const initialCategory = route.params?.category;
   const initialCategoryId = route.params?.categoryId;
   const initialSubCategory = route.params?.subCategory;
   const initialSubCategoryId = route.params?.subCategoryId;
-  
+
   const { categories, subCategories, getSubCategories } = useCategories();
   const { addressData, loading, submitPost } = useCreatePost();
-  const setCategoryStore = useCategoryStore(state => state.setCategory);
-  const setSubCategoryStore = useCategoryStore(state => state.setSubCategory);
-  
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(() => {
-    if (initialCategory) {
-      setCategoryStore(initialCategory);
-      return initialCategory;
-    }
-    if (initialCategoryId) {
-      const category = categories.find(cat => cat.id === initialCategoryId);
-      if (category) setCategoryStore(category);
-      return category || null;
-    }
-    return null;
-  });
+  const setCategoryStore = useCategoryStore((state) => state.setCategory);
+  const setSubCategoryStore = useCategoryStore((state) => state.setSubCategory);
 
-  const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(() => {
-    if (initialSubCategory) {
-      setSubCategoryStore(initialSubCategory);
-      return initialSubCategory;
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    () => {
+      if (initialCategory) {
+        setCategoryStore(initialCategory);
+        return initialCategory;
+      }
+      if (initialCategoryId) {
+        const category = categories.find((cat) => cat.id === initialCategoryId);
+        if (category) setCategoryStore(category);
+        return category || null;
+      }
+      return null;
     }
-    if (initialSubCategoryId) {
-      const subCategory = subCategories.find(subCat => subCat.id === initialSubCategoryId);
-      if (subCategory) setSubCategoryStore(subCategory);
-      return subCategory || null;
-    }
-    return null;
-  });
+  );
 
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [selectedSubCategory, setSelectedSubCategory] =
+    useState<SubCategory | null>(() => {
+      if (initialSubCategory) {
+        setSubCategoryStore(initialSubCategory);
+        return initialSubCategory;
+      }
+      if (initialSubCategoryId) {
+        const subCategory = subCategories.find(
+          (subCat) => subCat.id === initialSubCategoryId
+        );
+        if (subCategory) setSubCategoryStore(subCategory);
+        return subCategory || null;
+      }
+      return null;
+    });
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string | null>(null);
-  const [condition, setCondition] = useState<ItemCondition | ''>('');
+  const [condition, setCondition] = useState<ItemCondition | "">("");
   const [isExchange, setIsExchange] = useState<boolean>(false);
   const [isGift, setIsGift] = useState<boolean>(false);
   const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
@@ -106,24 +119,30 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const [isUploadingVideo, setIsUploadingVideo] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [title, setTitle] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
+  const [title, setTitle] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const [showTitleHint, setShowTitleHint] = useState<boolean>(false);
-  const [showDescriptionHint, setShowDescriptionHint] = useState<boolean>(false);
-  const [desiredCategoryId, setDesiredCategoryId] = useState<string>('');
-  const [desiredSubCategoryId, setDesiredSubCategoryId] = useState<string | null>(null);
+  const [isTermsAccepted, setIsTermsAccepted] = useState<boolean>(false);
+  const [showDescriptionHint, setShowDescriptionHint] =
+    useState<boolean>(false);
+  const [desiredCategoryId, setDesiredCategoryId] = useState<string>("");
+  const [desiredSubCategoryId, setDesiredSubCategoryId] = useState<
+    string | null
+  >(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
-  const [timePreference, setTimePreference] = useState<string>('all_day');
+  const [timePreference, setTimePreference] = useState<string>("all_day");
   const [dayTimeFrames, setDayTimeFrames] = useState<DayTimeFrame[]>([]);
-  const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>('');
-  const [frameStartTime, setFrameStartTime] = useState<string>('09:00');
-  const [frameEndTime, setFrameEndTime] = useState<string>('21:00');
+  const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>("");
+  const [frameStartTime, setFrameStartTime] = useState<string>("09:00");
+  const [frameEndTime, setFrameEndTime] = useState<string>("21:00");
 
   useEffect(() => {
     if (addressData.length > 0) {
-      const defaultAddress = addressData.find(addr => addr.isDefault);
-      setSelectedAddressId(defaultAddress?.addressId || addressData[0].addressId);
+      const defaultAddress = addressData.find((addr) => addr.isDefault);
+      setSelectedAddressId(
+        defaultAddress?.addressId || addressData[0].addressId
+      );
     }
   }, [addressData]);
 
@@ -140,8 +159,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   }, [selectedCategory]);
 
   const conditions: ConditionOption[] = [
-    { id: ItemCondition.NEW, name: 'Mới' },
-    { id: ItemCondition.USED, name: 'Đã sử dụng' },
+    { id: ItemCondition.NEW, name: "Mới" },
+    { id: ItemCondition.USED, name: "Đã sử dụng" },
   ];
 
   const WEEKDAYS = [
@@ -156,67 +175,69 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 
   const handleAddTimeFrame = () => {
     if (!selectedDayForFrame) {
-      Alert.alert('Lỗi!', 'Vui lòng chọn ngày');
+      Alert.alert("Lỗi!", "Vui lòng chọn ngày");
       return;
     }
-  
-    if (selectedDayForFrame === 'all') {
-      setDayTimeFrames([{
-        day: 'all',
-        startTime: frameStartTime,
-        endTime: frameEndTime
-      }]);
+
+    if (selectedDayForFrame === "all") {
+      setDayTimeFrames([
+        {
+          day: "all",
+          startTime: frameStartTime,
+          endTime: frameEndTime,
+        },
+      ]);
       return;
     }
-  
-    if (dayTimeFrames.some(frame => frame.day === selectedDayForFrame)) {
-      Alert.alert('Lỗi!', 'Ngày này đã có giờ');
+
+    if (dayTimeFrames.some((frame) => frame.day === selectedDayForFrame)) {
+      Alert.alert("Lỗi!", "Ngày này đã có giờ");
       return;
     }
-  
-    const start = parseInt(frameStartTime.replace(':', ''));
-    const end = parseInt(frameEndTime.replace(':', ''));
+
+    const start = parseInt(frameStartTime.replace(":", ""));
+    const end = parseInt(frameEndTime.replace(":", ""));
     if (start >= end) {
-      Alert.alert('Lỗi!', 'Giờ kết thúc phải sau giờ bắt đầu');
+      Alert.alert("Lỗi!", "Giờ kết thúc phải sau giờ bắt đầu");
       return;
     }
-  
-    setDayTimeFrames(prev => [
+
+    setDayTimeFrames((prev) => [
       ...prev,
       {
         day: selectedDayForFrame,
         startTime: frameStartTime,
-        endTime: frameEndTime
-      }
+        endTime: frameEndTime,
+      },
     ]);
-  
-    console.log('Day time frames:', dayTimeFrames);
-    
-    setSelectedDayForFrame('');
+
+    console.log("Day time frames:", dayTimeFrames);
+
+    setSelectedDayForFrame("");
   };
-  
+
   const handleRemoveTimeFrame = (day: string) => {
-    setSelectedDayForFrame('');
-    setDayTimeFrames(prev => prev.filter(frame => frame.day !== day));
+    setSelectedDayForFrame("");
+    setDayTimeFrames((prev) => prev.filter((frame) => frame.day !== day));
   };
-  
+
   const getCustomPerDayTimeString = (): string => {
-    if (dayTimeFrames.length === 0) return '';
-  
-    if (dayTimeFrames.some(frame => frame.day === 'all')) {
-      const frame = dayTimeFrames.find(frame => frame.day === 'all');
+    if (dayTimeFrames.length === 0) return "";
+
+    if (dayTimeFrames.some((frame) => frame.day === "all")) {
+      const frame = dayTimeFrames.find((frame) => frame.day === "all");
       return `custom ${frame?.startTime}_${frame?.endTime} mon_tue_wed_thu_fri_sat_sun`;
     }
-    
+
     const frames = dayTimeFrames
-      .map(frame => `${frame.startTime}_${frame.endTime} ${frame.day}`)
-      .join(' | ');
-    
+      .map((frame) => `${frame.startTime}_${frame.endTime} ${frame.day}`)
+      .join(" | ");
+
     return `customPerDay ${frames}`;
   };
 
-  const handlePostTypeChange = (type: 'exchange' | 'gift') => {
-    if (type === 'exchange') {
+  const handlePostTypeChange = (type: "exchange" | "gift") => {
+    if (type === "exchange") {
       setIsExchange(true);
       setIsGift(false);
     } else {
@@ -225,18 +246,22 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
     }
   };
 
-  const handleCategoryChange = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
+  const handleCategoryChange = async (categoryId: string) => {
+    const category = categories.find((cat) => cat.id === categoryId);
     setSelectedCategory(category || null);
     setSelectedSubCategory(null);
+
     if (category) {
       setCategoryStore(category);
       setSubCategoryStore(null);
+      await getSubCategories(category.id);
     }
   };
 
   const handleSubCategoryChange = (subCategoryId: string) => {
-    const subCategory = subCategories.find(subCat => subCat.id === subCategoryId);
+    const subCategory = subCategories.find(
+      (subCat) => subCat.id === subCategoryId
+    );
     setSelectedSubCategory(subCategory || null);
     if (subCategory) {
       setSubCategoryStore(subCategory);
@@ -245,113 +270,116 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 
   const getAvailableTimeString = (timePreference: string) => {
     switch (timePreference) {
-      case 'allDay':
-        return 'allDay 09:00_21:00 mon_tue_wed_thu_fri_sat_sun';
-      case 'officeHours':
-        return 'officeHours 09:00_17:00 mon_tue_wed_thu_fri';
-      case 'evening':
-        return 'evening 17:00_21:00 mon_tue_wed_thu_fri_sat_sun';
-      case 'custom':
+      case "allDay":
+        return "allDay 09:00_21:00 mon_tue_wed_thu_fri_sat_sun";
+      case "officeHours":
+        return "officeHours 09:00_17:00 mon_tue_wed_thu_fri";
+      case "evening":
+        return "evening 17:00_21:00 mon_tue_wed_thu_fri_sat_sun";
+      case "custom":
         return getCustomPerDayTimeString();
       default:
-        return '';
+        return "";
     }
   };
 
   const validateForm = () => {
     if (!title.trim()) {
-      Alert.alert('Error', 'Vui lòng nhập tiêu đề tin đăng');
+      Alert.alert("Error", "Vui lòng nhập tiêu đề tin đăng");
       return false;
     }
     if (!description.trim()) {
-      Alert.alert('Error', 'Vui lòng nhập mô tả chi tiết');
+      Alert.alert("Error", "Vui lòng nhập mô tả chi tiết");
       return false;
     }
     if (!selectedCategory) {
-      Alert.alert('Error', 'Vui lòng chọn danh mục');
+      Alert.alert("Error", "Vui lòng chọn danh mục");
       return false;
     }
     if (!condition) {
-      Alert.alert('Error', 'Vui lòng chọn tình trạng sản phẩm');
+      Alert.alert("Error", "Vui lòng chọn tình trạng sản phẩm");
       return false;
     }
     if (images.length === 0) {
-      Alert.alert('Error', 'Vui lòng tải lên ít nhất 1 ảnh');
+      Alert.alert("Error", "Vui lòng tải lên ít nhất 1 ảnh");
       return false;
     }
     if (!timePreference) {
-      Alert.alert('Error', 'Vui lòng chọn giờ nhận');
+      Alert.alert("Error", "Vui lòng chọn giờ nhận");
       return false;
     }
     if (!desiredCategoryId && isExchange) {
-      Alert.alert('Error', 'Vui lòng chọn sản phẩm mong muốn trao đổi');
+      Alert.alert("Error", "Vui lòng chọn sản phẩm mong muốn trao đổi");
       return false;
     }
     return true;
   };
-  
+
   const uploadImageToCloudinary = async (uri: string): Promise<string> => {
     try {
-      console.log('Starting upload process with URI:', uri);
-  
+      console.log("Starting upload process with URI:", uri);
+
       // Create file object
-      const filename = uri.split('/').pop() || 'photo.jpg';
+      const filename = uri.split("/").pop() || "photo.jpg";
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-  
-      console.log('File details:', {
+      const type = match ? `image/${match[1]}` : "image/jpeg";
+
+      console.log("File details:", {
         filename,
-        type
+        type,
       });
-  
+
       const formData = new FormData();
-  
+
       // Append file with proper structure
       const fileData = {
-        uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
         name: filename,
         type: type,
       };
 
-      const CLOUDINARY_UPLOAD_PRESET = 'gift_system';
-      const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dt4ianp80/image/upload';
-  
-      console.log('FormData file object:', fileData);
-      formData.append('file', fileData as any);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
-      console.log('Cloudinary URL:', CLOUDINARY_URL);
-      console.log('Upload preset:', CLOUDINARY_UPLOAD_PRESET);
-  
+      const CLOUDINARY_UPLOAD_PRESET = "gift_system";
+      const CLOUDINARY_URL =
+        "https://api.cloudinary.com/v1_1/dt4ianp80/image/upload";
+
+      console.log("FormData file object:", fileData);
+      formData.append("file", fileData as any);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      console.log("Cloudinary URL:", CLOUDINARY_URL);
+      console.log("Upload preset:", CLOUDINARY_UPLOAD_PRESET);
+
       const response = await fetch(CLOUDINARY_URL, {
-        method: 'POST',
+        method: "POST",
         body: formData,
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
         },
       });
-  
-      console.log('Response status:', response.status);
-      
+
+      console.log("Response status:", response.status);
+
       // Get detailed error message if available
       const responseData = await response.json();
-      console.log('Response data:', responseData);
-  
+      console.log("Response data:", responseData);
+
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status} - ${JSON.stringify(responseData)}`);
+        throw new Error(
+          `Upload failed: ${response.status} - ${JSON.stringify(responseData)}`
+        );
       }
-  
+
       return responseData.secure_url;
     } catch (error: any) {
-      console.error('Detailed upload error:', {
+      console.error("Detailed upload error:", {
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw error;
     }
   };
-  
+
   const handleImageUpload = async () => {
     try {
       setIsUploadingImage(true);
@@ -361,88 +389,93 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         aspect: [4, 3],
         quality: 1,
       });
-  
+
       if (!result.canceled) {
         const uri = result.assets[0].uri;
         setSelectedImage(uri);
-  
+
         const imageUrl = await uploadImageToCloudinary(uri);
-        setImages(prev => [...prev, imageUrl]);
-        console.log('Image uploaded successfully:', imageUrl);
+        setImages((prev) => [...prev, imageUrl]);
+        console.log("Image uploaded successfully:", imageUrl);
       }
     } catch (error) {
-      console.error('Image upload error:', error);
-      Alert.alert('Upload Failed', 'Please try again');
+      console.error("Image upload error:", error);
+      Alert.alert("Upload Failed", "Please try again");
     } finally {
       setIsUploadingImage(false);
     }
   };
 
-    const uploadVideoToCloudinary = async (uri: string): Promise<string> => {
+  const uploadVideoToCloudinary = async (uri: string): Promise<string> => {
     try {
-      console.log('Starting video upload process with URI:', uri);
-  
-      const filename = uri.split('/').pop() || 'video.mp4';
+      console.log("Starting video upload process with URI:", uri);
+
+      const filename = uri.split("/").pop() || "video.mp4";
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `video/${match[1]}` : 'video/mp4';
-  
-      console.log('Video file details:', {
+      const type = match ? `video/${match[1]}` : "video/mp4";
+
+      console.log("Video file details:", {
         filename,
-        type
+        type,
       });
-  
+
       const formData = new FormData();
-  
+
       const fileData = {
-        uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
         name: filename,
         type: type,
       };
-  
-      const CLOUDINARY_UPLOAD_PRESET = 'gift_system';
-      const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dt4ianp80/video/upload';
-  
-      console.log('FormData video object:', fileData);
-      formData.append('file', fileData as any);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
-      console.log('Sending video upload request to Cloudinary...');
-      console.log('Cloudinary URL:', CLOUDINARY_URL);
-  
+
+      const CLOUDINARY_UPLOAD_PRESET = "gift_system";
+      const CLOUDINARY_URL =
+        "https://api.cloudinary.com/v1_1/dt4ianp80/video/upload";
+
+      console.log("FormData video object:", fileData);
+      formData.append("file", fileData as any);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      console.log("Sending video upload request to Cloudinary...");
+      console.log("Cloudinary URL:", CLOUDINARY_URL);
+
       const response = await fetch(CLOUDINARY_URL, {
-        method: 'POST',
+        method: "POST",
         body: formData,
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
         },
       });
-  
-      console.log('Video upload response status:', response.status);
-  
+
+      console.log("Video upload response status:", response.status);
+
       const responseData = await response.json();
-      console.log('Video upload response data:', responseData);
-  
+      console.log("Video upload response data:", responseData);
+
       if (!response.ok) {
-        throw new Error(`Video upload failed: ${response.status} - ${JSON.stringify(responseData)}`);
+        throw new Error(
+          `Video upload failed: ${response.status} - ${JSON.stringify(
+            responseData
+          )}`
+        );
       }
-  
+
       return responseData.secure_url;
     } catch (error: any) {
-      console.error('Detailed video upload error:', {
+      console.error("Detailed video upload error:", {
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw error;
     }
   };
-  
+
   const pickVideo = async () => {
     try {
-      console.log('Starting video picker...');
-  
+      console.log("Starting video picker...");
+
       setIsUploadingVideo(true);
-  
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
@@ -450,30 +483,30 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         quality: 1,
         videoMaxDuration: 60,
       });
-  
-      console.log('Video picker result:', result);
-  
+
+      console.log("Video picker result:", result);
+
       if (!result.canceled) {
         const uri = result.assets[0].uri;
-        console.log('Selected video URI:', uri);
-  
+        console.log("Selected video URI:", uri);
+
         const videoUrl = await uploadVideoToCloudinary(uri);
-        console.log('Video uploaded successfully to Cloudinary:', videoUrl);
+        console.log("Video uploaded successfully to Cloudinary:", videoUrl);
 
         setVideo(videoUrl);
       }
     } catch (error) {
-      console.error('Error in video picking/upload process:', error);
-      Alert.alert('Upload Failed', 'Failed to upload video. Please try again');
+      console.error("Error in video picking/upload process:", error);
+      Alert.alert("Upload Failed", "Failed to upload video. Please try again");
     } finally {
       setIsUploadingVideo(false);
     }
   };
-  
+
   // Update the removeVideo function to log the action
   const removeVideo = () => {
-    console.log('Removing video from state');
-    setVideo('');
+    console.log("Removing video from state");
+    setVideo("");
   };
 
   const removeImage = (index: number) => {
@@ -483,20 +516,19 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 
   const handleAlertConfirm = () => {
     setShowSuccessAlert(false);
-    navigation.navigate('Main' , {
-      screen: 'Home'
+    navigation.navigate("Main", {
+      screen: "Home",
     });
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    console.log('Submitting post:');
-    
-  
+    console.log("Submitting post:");
+
     try {
       setIsLoading(true);
-  
+
       const postData = {
         name: title.trim(),
         description: description.trim(),
@@ -508,23 +540,21 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId,
-        desiredSubCategoryId: desiredSubCategoryId
+        desiredSubCategoryId: desiredSubCategoryId,
       };
 
       console.log("Form Data: ", postData);
-  
+
       const response = await submitPost(postData);
 
-      console.log('Submit response:', response);
-      
-      
+      console.log("Submit response:", response);
+
       if (response === true) {
         setShowSuccessAlert(true);
       }
-  
     } catch (error) {
-      Alert.alert('Error', 'Failed to create post');
-      console.error('Submit error:', error);
+      Alert.alert("Error", "Failed to create post");
+      console.error("Submit error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -533,30 +563,34 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
   const CustomPerDayTimeSection = () => {
     return (
       <View style={styles.customPerDayContainer}>
-        <Text style={styles.timeSelectionHeader}>Chọn thời gian có thể nhận</Text>
-  
+        <Text style={styles.timeSelectionHeader}>
+          Chọn thời gian có thể nhận
+        </Text>
+
         {/* Day Selection Grid */}
         <View style={styles.daySelectionGrid}>
           <TouchableOpacity
             style={[
               styles.dayChip,
-              selectedDayForFrame === 'all' && styles.dayChipSelected,
+              selectedDayForFrame === "all" && styles.dayChipSelected,
             ]}
-            onPress={() => setSelectedDayForFrame('all')}
+            onPress={() => setSelectedDayForFrame("all")}
           >
             <Text
               style={[
                 styles.dayChipText,
-                selectedDayForFrame === 'all' && styles.dayChipTextSelected,
+                selectedDayForFrame === "all" && styles.dayChipTextSelected,
               ]}
             >
               Tất cả các ngày
             </Text>
           </TouchableOpacity>
-          {WEEKDAYS.map(day => {
+          {WEEKDAYS.map((day) => {
             const isSelected = day.value === selectedDayForFrame;
-            const isDisabled = dayTimeFrames.some(frame => frame.day === day.value) || selectedDayForFrame === 'all';
-            
+            const isDisabled =
+              dayTimeFrames.some((frame) => frame.day === day.value) ||
+              selectedDayForFrame === "all";
+
             return (
               <TouchableOpacity
                 key={day.value}
@@ -581,14 +615,17 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             );
           })}
         </View>
-  
+
         {/* Time Selection */}
         {selectedDayForFrame && (
           <View style={styles.timePickerContainer}>
             <Text style={styles.timeFrameLabel}>
-              Chọn giờ có thể nhận cho {selectedDayForFrame === 'all' ? 'tất cả các ngày' : WEEKDAYS.find(d => d.value === selectedDayForFrame)?.label}
+              Chọn giờ có thể nhận cho{" "}
+              {selectedDayForFrame === "all"
+                ? "tất cả các ngày"
+                : WEEKDAYS.find((d) => d.value === selectedDayForFrame)?.label}
             </Text>
-            
+
             <View style={styles.timePickersRow}>
               <View style={styles.timePickerWrapper}>
                 <Text style={styles.timeLabel}>Từ</Text>
@@ -597,12 +634,16 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
                   onValueChange={setFrameStartTime}
                   style={styles.enhancedTimePicker}
                 >
-                  {TIME_SLOTS.map(slot => (
-                    <Picker.Item key={slot.value} label={slot.label} value={slot.value} />
+                  {TIME_SLOTS.map((slot) => (
+                    <Picker.Item
+                      key={slot.value}
+                      label={slot.label}
+                      value={slot.value}
+                    />
                   ))}
                 </Picker>
               </View>
-  
+
               <View style={styles.timePickerWrapper}>
                 <Text style={styles.timeLabel}>Đến</Text>
                 <Picker
@@ -610,14 +651,18 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
                   onValueChange={setFrameEndTime}
                   style={styles.enhancedTimePicker}
                 >
-                  {TIME_SLOTS.map(slot => (
-                    <Picker.Item key={slot.value} label={slot.label} value={slot.value} />
+                  {TIME_SLOTS.map((slot) => (
+                    <Picker.Item
+                      key={slot.value}
+                      label={slot.label}
+                      value={slot.value}
+                    />
                   ))}
                 </Picker>
               </View>
             </View>
-  
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.addFrameButton}
               onPress={handleAddTimeFrame}
             >
@@ -625,22 +670,24 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             </TouchableOpacity>
           </View>
         )}
-  
+
         {/* Selected Time Frames */}
         {dayTimeFrames.length > 0 && (
           <View style={styles.selectedFramesContainer}>
             <Text style={styles.selectedFramesTitle}>Thời gian đã chọn:</Text>
-            {dayTimeFrames.map(frame => (
+            {dayTimeFrames.map((frame) => (
               <View key={frame.day} style={styles.selectedFrameCard}>
                 <View style={styles.frameInfo}>
                   <Text style={styles.frameDayText}>
-                    {frame.day === 'all' ? 'Tất cả các ngày' : WEEKDAYS.find(d => d.value === frame.day)?.label}
+                    {frame.day === "all"
+                      ? "Tất cả các ngày"
+                      : WEEKDAYS.find((d) => d.value === frame.day)?.label}
                   </Text>
                   <Text style={styles.frameTimeText}>
                     {frame.startTime} - {frame.endTime}
                   </Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => handleRemoveTimeFrame(frame.day)}
                   style={styles.removeButton}
                 >
@@ -672,7 +719,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           <View style={styles.categoryContainer}>
             <View style={styles.pickerContainer}>
               <Picker
-                selectedValue={selectedCategory?.id || ''}
+                selectedValue={selectedCategory?.id || ""}
                 onValueChange={handleCategoryChange}
               >
                 <Picker.Item label="Chọn danh mục" value="" />
@@ -689,14 +736,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             {selectedCategory && (
               <View style={styles.pickerContainer}>
                 <Picker
-                  selectedValue={selectedSubCategory?.id || ''}
+                  selectedValue={selectedSubCategory?.id || ""}
                   onValueChange={handleSubCategoryChange}
                 >
                   <Picker.Item label="Chọn danh mục phụ" value="" />
                   {subCategories.map((subCategory) => (
                     <Picker.Item
                       key={subCategory.id}
-                      label={subCategory.subCategoryName}
+                      label={subCategory.name}
                       value={subCategory.id}
                     />
                   ))}
@@ -707,7 +754,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             {selectedCategory && selectedSubCategory && (
               <View style={styles.selectedCategoryDisplay}>
                 <Text style={styles.selectedCategoryText}>
-                  Danh mục đã chọn: {selectedCategory.name} - {selectedSubCategory.subCategoryName}
+                  Danh mục đã chọn: {selectedCategory.name} -{" "}
+                  {selectedSubCategory.name}
                 </Text>
               </View>
             )}
@@ -717,7 +765,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         {/* Media Upload Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>THÔNG TIN CHI TIẾT</Text>
-          
+
           <MediaUploadSection
             images={images}
             video={video}
@@ -733,15 +781,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={condition}
-              onValueChange={(value: ItemCondition | '') => setCondition(value)}
+              onValueChange={(value: ItemCondition | "") => setCondition(value)}
             >
               <Picker.Item label="Tình trạng" value="" />
               {conditions.map((item) => (
-                <Picker.Item
-                  key={item.id}
-                  label={item.name}
-                  value={item.id}
-                />
+                <Picker.Item key={item.id} label={item.name} value={item.id} />
               ))}
             </Picker>
           </View>
@@ -752,8 +796,10 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
           <Text style={styles.sectionTitle}>HÌNH THỨC</Text>
           <View style={styles.postTypeContainer}>
             <RadioButton.Group
-              onValueChange={value => handlePostTypeChange(value as 'exchange' | 'gift')}
-              value={isExchange ? 'exchange' : 'gift'}
+              onValueChange={(value) =>
+                handlePostTypeChange(value as "exchange" | "gift")
+              }
+              value={isExchange ? "exchange" : "gift"}
             >
               <View style={styles.radioOption}>
                 <RadioButton.Item
@@ -771,10 +817,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
               </View>
             </RadioButton.Group>
           </View>
-          
+
           {isExchange && (
             <Text style={styles.exchangeHint}>
-              Bạn nên ghi rõ món đồ mình cần trao đổi để có được trải nghiệm tốt nhất.
+              Bạn nên ghi rõ món đồ mình cần trao đổi để có được trải nghiệm tốt
+              nhất.
             </Text>
           )}
         </View>
@@ -782,49 +829,56 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         {/* New section for categories and subcategories */}
         {isExchange && (
           <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danh mục muốn trao đổi</Text>
-          
-          <Picker
-            selectedValue={desiredCategoryId}
-            onValueChange={(itemValue) => {
-              setDesiredCategoryId(itemValue);
-              setDesiredSubCategoryId('');
-            }}
-            style={styles.picker}
-          >
-            <Picker.Item label="Chọn danh mục" value="" />
-            {categories.map((category) => (
-              <Picker.Item 
-                key={category.id} 
-                label={category.name} 
-                value={category.id} 
-              />
-            ))}
-          </Picker>
+            <Text style={styles.sectionTitle}>Danh mục muốn trao đổi</Text>
 
-          {desiredCategoryId && (
             <Picker
-              selectedValue={desiredSubCategoryId}
-              onValueChange={(itemValue) => setDesiredSubCategoryId(itemValue)}
+              selectedValue={desiredCategoryId}
+              onValueChange={async (itemValue) => {
+                setDesiredCategoryId(itemValue);
+                setDesiredSubCategoryId("");
+                if (itemValue) {
+                  await getSubCategories(itemValue);
+                }
+              }}
               style={styles.picker}
             >
-              <Picker.Item label="Chọn danh mục phụ" value="" />
-              {subCategories.map((subCategory) => (
+              <Picker.Item label="Chọn danh mục" value="" />
+              {categories.map((category) => (
                 <Picker.Item
-                  key={subCategory.id}
-                  label={subCategory.subCategoryName}
-                  value={subCategory.id}
+                  key={category.id}
+                  label={category.name}
+                  value={category.id}
                 />
               ))}
             </Picker>
-          )}
-        </View>
+
+            {desiredCategoryId && (
+              <Picker
+                selectedValue={desiredSubCategoryId}
+                onValueChange={(itemValue) =>
+                  setDesiredSubCategoryId(itemValue)
+                }
+                style={styles.picker}
+              >
+                <Picker.Item label="Chọn danh mục phụ" value="" />
+                {subCategories.map((subCategory) => (
+                  <Picker.Item
+                    key={subCategory.id}
+                    label={subCategory.name}
+                    value={subCategory.id}
+                  />
+                ))}
+              </Picker>
+            )}
+          </View>
         )}
 
         {/* Title and Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>TIÊU ĐỀ TIN ĐĂNG VÀ MÔ TẢ CHI TIẾT</Text>
-          
+          <Text style={styles.sectionTitle}>
+            TIÊU ĐỀ TIN ĐĂNG VÀ MÔ TẢ CHI TIẾT
+          </Text>
+
           <TextInput
             style={styles.input}
             placeholder="Tiêu đề tin đăng"
@@ -861,7 +915,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>THỜI GIAN CÓ THỂ NHẬN</Text>
           <RadioButton.Group
-            onValueChange={value => setTimePreference(value)}
+            onValueChange={(value) => setTimePreference(value)}
             value={timePreference}
           >
             <View style={styles.radioOption}>
@@ -894,7 +948,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             </View>
           </RadioButton.Group>
 
-          {timePreference === 'custom' && <CustomPerDayTimeSection />}
+          {timePreference === "custom" && <CustomPerDayTimeSection />}
         </View>
 
         {/* Address Section */}
@@ -909,7 +963,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
                   key={address.addressId}
                   style={[
                     styles.addressCard,
-                    selectedAddressId === address.addressId && styles.selectedAddressCard
+                    selectedAddressId === address.addressId &&
+                      styles.selectedAddressCard,
                   ]}
                   onPress={() => setSelectedAddressId(address.addressId)}
                 >
@@ -931,20 +986,40 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
             </View>
           )}
         </View>
+
+        {/* Terms and Conditions Checkbox */}
+        <View style={styles.section}>
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              status={isTermsAccepted ? 'checked' : 'unchecked'}
+              onPress={() => setIsTermsAccepted(!isTermsAccepted)}
+            />
+            <Text style={styles.checkboxLabel}>
+              Tôi đồng ý với các điều khoản và điều kiện
+            </Text>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Footer Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.footerButton, styles.previewButton]}
-          onPress={() => {/* Handle preview */}}
+          onPress={() => {
+            /* Handle preview */
+          }}
         >
-          <Text style={{color: "black"}}>Xem trước</Text>
+          <Text style={{ color: "black" }}>Xem trước</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
-          style={[styles.footerButton, styles.publishButton]}
+          style={[
+            styles.footerButton,
+            styles.publishButton,
+            !isTermsAccepted && styles.disabledButton,
+          ]}
           onPress={handleSubmit}
+          disabled={!isTermsAccepted}
         >
           <Text style={styles.buttonText}>Đăng bài</Text>
         </TouchableOpacity>
@@ -964,14 +1039,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({ navigation, route }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   backButton: {
     fontSize: 24,
@@ -979,9 +1054,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   headerSpace: {
     width: 40,
@@ -992,32 +1067,32 @@ const styles = StyleSheet.create({
   section: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
     borderRadius: 8,
     marginBottom: 12,
   },
   mediaButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 12,
   },
   uploadButton: {
     padding: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 8,
   },
   imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 12,
   },
@@ -1027,60 +1102,56 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   videoPreview: {
-    width: '100%',
+    width: "100%",
     height: 200,
     marginBottom: 12,
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   input: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
   },
   textArea: {
     height: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   hint: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
     marginBottom: 12,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   addressContainer: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
   },
   footer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    borderTopColor: "#e0e0e0",
+    backgroundColor: "#fff",
   },
   footerButton: {
     flex: 1,
     padding: 16,
     borderRadius: 8,
     marginHorizontal: 4,
-    alignItems: 'center',
+    alignItems: "center",
   },
   previewButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   publishButton: {
-    backgroundColor: '#f97314',
+    backgroundColor: "#f97314",
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   postTypeContainer: {
     marginBottom: 16,
@@ -1089,12 +1160,12 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   exchangeHint: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginTop: 8,
     padding: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
   },
   timePicker: {
@@ -1103,23 +1174,23 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 50,
-    width: '100%',
+    width: "100%",
   },
   addressCard: {
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
   },
   selectedAddressCard: {
     borderColor: Colors.orange500,
     backgroundColor: Colors.orange50,
   },
   addressRadioContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   radioOuter: {
     height: 20,
@@ -1127,8 +1198,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 2,
     borderColor: Colors.orange500,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 10,
   },
   radioInner: {
@@ -1142,7 +1213,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
   },
   defaultBadge: {
     fontSize: 12,
@@ -1160,17 +1231,17 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     color: Colors.orange600,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 20,
   },
   dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1ABC9C',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1ABC9C",
     padding: 10,
     borderRadius: 5,
     flex: 1,
@@ -1191,8 +1262,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   timePickersRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
   },
   timePickerWrapper: {
@@ -1202,13 +1273,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   enhancedTimePicker: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     height: 48,
   },
   weekdayGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   weekdayChip: {
@@ -1219,42 +1290,42 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   timeFrameSelectionContainer: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 16,
     borderRadius: 12,
     gap: 12,
   },
   timeFrameLabel: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 8,
   },
   addFrameButton: {
     backgroundColor: Colors.orange500,
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 14,
   },
   addFrameButtonText: {
-    color: 'white',
-    fontWeight: '500',
+    color: "white",
+    fontWeight: "500",
   },
   selectedFramesContainer: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 16,
     borderRadius: 12,
   },
   selectedFramesTitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 12,
   },
   timeFrameItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'white',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "white",
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
@@ -1271,13 +1342,13 @@ const styles = StyleSheet.create({
   },
   timeSelectionHeader: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 16,
-    color: Colors.gray800
+    color: Colors.gray800,
   },
   daySelectionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 16,
   },
@@ -1300,30 +1371,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   dayChipTextSelected: {
-    color: 'white',
+    color: "white",
   },
   dayChipTextDisabled: {
     color: Colors.gray400,
   },
   timePickerContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   selectedFrameCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#000',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1334,7 +1405,7 @@ const styles = StyleSheet.create({
   },
   frameDayText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.gray800,
     marginBottom: 4,
   },
@@ -1348,6 +1419,19 @@ const styles = StyleSheet.create({
   removeIcon: {
     color: Colors.lightRed,
     fontSize: 20,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#333",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
 });
 
