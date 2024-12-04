@@ -102,7 +102,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
   const showSubCategoryModal = async (category: Category) => {
     setSelectedCategory(category);
     await getSubCategories(category.id);
-    
+
     Animated.timing(slideAnim, {
       toValue: SCREEN_HEIGHT,
       duration: 300,
