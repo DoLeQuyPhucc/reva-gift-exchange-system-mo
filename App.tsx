@@ -1,4 +1,6 @@
+import "./gesture-handler";
 import React, { useEffect } from "react";
+import { enableScreens } from "react-native-screens";
 import { useFonts } from "expo-font";
 import Navigation from "@/src/layouts/Navigation";
 import fonts from "@/src/config/fonts";
@@ -8,7 +10,9 @@ import { useNotificationStore } from "@/src/stores/notificationStore";
 import { useAuthStore } from "@/src/stores/authStore";
 
 const STRIPE_KEY =
-  'pk_test_51QG1BCFZYtuiwMkRanQqBx1ybBgNqkztXRBPBda7ETS0kE5o5rJmnzxx94u3EZg8GMlLOXMBZK7K23P9zlZKDVXo00gWFlfPc0';
+  "pk_test_51QG1BCFZYtuiwMkRanQqBx1ybBgNqkztXRBPBda7ETS0kE5o5rJmnzxx94u3EZg8GMlLOXMBZK7K23P9zlZKDVXo00gWFlfPc0";
+
+enableScreens();
 
 export default function App() {
   let [fontsLoaded] = useFonts(fonts);

@@ -1,4 +1,4 @@
-import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import React, { useState } from "react";
 import {
@@ -16,11 +16,10 @@ import Colors from "@/constants/Colors";
 import { Category, SubCategory } from "@/shared/type";
 
 import { useNavigation } from "@/hooks/useNavigation";
-import { useCategoryStore } from "@/src/stores/categoryStore";
 import useCategories from "@/hooks/useCategories";
 import { useAuthStore } from "@/src/stores/authStore";
 
-const Tab = createMaterialBottomTabNavigator<BottomTabParamList>();
+const Tab = createBottomTabNavigator<BottomTabParamList>();
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export interface TabBarProps {
@@ -227,15 +226,15 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
     <View style={{ flex: 1 }}>
       <Tab.Navigator
         initialRouteName={tabs[0].route}
-        shifting={true}
-        activeColor={Colors.orange600}
-        inactiveColor="gray"
-        barStyle={{
-          borderRadius: 20,
-          height: 70,
-          backgroundColor: "white",
+        screenOptions={{
+          tabBarActiveTintColor: Colors.orange600,
+          tabBarInactiveTintColor: "gray",
+          tabBarStyle: {
+            borderRadius: 20,
+            height: 70,
+            backgroundColor: "white",
+          },
         }}
-        activeIndicatorStyle={{ opacity: 0 }}
       >
         {tabs.map((tabProps: TabBarProps, idx) => (
           <Tab.Screen
@@ -244,11 +243,11 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
             component={tabProps.component}
             options={{
               tabBarLabel: tabProps.tabBarLabel,
-              tabBarIcon: ({ color }: { color: string }) => (
+              tabBarIcon: ({ color, size }) => (
                 <Icon
                   name={tabProps.tabBarIconProps.iconName}
                   color={color}
-                  size={20}
+                  size={size}
                 />
               ),
             }}

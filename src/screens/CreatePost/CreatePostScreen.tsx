@@ -532,7 +532,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       const postData = {
         name: title.trim(),
         description: description.trim(),
-        subCategoryId: selectedSubCategory!.id,
+        categoryId: selectedCategory!.id,
         isGift: isFreeGift,
         quantity: 1,
         condition: condition,
@@ -540,7 +540,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId,
-        desiredSubCategoryId: desiredSubCategoryId,
+        desiredCategoryId: desiredCategoryId,
       };
 
       console.log("Form Data: ", postData);
@@ -991,7 +991,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         <View style={styles.section}>
           <View style={styles.checkboxContainer}>
             <Checkbox
-              status={isTermsAccepted ? 'checked' : 'unchecked'}
+              status={isTermsAccepted ? "checked" : "unchecked"}
               onPress={() => setIsTermsAccepted(!isTermsAccepted)}
             />
             <Text style={styles.checkboxLabel}>
