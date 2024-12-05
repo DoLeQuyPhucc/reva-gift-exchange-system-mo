@@ -61,21 +61,21 @@ const MyTransactions = () => {
   const fetchTransactions = async () => {
     try {
       const response = await axiosInstance.get("transaction/own-transactions");
-  
+
       if (!response.data.data) {
         return;
       }
-  
+
       const statusOrder = {
-        'In_Progress': 0,
-        'Completed': 1, 
-        'Not_Completed': 2
+        In_Progress: 0,
+        Completed: 1,
+        Not_Completed: 2,
       };
-  
+
       const transactionsList = await Promise.all(
         response.data.data.map(async (transaction: Transaction) => {
           let updatedTransaction = { ...transaction };
-  
+
           if (
             transaction.status === "Completed" ||
             transaction.status === "Not_Completed"
@@ -90,7 +90,7 @@ const MyTransactions = () => {
               } else {
                 updatedTransaction.rating = rating.data.data[0].rating;
                 updatedTransaction.ratingComment = rating.data.data[0].comment;
-              }              
+              }
             } catch (error) {
               updatedTransaction.rating = null;
               updatedTransaction.ratingComment = null;
@@ -99,12 +99,14 @@ const MyTransactions = () => {
           return updatedTransaction;
         })
       );
-  
+
       // Sort transactions by status priority
-      const sortedTransactions = transactionsList.sort((a: Transaction, b: Transaction) => {
-        return statusOrder[a.status] - statusOrder[b.status];
-      });
-  
+      const sortedTransactions = transactionsList.sort(
+        (a: Transaction, b: Transaction) => {
+          return statusOrder[a.status] - statusOrder[b.status];
+        }
+      );
+
       setTransactions(sortedTransactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -339,10 +341,12 @@ const MyTransactions = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.resultCount}>
-        Hiển thị {transactions.length} giao dịch
-      </Text>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <Text style={styles.resultCount}>{transactions.length} giao dịch</Text>
         {transactions.map((transaction) => (
           <View key={transaction.id} style={styles.card}>
             <View style={styles.cardHeader}>
@@ -547,60 +551,60 @@ const MyTransactions = () => {
 
             {(transaction.status === "Completed" ||
               transaction.status === "Not_Completed") && (
-                <>
-                  <TouchableOpacity
-                    style={[styles.verifyButton, { opacity: 0.5 }]}
-                    disabled={true}
-                  >
-                    <Text style={styles.verifyButtonText}>Đã xác thực</Text>
-                  </TouchableOpacity>
-                  {transaction.rating === null || transaction.rating === 0 ? (
-                    <TouchableOpacity
-                      style={styles.detailsButton}
-                      onPress={() => handleOpenRatingModal(transaction)}
-                    >
-                      <View style={styles.detailsButtonContent}>
-                        <Icon
-                          name="drive-file-rename-outline"
-                          size={20}
-                          color={Colors.orange500}
-                        />
-                        <Text style={styles.detailsButtonText}>Đánh giá</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ) : (
-                    <>
-                      <View style={styles.starContainer}>
-                        <Text style={styles.titleText}>Đánh giá giao dịch</Text>
-                        <View style={styles.ratingContainer}>
-                          <Text style={styles.labelText}>Chất lượng: </Text>
-                          <Text style={styles.starText}>
-                            {renderStars(transaction.rating || 0)}
-                          </Text>
-                        </View>
-                        {transaction.ratingComment && (
-                          <View style={styles.commentContainer}>
-                            <Text style={styles.labelText}>Nhận xét: </Text>
-                            <Text style={styles.commentText}>
-                              {transaction.ratingComment}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </>
-                  )}
-
+              <>
+                <TouchableOpacity
+                  style={[styles.verifyButton, { opacity: 0.5 }]}
+                  disabled={true}
+                >
+                  <Text style={styles.verifyButtonText}>Đã xác thực</Text>
+                </TouchableOpacity>
+                {transaction.rating === null || transaction.rating === 0 ? (
                   <TouchableOpacity
                     style={styles.detailsButton}
-                    onPress={() => handleOpenReportModal(transaction)}
+                    onPress={() => handleOpenRatingModal(transaction)}
                   >
                     <View style={styles.detailsButtonContent}>
-                      <Icon name="report" size={20} color={Colors.orange500} />
-                      <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                      <Icon
+                        name="drive-file-rename-outline"
+                        size={20}
+                        color={Colors.orange500}
+                      />
+                      <Text style={styles.detailsButtonText}>Đánh giá</Text>
                     </View>
                   </TouchableOpacity>
-                </>
-              )}
+                ) : (
+                  <>
+                    <View style={styles.starContainer}>
+                      <Text style={styles.titleText}>Đánh giá giao dịch</Text>
+                      <View style={styles.ratingContainer}>
+                        <Text style={styles.labelText}>Chất lượng: </Text>
+                        <Text style={styles.starText}>
+                          {renderStars(transaction.rating || 0)}
+                        </Text>
+                      </View>
+                      {transaction.ratingComment && (
+                        <View style={styles.commentContainer}>
+                          <Text style={styles.labelText}>Nhận xét: </Text>
+                          <Text style={styles.commentText}>
+                            {transaction.ratingComment}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                )}
+
+                <TouchableOpacity
+                  style={styles.detailsButton}
+                  onPress={() => handleOpenReportModal(transaction)}
+                >
+                  <View style={styles.detailsButtonContent}>
+                    <Icon name="report" size={20} color={Colors.orange500} />
+                    <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -770,7 +774,6 @@ const MyTransactions = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "#f5f5f5",
   },
   resultCount: {
@@ -1061,6 +1064,13 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginVertical: 16,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    padding: 16,
   },
 });
 

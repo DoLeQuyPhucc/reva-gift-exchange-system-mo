@@ -3,7 +3,7 @@ import { ScrollView, View, ActivityIndicator, SafeAreaView, TouchableOpacity, St
 import { Card, Text } from 'react-native-paper';
 import axiosInstance from '@/api/axiosInstance';
 import { useNavigation } from '@/hooks/useNavigation';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import Colors from '@/src/constants/Colors';
 import { useAuthStore } from '@/src/stores/authStore';
 
@@ -54,12 +54,12 @@ const RequestSubActionScreen = () => {
   const menuItems = [
     {
       title: 'Các yêu cầu của tôi',
-      icon: 'cube-outline',
+      icon: 'art-track',
       onPress: () => handleAuthenticatedNavigation('MyRequests'),
     },
     {
       title: 'Các yêu cầu được gửi đến tôi',
-      icon: 'cube-outline',
+      icon: 'article',
       onPress: () => handleAuthenticatedNavigation('RequestsForMe'),
     },
   ];
@@ -69,17 +69,22 @@ const RequestSubActionScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
-            <Card key={index} style={styles.menuCard}>
-              <TouchableOpacity onPress={item.onPress}>
-                <Card.Content style={styles.menuContent}>
-                  <View style={styles.menuLeft}>
-                    <Icon name={item.icon} size={24} color={Colors.orange500} />
-                    <Text style={styles.menuText}>{item.title}</Text>
-                  </View>
-                  <Icon name="chevron-forward-outline" size={24} color={Colors.orange500} style={{ marginRight: 12 }} />
-                </Card.Content>
-              </TouchableOpacity>
-            </Card>
+            
+          <TouchableOpacity
+          key={index}
+          style={styles.menuItem}
+          onPress={item.onPress}
+        >
+          <View style={styles.menuItemContent}>
+            <View style={styles.menuItemIcon}>
+              <Icon name={item.icon} size={24} color={Colors.orange500} />
+            </View>
+            <View style={styles.menuItemText}>
+              <Text style={styles.menuItemTitle}>{item.title}</Text>
+            </View>
+            <Icon name="chevron-forward-outline" size={20} color={Colors.gray400} />
+          </View>
+        </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
@@ -100,9 +105,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.orange50,
-  },
-  menuSection: {
-    marginBottom: 24,
   },
   menuCard: {
     backgroundColor: 'white',
@@ -126,6 +128,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.darkText,
     flex: 1,
+  },
+
+  menuSection: {
+    paddingHorizontal: 8,
+    gap: 12,
+  },
+  menuItem: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemIcon: {
+    backgroundColor: Colors.orange50,
+    padding: 12,
+    borderRadius: 12,
+    marginRight: 16,
+  },
+  menuItemText: {
+    flex: 1,
+  },
+  menuItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  menuItemDescription: {
+    fontSize: 13,
+    color: Colors.gray600,
   },
 });
 
