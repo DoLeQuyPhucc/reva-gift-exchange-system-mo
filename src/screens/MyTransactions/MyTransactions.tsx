@@ -53,7 +53,7 @@ const MyTransactions = () => {
   }, [isConfirm]);
 
   useEffect(() => {
-    if (selectedTransaction?.status === "Pending") {
+    if (selectedTransaction?.status === "In_Progress") {
       fetchQRCode(selectedTransaction.id);
     }
   }, [selectedTransaction]);
@@ -61,32 +61,51 @@ const MyTransactions = () => {
   const fetchTransactions = async () => {
     try {
       const response = await axiosInstance.get("transaction/own-transactions");
-
+  
       if (!response.data.data) {
         return;
       }
+  
+      const statusOrder = {
+        'In_Progress': 0,
+        'Completed': 1, 
+        'Not_Completed': 2
+      };
+  
       const transactionsList = await Promise.all(
         response.data.data.map(async (transaction: Transaction) => {
+          let updatedTransaction = { ...transaction };
+  
           if (
             transaction.status === "Completed" ||
             transaction.status === "Not_Completed"
           ) {
-            const rating = await axiosInstance.get(
-              `rating/transaction/${transaction.id}`
-            );
-            if (rating.data.data.length === 0) {
-              transaction.rating = null;
-            } else {
-              transaction.rating = rating.data.data[0].rating;
-              transaction.ratingComment = rating.data.data[0].comment;
+            try {
+              const rating = await axiosInstance.get<RatingResponse>(
+                `rating/transaction/${transaction.id}`
+              );
+              if (rating.data.data.length === 0) {
+                updatedTransaction.rating = null;
+                updatedTransaction.ratingComment = null;
+              } else {
+                updatedTransaction.rating = rating.data.data[0].rating;
+                updatedTransaction.ratingComment = rating.data.data[0].comment;
+              }              
+            } catch (error) {
+              updatedTransaction.rating = null;
+              updatedTransaction.ratingComment = null;
             }
-            return transaction;
           }
-
-          return transaction;
+          return updatedTransaction;
         })
       );
-      setTransactions(transactionsList);
+  
+      // Sort transactions by status priority
+      const sortedTransactions = transactionsList.sort((a: Transaction, b: Transaction) => {
+        return statusOrder[a.status] - statusOrder[b.status];
+      });
+  
+      setTransactions(sortedTransactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
@@ -104,8 +123,7 @@ const MyTransactions = () => {
   const handleVerification = async () => {
     if (selectedTransaction) {
       const res = await axiosInstance.put(
-        `transaction/update-status/${selectedTransaction.id}`,
-        "Completed"
+        `transaction/approve/${selectedTransaction.id}`
       );
       if (res.data.isSuccess === true) {
         Alert.alert("Thành công", "Xác nhận giao dịch thành công.");
@@ -178,6 +196,8 @@ const MyTransactions = () => {
   };
   interface RatingResponse {
     isSuccess: boolean;
+    data: any;
+    code: number;
     message?: string;
   }
 
@@ -273,7 +293,7 @@ const MyTransactions = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "In_Progress":
         return "Đang diễn ra";
       case "Completed":
         return "Hoàn thành";
@@ -286,7 +306,7 @@ const MyTransactions = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "In_Progress":
         return Colors.orange500;
       case "Completed":
         return Colors.lightGreen;
@@ -442,7 +462,7 @@ const MyTransactions = () => {
               </Text>
             )}
 
-            {transaction.status === "Pending" &&
+            {transaction.status === "In_Progress" &&
               checkRole(transaction) === "requester" && (
                 <>
                   <TouchableOpacity
@@ -495,7 +515,7 @@ const MyTransactions = () => {
                 </>
               )}
 
-            {transaction.status === "Pending" &&
+            {transaction.status === "In_Progress" &&
               checkRole(transaction) === "charitarian" && (
                 <>
                   <TouchableOpacity
@@ -525,8 +545,8 @@ const MyTransactions = () => {
                 </>
               )}
 
-            {transaction.status === "Completed" ||
-              (transaction.status === "Not_Completed" && (
+            {(transaction.status === "Completed" ||
+              transaction.status === "Not_Completed") && (
                 <>
                   <TouchableOpacity
                     style={[styles.verifyButton, { opacity: 0.5 }]}
@@ -580,7 +600,7 @@ const MyTransactions = () => {
                     </View>
                   </TouchableOpacity>
                 </>
-              ))}
+              )}
           </View>
         ))}
       </ScrollView>

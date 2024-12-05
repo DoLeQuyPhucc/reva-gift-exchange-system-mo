@@ -80,7 +80,7 @@ const ProfileScreen = () => {
       if (screenName === 'MyProducts') {
         navigation.navigate('MyProducts');
       } else if (screenName === 'MyRequests') {
-        navigation.navigate('MyRequests');
+        navigation.navigate('RequestSubAction');
       } else if (screenName === 'MyTransactions') {
         navigation.navigate('MyTransactions');
       }

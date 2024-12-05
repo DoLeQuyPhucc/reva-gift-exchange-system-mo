@@ -33,7 +33,10 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   ProfileDetail: undefined;
   MyProducts: undefined;
-  MyRequests: undefined;
+  // MyRequests: undefined;
+  MyRequests: { productId: string; type: string };
+  RequestsForMe: { productId: string };
+  RequestSubAction: undefined;
   MyTransactions: undefined;
   ChatScreen: undefined;
   PackageScreen: undefined;

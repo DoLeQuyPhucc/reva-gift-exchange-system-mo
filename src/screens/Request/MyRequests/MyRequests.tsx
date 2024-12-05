@@ -1,39 +1,41 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Modal,
-  Platform,
-  TextInput,
-} from "react-native";
-import axiosInstance from "@/src/api/axiosInstance";
-import Colors from "@/src/constants/Colors";
+import { View, Text, Platform, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, TextInput } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import Colors from '@/src/constants/Colors';
+import { Request, User } from '@/src/shared/type';
+import axiosInstance from '@/src/api/axiosInstance';
+import { formatDate, formatDate_DD_MM_YYYY } from '@/src/shared/formatDate';
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { Request, User } from "@/src/shared/type";
-import { formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
-import ImagesModalViewer from "@/src/components/modal/ImagesModalViewer";
-import { CustomAlert } from "@/src/components/CustomAlert";
+import ImagesModalViewer from '@/src/components/modal/ImagesModalViewer';
+import { CustomAlert } from '@/src/components/CustomAlert';
+import { useNavigation } from '@/src/hooks/useNavigation';
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
   Approved: Colors.lightGreen,
   Rejected: Colors.lightRed,
+  Hold_On: Colors.gray600,
 };
 
 const STATUS_LABELS = {
   Pending: "Đang chờ",
   Approved: "Đã duyệt",
   Rejected: "Từ chối",
+  Hold_On: "Tạm hoãn",
 };
 
-const MyRequests = () => {
-  const [activeTab, setActiveTab] = useState("myRequests");
-  const [myRequests, setMyRequests] = useState<Request[]>([]);
-  const [requestsForMe, setRequestsForMe] = useState<Request[]>([]);
+type MyRequestsScreenRouteProp = RouteProp<
+  RootStackParamList,
+  "MyRequests"
+>;
+
+export default function MyRequestsScreen() {
+    const route = useRoute<MyRequestsScreenRouteProp>();
+    const itemId = route.params.productId;
+    const typeRequest = route.params.type;
+
+  const [requests, setRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -52,28 +54,57 @@ const MyRequests = () => {
     message: "",
   });
 
+  const navigation = useNavigation();
+  
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+  const fetchRequests = async () => {
+    try {
+      let requestsResponse;
+  
+      switch (typeRequest) {
+        case "itemRequestTo":
+          if (itemId !== '') {
+            requestsResponse = await axiosInstance.get(`request/my-requests/${itemId}`);
+          } else {
+            requestsResponse = await axiosInstance.get(`request/my-requests`);
+          }
+          break;
+        case "requestsForMe":
+          if (itemId !== '') {
+            requestsResponse = await axiosInstance.get(`request/requests-for-me/${itemId}`);
+          } else {
+            requestsResponse = await axiosInstance.get(`request/requests-for-me`);
+          }
+          break;
+        default:
+          console.warn("Invalid typeRequest:", typeRequest);
+          return;
+      }
+  
+      if (requestsResponse?.data?.data) {
+        const sortedRequests = requestsResponse.data.data.sort((a: Request, b: Request) => {
+          const statusOrder: { [key: string]: number } = { Pending: 1, Hold_On: 2, Approved: 3, Rejected: 4 };
+          return statusOrder[a.status] - statusOrder[b.status];
+        });
+        setRequests(sortedRequests);
+      } else {
+        console.warn("No data found in response:", requestsResponse);
+      }
+  
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    }
+  };
+  
+
   const handleImagePress = (listImages: string[]) => {
     setSelectedImages(listImages);
     setModalVisible(true);
   };
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const fetchRequests = async () => {
-    try {
-      const [myRequestsResponse, requestsForMeResponse] = await Promise.all([
-        axiosInstance.get("request/my-requests"),
-        axiosInstance.get("request/requests-for-me"),
-      ]);
-      setMyRequests(myRequestsResponse.data.data);
-      setRequestsForMe(requestsForMeResponse.data.data);
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-    }
-  };
-
+  
   const formatTimeSlot = (timeString: string) => {
     const startTime = new Date(timeString);
 
@@ -175,6 +206,7 @@ const MyRequests = () => {
     }
   };
 
+  
   const renderRequestCard = (request: Request, showActions = false) => (
     <View style={styles.card} key={request.id}>
       <View style={styles.cardHeader}>
@@ -212,20 +244,19 @@ const MyRequests = () => {
         </View>
       </View>
 
+      {request.status === "Hold_On" && (
+          <Text style={styles.holdOnText}>*Tạm hoãn yêu cầu do sản phẩm đang được tiến hành giao dịch khác. Sẽ mở lại nếu như giao dịch đó không thành công</Text>
+        )}
       <View style={styles.itemsContainer}>
         {request.requesterItem?.itemId || request.requestImages.length > 0 ? (
           // Trường hợp trao đổi bình thường
           <>
-            <View style={styles.itemCard}>
-              <TouchableOpacity
-                onPress={() =>
-                  handleImagePress(
+            <TouchableOpacity style={styles.itemCard} onPress={() => request.requesterItem?.itemId ? navigation.navigate("ProductDetail", { productId: request.requesterItem.itemId }) : handleImagePress(
                     request.requesterItem?.itemId
                       ? request.requesterItem?.itemImages
                       : request.requestImages
-                  )
-                }
-              >
+                  )}>
+              
                 <Image
                   source={{
                     uri:
@@ -234,45 +265,38 @@ const MyRequests = () => {
                   }}
                   style={styles.itemImage}
                 />
-              </TouchableOpacity>
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.requesterItem?.itemName}
               </Text>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.exchangeIconContainer}>
               <Icon name="swap-vert" size={24} color={Colors.orange500} />
             </View>
 
-            <View style={styles.itemCard}>
-              <TouchableOpacity
-                onPress={() => handleImagePress(request.charitarianItem.itemImages)}
-              >
+            <TouchableOpacity style={styles.itemCard} onPress={() => request.requesterItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
+              
                 <Image
                   source={{ uri: request.charitarianItem.itemImages[0] }}
                   style={styles.itemImage}
                 />
-              </TouchableOpacity>
               <Text style={styles.itemName} numberOfLines={2}>
                 {request.charitarianItem.itemName}
               </Text>
-            </View>
+            </TouchableOpacity>
           </>
         ) : (
           // Trường hợp đăng ký nhận
-          <View style={styles.singleItemContainer}>
-            <TouchableOpacity
-              onPress={() => handleImagePress(request.charitarianItem.itemImages)}
-            >
+          <TouchableOpacity style={styles.singleItemContainer} onPress={() => request.requesterItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
+            
               <Image
                 source={{ uri: request.charitarianItem.itemImages[0] }}
                 style={styles.singleItemImage}
               />
-            </TouchableOpacity>
             <Text style={styles.itemName} numberOfLines={2}>
               {request.charitarianItem.itemName}
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -297,7 +321,7 @@ const MyRequests = () => {
         <View style={styles.timeSlotList}>
           {request.appointmentDate.map((time: string, index: number) => (
             <View key={index} style={styles.timeSlotChip}>
-              <Text style={styles.timeSlotText}>{formatTimeSlot(time)}</Text>
+              <Text style={styles.timeSlotText}>{formatDate(time)}</Text>
             </View>
           ))}
         </View>
@@ -328,65 +352,17 @@ const MyRequests = () => {
       )}
     </View>
   );
-
   return (
     <View style={styles.container}>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "myRequests" && styles.activeTab]}
-          onPress={() => setActiveTab("myRequests")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "myRequests" && styles.activeTabText,
-            ]}
-          >
-            Yêu cầu của tôi
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "requestsForMe" && styles.activeTab,
-          ]}
-          onPress={() => setActiveTab("requestsForMe")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "requestsForMe" && styles.activeTabText,
-            ]}
-          >
-            Yêu cầu được gửi tới
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        {activeTab === "myRequests" && (
-          <>
-          
           <Text style={styles.resultCount}>
-            Hiển thị {myRequests.length} yêu cầu
+            Hiển thị {requests.length} yêu cầu
           </Text>
-          {myRequests.map((request) => renderRequestCard(request))}
-          </>
-        )
-          }
-        {activeTab === "requestsForMe" && (
-          <>
-          
-          <Text style={styles.resultCount}>
-            Hiển thị {requestsForMe.length} yêu cầu
-          </Text>
-          {requestsForMe.map((request) => renderRequestCard(request, true))}
-          </>
-
-        )}
+          {typeRequest === 'itemRequestTo' ? requests.map((request) => renderRequestCard(request)) : requests.map((request) => renderRequestCard(request, true))}
+        
       </ScrollView>
 
       <Modal visible={showTimeModal} transparent animationType="slide">
@@ -545,8 +521,198 @@ const MyRequests = () => {
         onCancel={() => setShowAlertDialog(false)}
       />
     </View>
-  );
-};
+  )
+}
+
+// const MyRequests = () => {
+
+//   return (
+//     <View style={styles.container}>
+
+//       <ScrollView
+//         style={styles.scrollView}
+//         showsVerticalScrollIndicator={false}
+//       >
+//         {activeTab === "myRequests" && (
+//           <>
+          
+//           <Text style={styles.resultCount}>
+//             Hiển thị {myRequests.length} yêu cầu
+//           </Text>
+//           {myRequests.map((request) => renderRequestCard(request))}
+//           </>
+//         )
+//           }
+//         {activeTab === "requestsForMe" && (
+//           <>
+          
+//           <Text style={styles.resultCount}>
+//             Hiển thị {requestsForMe.length} yêu cầu
+//           </Text>
+//           {requestsForMe.map((request) => renderRequestCard(request, true))}
+//           </>
+
+//         )}
+//       </ScrollView>
+
+//       <Modal visible={showTimeModal} transparent animationType="slide">
+//         <View style={styles.modalContainer}>
+//           <View style={styles.modalContent}>
+//             <Text style={[styles.modalTitle, styles.textCenter]}>Bạn muốn xác nhận giao dịch này</Text>
+
+//             <ScrollView style={styles.timeSlotScrollView}>
+//               {selectedRequest?.appointmentDate.map(
+//                 (time: string, index: number) => (
+//                     <Text
+//                       style={[
+//                         styles.modalTimeSlotText,
+//                         selectedTime === time && styles.selectedTimeSlotText,
+//                       ]}
+//                     >
+//                       {formatTimeSlot(time)}
+//                     </Text>
+//                 )
+//               )}
+//             </ScrollView>
+
+            
+//             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
+//             <TextInput
+//               style={styles.requestInput}
+//               placeholder="Nhập tin nhắn..."
+//               value={approveMessage}
+//               onChangeText={setApproveMessage}
+//               multiline
+//             />
+//             {approveMessage.length > 99 && (
+//               <Text style={styles.textErrorMessage}>
+//                 Lời nhắn của bạn không được vượt quá 100 ký tự.
+//               </Text>
+//             )}
+
+//             <View style={styles.modalActions}>
+//               <TouchableOpacity
+//                 style={[styles.modalButton, styles.cancelButton]}
+//                 onPress={() => {
+//                   setShowTimeModal(false);
+//                   setSelectedRequest(null);
+//                   setSelectedTime(null);
+//                   setApproveMessage("");
+//                 }}
+//               >
+//                 <Text style={styles.modalButtonText}>Hủy</Text>
+//               </TouchableOpacity>
+//               <TouchableOpacity
+//                 style={[
+//                   styles.modalButton,
+//                   styles.confirmButton,
+//                   !selectedTime && styles.disabledButton,
+//                 ]}
+//                 onPress={() =>
+//                   selectedRequest?.id && handleApprove(selectedRequest.id)
+//                 }
+//                 disabled={!selectedTime}
+//               >
+//                 <Text style={styles.modalButtonText}>Xác nhận</Text>
+//               </TouchableOpacity>
+//             </View>
+//           </View>
+//         </View>
+//       </Modal>
+
+//       <Modal visible={showRejectModal} transparent animationType="slide">
+//         <View style={styles.modalContainer}>
+//           <View style={styles.modalContent}>
+//             <Text style={[styles.modalTitle, styles.textCenter]}>
+//               Bạn muốn từ chối giao dịch này?
+//             </Text>
+//             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
+//             <TextInput
+//               style={styles.requestInput}
+//               placeholder="Nhập tin nhắn..."
+//               value={rejectMessage}
+//               onChangeText={setRejectMessage}
+//               multiline
+//             />
+//             {rejectMessage.length > 99 && (
+//               <Text style={styles.textErrorMessage}>
+//                 Lời nhắn của bạn không được vượt quá 100 ký tự.
+//               </Text>
+//             )}
+//             <View style={styles.modalActions}>
+//               <TouchableOpacity
+//                 style={[styles.modalButton, styles.cancelButton]}
+//                 onPress={() => {
+//                   setShowRejectModal(false);
+//                 }}
+//               >
+//                 <Text style={styles.modalButtonText}>Hủy</Text>
+//               </TouchableOpacity>
+//               <TouchableOpacity
+//                 style={[styles.modalButton, styles.confirmButton]}
+//                 onPress={() =>
+//                   selectedRequest?.id && handleReject(selectedRequest.id)
+//                 }
+//               >
+//                 <Text style={styles.modalButtonText}>Xác nhận</Text>
+//               </TouchableOpacity>
+//             </View>
+//           </View>
+//         </View>
+//       </Modal>
+//       <Modal visible={showInfoUser} transparent animationType="slide">
+//         <View style={styles.modalContainer}>
+//           <View style={styles.modalContent}>
+//             <View style={styles.profileHeader}>
+//               <Image
+//                 source={{ uri: user.profilePicture }}
+//                 style={styles.profilePicture}
+//               />
+//               <Text style={styles.userName}>
+//                 {user.username}
+//               </Text>
+//             </View>
+
+//             <View style={styles.infoSection}>
+//               <View style={styles.infoRow}>
+//                 <Text style={styles.infoLabel}>Điểm:</Text>
+//                 <Text style={styles.infoValue}>{user.point}</Text>
+//               </View>
+
+//               <View style={styles.infoRow}>
+//                 <Text style={styles.infoLabel}>Là thành viên từ:</Text>
+//                 <Text style={styles.infoValue}>
+//                   {new Date(user.dateJoined as string).toLocaleDateString()}
+//                 </Text>
+//               </View>
+//             </View>
+
+//             <TouchableOpacity
+//               style={styles.closeButton}
+//               onPress={() => setShowInfoUser(false)}
+//             >
+//               <Text style={styles.closeButtonText}>Đóng</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+//       </Modal>
+
+//       <ImagesModalViewer
+//         images={selectedImages}
+//         isVisible={isModalVisible}
+//         onClose={() => setModalVisible(false)}
+//       />
+
+//       <CustomAlert
+//         visible={showAlertDialog}
+//         title={alertData.title}
+//         message={alertData.message}
+//         onConfirm={() => setShowAlertDialog(false)}
+//         onCancel={() => setShowAlertDialog(false)}
+//       />
+//     </View>
+//   );
+// };
 
 const styles = StyleSheet.create({
   container: {
@@ -907,6 +1073,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+  holdOnText: {
+    backgroundColor: "#f5f5f5",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
 });
 
-export default MyRequests;

@@ -97,12 +97,11 @@ export default function ProductDetailScreen() {
         const response = await axiosInstance.get(`/items/${itemId}`);
 
         if (response.data.isSuccess && response.data.data) {
-          console.log("Product:", response.data.data);
+          console.log("Product data:", response.data.data.id);
           setProduct(response.data.data);
           setCustomTimeRanges(
             response.data.data?.availableTime || "officeHours 9:00_17:00"
           );
-          console.log("Product:", response.data.data);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
         }
@@ -212,6 +211,7 @@ export default function ProductDetailScreen() {
     const newImages = moreImages.filter((_, idx) => idx !== index);
     setMoreImages(newImages);
   };
+
   const parseCustomPerDay = (rangeString: string): DayTimeRange[] => {
     const [type, ...dayRanges] = rangeString.split(" ");
 
@@ -236,22 +236,32 @@ export default function ProductDetailScreen() {
       });
   };
 
+  const parseOfficeHours = (range: string): DayTimeRange[] => {
+    const [, hours, daysOnly] = range.split(" ");
+    const [start, end] = hours.split("_").map((hour) => parseInt(hour));
+
+    return daysOnly.split("_").map((day) => ({
+      day: day,
+      startHour: start,
+      endHour: end,
+    }));
+  };
+
   const setCustomTimeRanges = (range: string) => {
     const [type] = range.split(" ");
+    let timeRanges: DayTimeRange[] = [];
 
     if (type === "customPerDay") {
-      const timeRanges = parseCustomPerDay(range);
-      console.log("Time ranges:", timeRanges);
-      setTimeRanges(timeRanges); // Thêm state mới để lưu timeRanges
-      setDaysOnly(timeRanges.map((r) => r.day).join("_"));
+      timeRanges = parseCustomPerDay(range);
     } else {
-      // Logic cũ cho officeHours
-      const [, hours, daysOnly] = range.split(" ");
-      const [start, end] = hours.split("_").map((hour) => parseInt(hour));
+      timeRanges = parseOfficeHours(range);
+      const [start, end] = range.split(" ")[1].split("_").map(Number);
       setStartHour(start);
       setEndHour(end);
-      setDaysOnly(daysOnly);
     }
+
+    setTimeRanges(timeRanges); // Lưu lại timeRanges vào state
+    setDaysOnly(timeRanges.map((r) => r.day).join("_"));
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -317,6 +327,7 @@ export default function ProductDetailScreen() {
       ];
     }
   };
+
   const formatTimeRanges = (timeRanges: DayTimeRange[]): string => {
     if (!timeRanges || timeRanges.length === 0) {
       return `từ ${startHour}:00 - ${endHour - 1}:59, ${convertDayOfWeek(
@@ -324,12 +335,24 @@ export default function ProductDetailScreen() {
       )}`;
     }
 
-    return timeRanges
-      .map((range) => {
-        const dayName = convertDayOfWeek(range.day);
-        return `${range.startHour}:00-${range.endHour - 1}:59 ${dayName}`;
+    // Nhóm các ngày theo khung giờ
+    const groupedRanges: Record<string, string[]> = {};
+    timeRanges.forEach(({ startHour, endHour, day }) => {
+      const key = `${startHour}-${endHour}`;
+      if (!groupedRanges[key]) {
+        groupedRanges[key] = [];
+      }
+      groupedRanges[key].push(day);
+    });
+
+    // Tạo chuỗi mô tả
+    return Object.entries(groupedRanges)
+      .map(([key, days]) => {
+        const [start, end] = key.split("-");
+        const dayNames = days.map(convertDayOfWeek).join(", ");
+        return `${start}:00-${parseInt(end) - 1}:59 ${dayNames}`;
       })
-      .join(", ");
+      .join("; ");
   };
 
   // Generate hour and minute arrays
@@ -792,7 +815,7 @@ export default function ProductDetailScreen() {
                   )}
 
                   <Text style={styles.moreItemText}>
-                    Sản phẩm khác, bạn hãy chụp lại sản phẩm và ghi rõ thông tin
+                    Sản phẩm khác, vui lòng chụp lại sản phẩm và ghi rõ thông tin
                     sản phẩm
                   </Text>
                   {selectedUserItem && (
@@ -864,12 +887,6 @@ export default function ProductDetailScreen() {
                   <Text style={styles.description}>
                     Khung giờ: {formatTimeRanges(timeRanges)}
                   </Text>
-
-                  <Text style={styles.modalDescriptionSub}>
-                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiếp
-                    hành trao đổi.
-                  </Text>
-
                   {/* Selected Time Slots */}
                   <View style={styles.selectedSlotsContainer}>
                     {selectedTimeSlots.map((slot) => (
@@ -890,7 +907,9 @@ export default function ProductDetailScreen() {
                       {/* Date Picker */}
                       <TouchableOpacity
                         style={styles.datePickerButton}
-                        onPress={() => setShowDatePicker(true)}
+                        onPress={() => {
+                          setShowDatePicker(true);
+                        }}
                       >
                         <Text style={styles.datePickerButtonText}>
                           Chọn ngày:{" "}
@@ -898,6 +917,21 @@ export default function ProductDetailScreen() {
                         </Text>
                       </TouchableOpacity>
 
+                      {/* Hiển thị khung giờ cho ngày đã chọn */}
+                      {selectedDate && (
+                        <Text style={styles.timeRangeText}>
+                          {(() => {
+                            const timeRange =
+                              getTimeRangeForSelectedDate(selectedDate);
+                            if (timeRange) {
+                              return `Khung giờ cho phép: ${
+                                timeRange.start
+                              }:00 - ${timeRange.end - 1}:59`;
+                            }
+                            return "Không có khung giờ cho phép trong ngày này";
+                          })()}
+                        </Text>
+                      )}
                       {showDatePicker && (
                         // <DateTimePicker
                         //   value={selectedDate}
@@ -911,7 +945,7 @@ export default function ProductDetailScreen() {
                           date={selectedDate}
                           setDate={setSelectedDate}
                           allowedDays={daysOnly}
-                          timeRanges={timeRanges} // Thêm prop mới
+                          timeRanges={timeRanges}
                           onClose={() => setShowDatePicker(false)}
                         />
                       )}
@@ -980,24 +1014,14 @@ export default function ProductDetailScreen() {
                           </View>
                         ) : null}
                       </View>
-
-                      {/* Hiển thị khung giờ cho ngày đã chọn */}
-                      {selectedDate && (
-                        <Text style={styles.timeRangeText}>
-                          {(() => {
-                            const timeRange =
-                              getTimeRangeForSelectedDate(selectedDate);
-                            if (timeRange) {
-                              return `Khung giờ cho phép: ${
-                                timeRange.start
-                              }:00 - ${timeRange.end - 1}:59`;
-                            }
-                            return "Không có khung giờ cho phép trong ngày này";
-                          })()}
-                        </Text>
-                      )}
                     </View>
                   )}
+                  
+                  <Text style={styles.modalDescriptionSub}>
+                    Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiến
+                    hành trao đổi.
+                  </Text>
+
                 </>
               )}
             </ScrollView>
@@ -1106,7 +1130,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     color: "#666",
-    marginBottom: 8,
+    // marginBottom: 8,
   },
   detailsContainer: {
     marginBottom: 8,
@@ -1196,14 +1220,14 @@ const styles = StyleSheet.create({
   },
   modalDescription: {
     fontSize: 16,
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 8,
     fontWeight: "bold",
     textAlign: "left",
   },
   modalDescriptionSub: {
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 32,
     color: "#7B7B7B",
   },
   requestInput: {
@@ -1234,7 +1258,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 32,
+    marginBottom: 8,
   },
   timeSlotBadge: {
     flexDirection: "row",
@@ -1251,6 +1275,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    marginTop: 16,
+    marginBottom: 8,
   },
   timeSlotText: {
     color: Colors.orange500,
@@ -1261,7 +1287,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.orange500,
     padding: 12,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   datePickerButtonText: {
     color: "white",
@@ -1465,7 +1491,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "column",
     // alignItems: "center",
-    marginBottom: 50,
+    marginBottom: 8,
   },
   addButton: {
     backgroundColor: "#FF5722",
@@ -1537,7 +1563,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   timeRangeText: {
-    marginTop: 8,
+    // marginTop: 8,
     marginBottom: 8,
     color: Colors.orange500,
     fontSize: 14,

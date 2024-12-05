@@ -4,12 +4,18 @@ import axiosInstance from '@/src/api/axiosInstance';
 import Colors from '@/src/constants/Colors';
 import { Product } from '@/src/shared/type';
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useNavigation } from '@/src/hooks/useNavigation';
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
   Approved: Colors.lightGreen,
   Rejected: Colors.lightRed,
   Out_of_date: "#48494d"
+};
+
+const REQUEST_COLORS: { [key: string]: string } = {
+  itemRequestTo: Colors.orange500,
+  requestForItem: Colors.lightGreen,
 };
 
 const STATUS_LABELS = {
@@ -27,6 +33,7 @@ const MyProducts = () => {
     pending: [],
     outOfDate: []
   });
+  const navigation = useNavigation();
 
   useEffect(() => {
     // Fetch data from the API
@@ -47,7 +54,7 @@ const MyProducts = () => {
 
   const renderProducts = (items: Product[]) => {
     return items.map(item => (
-      <View key={item.id} style={styles.card}>
+      <TouchableOpacity key={item.id} style={styles.card} onPress={() => navigation.navigate("ProductDetail", { productId: item.id })}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.name}</Text>
           <View
@@ -78,14 +85,14 @@ const MyProducts = () => {
             <View style={styles.detailItem}>
               <Text style={styles.detailText}>{item.description}</Text>
             </View>
-            <View style={styles.detailItem}>
+            {/* <View style={styles.detailItem}>
               <Icon name="category" size={20} color={Colors.orange500} />
-              <Text style={styles.detailText}>Danh mục: {item.subCategory.category.name}</Text>
+              <Text style={styles.detailText}>Danh mục: {item.category.name}</Text>
             </View>
             <View style={styles.detailItem}>
               <Icon name="now-widgets" size={20} color={Colors.orange500}/>
               <Text style={styles.detailText}>Số lượng: {item.quantity}</Text>
-            </View>
+            </View> */}
             <View style={styles.detailItem}>
               <Icon name="loop" size={20} color={Colors.orange500}/>
               <Text style={styles.detailText}>Tình trạng: {item.condition}</Text>
@@ -103,7 +110,42 @@ const MyProducts = () => {
             )}
           </View>
         </View>
-      </View>
+        <View style={styles.cardFooter}>
+          
+        <TouchableOpacity
+          style={[
+            styles.statusBadge,
+            { backgroundColor: `${Colors.orange500}15` },
+          ]}
+          onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'itemRequestTo' })}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: Colors.orange500 },
+            ]}
+          >
+            {item.itemRequestTo} yêu cầu đã gửi đi
+          </Text>
+        </TouchableOpacity>
+          <TouchableOpacity
+          style={[
+            styles.statusBadge,
+            { backgroundColor: `${Colors.lightRed}15` },
+          ]}
+          onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'requestsForMe' })}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: Colors.lightRed },
+            ]}
+          >
+            {item.requestForItem} yêu cầu được gửi tới
+          </Text>
+        </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
     ));
   };
 
@@ -186,6 +228,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f1f1f1',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -212,8 +262,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   image: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     marginRight: 16,
     borderRadius: 8, 
   },

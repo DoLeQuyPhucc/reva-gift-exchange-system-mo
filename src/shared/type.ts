@@ -56,7 +56,7 @@ export interface User {
 
 export interface Request {
   id: string;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "Pending" | "Approved" | "Rejected" | "Hold_On";
   requestMessage: string | null;
   rejectMessage: string | null;
   note: string | null;
@@ -88,7 +88,7 @@ interface SubInfoItem {
 
 export interface Transaction {
   id: string;
-  status: string;
+  status: "Not_Completed" | "Completed" | "In_Progress";
   requestId: string;
   requestNote: string | null;
   rejectMessage: string | null;
@@ -108,8 +108,8 @@ export interface Transaction {
   requesterAddress: SubInfoAddress;
   requesterPhone: string;
 
-  rating: number | null;
-  ratingComment: string | null;
+  rating?: number | null;
+  ratingComment?: string | null;
 }
 
 export interface TransactionRatingType {
