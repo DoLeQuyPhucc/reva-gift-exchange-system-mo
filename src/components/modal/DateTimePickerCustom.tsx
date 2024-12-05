@@ -87,6 +87,7 @@ const DateTimePickerCustom: React.FC<DateTimePickerCustomProps> = ({
   
     return (
       <DateTimePicker
+        display="default"
         mode="date"
         value={date}
         minimumDate={initialAllowedDate}

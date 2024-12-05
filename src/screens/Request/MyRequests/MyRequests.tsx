@@ -5,7 +5,7 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import Colors from '@/src/constants/Colors';
 import { Request, User } from '@/src/shared/type';
 import axiosInstance from '@/src/api/axiosInstance';
-import { formatDate_DD_MM_YYYY } from '@/src/shared/formatDate';
+import { formatDate, formatDate_DD_MM_YYYY } from '@/src/shared/formatDate';
 import Icon from "react-native-vector-icons/MaterialIcons";
 import ImagesModalViewer from '@/src/components/modal/ImagesModalViewer';
 import { CustomAlert } from '@/src/components/CustomAlert';
@@ -244,6 +244,9 @@ export default function MyRequestsScreen() {
         </View>
       </View>
 
+      {request.status === "Hold_On" && (
+          <Text style={styles.holdOnText}>*Tạm hoãn yêu cầu do sản phẩm đang được tiến hành giao dịch khác. Sẽ mở lại nếu như giao dịch đó không thành công</Text>
+        )}
       <View style={styles.itemsContainer}>
         {request.requesterItem?.itemId || request.requestImages.length > 0 ? (
           // Trường hợp trao đổi bình thường
@@ -318,7 +321,7 @@ export default function MyRequestsScreen() {
         <View style={styles.timeSlotList}>
           {request.appointmentDate.map((time: string, index: number) => (
             <View key={index} style={styles.timeSlotChip}>
-              <Text style={styles.timeSlotText}>{formatTimeSlot(time)}</Text>
+              <Text style={styles.timeSlotText}>{formatDate(time)}</Text>
             </View>
           ))}
         </View>
@@ -1069,6 +1072,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  holdOnText: {
+    backgroundColor: "#f5f5f5",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
 });
 
