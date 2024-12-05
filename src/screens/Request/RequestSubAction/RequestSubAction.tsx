@@ -82,7 +82,7 @@ const RequestSubActionScreen = () => {
             <View style={styles.menuItemText}>
               <Text style={styles.menuItemTitle}>{item.title}</Text>
             </View>
-            <Icon name="chevron-forward-outline" size={20} color={Colors.gray400} />
+            <Icon name="arrow-forward-ios" size={20} color={Colors.gray400} />
           </View>
         </TouchableOpacity>
           ))}

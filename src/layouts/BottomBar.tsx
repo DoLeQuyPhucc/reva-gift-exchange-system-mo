@@ -227,10 +227,12 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
       <Tab.Navigator
         initialRouteName={tabs[0].route}
         screenOptions={{
+          headerShown: false,
           tabBarActiveTintColor: Colors.orange600,
           tabBarInactiveTintColor: "gray",
           tabBarStyle: {
-            borderRadius: 20,
+            borderTopRightRadius: 20,
+            borderTopLeftRadius: 20,
             height: 70,
             backgroundColor: "white",
           },
@@ -247,7 +249,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
                 <Icon
                   name={tabProps.tabBarIconProps.iconName}
                   color={color}
-                  size={size}
+                  size={20}
                 />
               ),
             }}
@@ -257,7 +259,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
 
       <View style={styles.fabContainer}>
         <TouchableOpacity style={styles.fab} onPress={showModal}>
-          <Icon name="add" size={24} color="white" />
+          <Icon name="add" size={20} color="white" />
         </TouchableOpacity>
       </View>
 
