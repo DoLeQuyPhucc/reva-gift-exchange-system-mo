@@ -532,7 +532,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       const postData = {
         name: title.trim(),
         description: description.trim(),
-        categoryId: selectedCategory!.id,
+        categoryId: selectedSubCategory!.id,
         isGift: isFreeGift,
         quantity: 1,
         condition: condition,
