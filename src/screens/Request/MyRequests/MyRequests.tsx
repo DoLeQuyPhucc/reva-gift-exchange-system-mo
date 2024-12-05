@@ -47,6 +47,7 @@ export default function MyRequestsScreen() {
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [isShowActions, setIsShowActions] = useState(false);
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [alertData, setAlertData] = useState({
@@ -70,6 +71,7 @@ export default function MyRequestsScreen() {
           } else {
             requestsResponse = await axiosInstance.get(`request/my-requests`);
           }
+          setIsShowActions(false);
           break;
         case "requestsForMe":
           if (itemId !== '') {
@@ -77,6 +79,7 @@ export default function MyRequestsScreen() {
           } else {
             requestsResponse = await axiosInstance.get(`request/requests-for-me`);
           }
+          setIsShowActions(true);
           break;
         default:
           console.warn("Invalid typeRequest:", typeRequest);
@@ -274,7 +277,7 @@ export default function MyRequestsScreen() {
               <Icon name="swap-vert" size={24} color={Colors.orange500} />
             </View>
 
-            <TouchableOpacity style={styles.itemCard} onPress={() => request.requesterItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
+            <TouchableOpacity style={styles.itemCard} onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
               
                 <Image
                   source={{ uri: request.charitarianItem.itemImages[0] }}
@@ -287,7 +290,7 @@ export default function MyRequestsScreen() {
           </>
         ) : (
           // Trường hợp đăng ký nhận
-          <TouchableOpacity style={styles.singleItemContainer} onPress={() => request.requesterItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
+          <TouchableOpacity style={styles.singleItemContainer} onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
             
               <Image
                 source={{ uri: request.charitarianItem.itemImages[0] }}
@@ -354,16 +357,159 @@ export default function MyRequestsScreen() {
   );
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-          <Text style={styles.resultCount}>
-            Hiển thị {requests.length} yêu cầu
-          </Text>
-          {typeRequest === 'itemRequestTo' ? requests.map((request) => renderRequestCard(request)) : requests.map((request) => renderRequestCard(request, true))}
-        
-      </ScrollView>
+              <ScrollView 
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+            <Text style={styles.resultCount}>
+              {requests.length} yêu cầu
+            </Text>
+
+          {requests.map((request) => (
+            <View key={request.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <TouchableOpacity
+                  style={styles.userInfo}
+                  onPress={() => handleShowInfoUser(request.requester.id)}
+                >
+                  <Image
+                    source={{ uri: request.requester.image }}
+                    style={styles.avatar}
+                  />
+                  <View>
+                    <Text style={styles.name}>{request.requester.name}</Text>
+                    <Text style={styles.timestamp}>
+                      {formatDate(request.createdAt)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <View style={[styles.statusBadge, { backgroundColor: `${STATUS_COLORS[request.status]}15` }]}>
+                  <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[request.status] }]} />
+                  <Text style={[styles.statusText, { color: STATUS_COLORS[request.status] }]}>
+                    {STATUS_LABELS[request.status]}
+                  </Text>
+                </View>
+              </View>
+
+              {request.requesterItem?.itemId || request.requestImages.length > 0 ? (
+                <>
+                
+                <Text style={styles.headerDetail} numberOfLines={2}>
+                      Trao đổi sản phẩm
+                    </Text>
+                  <View style={styles.itemsContainer}>
+                    <TouchableOpacity 
+                      style={styles.itemCard}
+                      onPress={() => request.requesterItem?.itemId ? navigation.navigate("ProductDetail", { productId: request.requesterItem.itemId }) : handleImagePress(
+                        request.requesterItem?.itemId
+                          ? request.requesterItem?.itemImages
+                          : request.requestImages
+                      )}
+                    >
+                      <Image
+                        source={{ uri: request.requesterItem?.itemImages[0] || request.requestImages[0] }}
+                        style={styles.itemImage}
+                      />
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {request.requesterItem?.itemName || "Sản phẩm đăng ký"}
+                      </Text>
+                    </TouchableOpacity>
+    
+                    <View style={styles.exchangeIconContainer}>
+                      <Icon name="swap-vert" size={24} color={Colors.orange500} />
+                    </View>
+    
+                    <TouchableOpacity 
+                      style={styles.itemCard}
+                      onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}
+                    >
+                      <Image
+                        source={{ uri: request.charitarianItem.itemImages[0] }}
+                        style={styles.itemImage}
+                      />
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {request.charitarianItem.itemName}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                
+                <Text style={styles.headerDetail} numberOfLines={2}>
+                      Đăng ký nhận
+                    </Text>
+                
+                <TouchableOpacity 
+                    style={styles.itemCard}
+                    onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}
+                  >
+                    <Image
+                      source={{ uri: request.charitarianItem.itemImages[0] }}
+                      style={styles.itemImage}
+                    />
+                    <Text style={styles.itemName} numberOfLines={2}>
+                      {request.charitarianItem.itemName}
+                    </Text>
+                  </TouchableOpacity>
+                  </>
+
+              )}
+
+
+              {request.requestMessage && (
+                <View style={styles.messageContainer}>
+                  <Icon
+                  name="question-answer"
+                  size={18}
+                  color={Colors.orange500}
+                />
+                  <Text style={styles.messageText}>{request.requestMessage}</Text>
+                </View>
+              )}
+
+              <View style={styles.timeSection}>
+                <View style={styles.timeSectionHeader}>
+                <Icon name="calendar-month" size={20} color={Colors.orange500} />
+                  <Text style={styles.timeTitle}>Thời gian mong muốn</Text>
+                </View>
+                <View style={styles.timeSlotList}>
+                  {request.appointmentDate.map((time, index) => (
+                    <View key={index} style={styles.timeSlotChip}>
+                      <Text style={styles.timeSlotText}>{formatDate(time)}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {isShowActions && request.status === "Pending" && (
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.rejectButton]}
+                    onPress={() => {
+                      setSelectedRequest(request);
+                      setShowRejectModal(true);
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Từ chối</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.approveButton]}
+                    onPress={() => {
+                      setSelectedRequest(request);
+                      setShowTimeModal(true);
+                      setSelectedTime(request.appointmentDate[0]);
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Chấp nhận</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
 
       <Modal visible={showTimeModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -492,7 +638,7 @@ export default function MyRequestsScreen() {
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Là thành viên từ:</Text>
                 <Text style={styles.infoValue}>
-                  {new Date(user.dateJoined as string).toLocaleDateString()}
+                  {formatDate_DD_MM_YYYY(user.dateJoined as string)}
                 </Text>
               </View>
             </View>
@@ -523,196 +669,6 @@ export default function MyRequestsScreen() {
     </View>
   )
 }
-
-// const MyRequests = () => {
-
-//   return (
-//     <View style={styles.container}>
-
-//       <ScrollView
-//         style={styles.scrollView}
-//         showsVerticalScrollIndicator={false}
-//       >
-//         {activeTab === "myRequests" && (
-//           <>
-          
-//           <Text style={styles.resultCount}>
-//             Hiển thị {myRequests.length} yêu cầu
-//           </Text>
-//           {myRequests.map((request) => renderRequestCard(request))}
-//           </>
-//         )
-//           }
-//         {activeTab === "requestsForMe" && (
-//           <>
-          
-//           <Text style={styles.resultCount}>
-//             Hiển thị {requestsForMe.length} yêu cầu
-//           </Text>
-//           {requestsForMe.map((request) => renderRequestCard(request, true))}
-//           </>
-
-//         )}
-//       </ScrollView>
-
-//       <Modal visible={showTimeModal} transparent animationType="slide">
-//         <View style={styles.modalContainer}>
-//           <View style={styles.modalContent}>
-//             <Text style={[styles.modalTitle, styles.textCenter]}>Bạn muốn xác nhận giao dịch này</Text>
-
-//             <ScrollView style={styles.timeSlotScrollView}>
-//               {selectedRequest?.appointmentDate.map(
-//                 (time: string, index: number) => (
-//                     <Text
-//                       style={[
-//                         styles.modalTimeSlotText,
-//                         selectedTime === time && styles.selectedTimeSlotText,
-//                       ]}
-//                     >
-//                       {formatTimeSlot(time)}
-//                     </Text>
-//                 )
-//               )}
-//             </ScrollView>
-
-            
-//             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
-//             <TextInput
-//               style={styles.requestInput}
-//               placeholder="Nhập tin nhắn..."
-//               value={approveMessage}
-//               onChangeText={setApproveMessage}
-//               multiline
-//             />
-//             {approveMessage.length > 99 && (
-//               <Text style={styles.textErrorMessage}>
-//                 Lời nhắn của bạn không được vượt quá 100 ký tự.
-//               </Text>
-//             )}
-
-//             <View style={styles.modalActions}>
-//               <TouchableOpacity
-//                 style={[styles.modalButton, styles.cancelButton]}
-//                 onPress={() => {
-//                   setShowTimeModal(false);
-//                   setSelectedRequest(null);
-//                   setSelectedTime(null);
-//                   setApproveMessage("");
-//                 }}
-//               >
-//                 <Text style={styles.modalButtonText}>Hủy</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity
-//                 style={[
-//                   styles.modalButton,
-//                   styles.confirmButton,
-//                   !selectedTime && styles.disabledButton,
-//                 ]}
-//                 onPress={() =>
-//                   selectedRequest?.id && handleApprove(selectedRequest.id)
-//                 }
-//                 disabled={!selectedTime}
-//               >
-//                 <Text style={styles.modalButtonText}>Xác nhận</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         </View>
-//       </Modal>
-
-//       <Modal visible={showRejectModal} transparent animationType="slide">
-//         <View style={styles.modalContainer}>
-//           <View style={styles.modalContent}>
-//             <Text style={[styles.modalTitle, styles.textCenter]}>
-//               Bạn muốn từ chối giao dịch này?
-//             </Text>
-//             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
-//             <TextInput
-//               style={styles.requestInput}
-//               placeholder="Nhập tin nhắn..."
-//               value={rejectMessage}
-//               onChangeText={setRejectMessage}
-//               multiline
-//             />
-//             {rejectMessage.length > 99 && (
-//               <Text style={styles.textErrorMessage}>
-//                 Lời nhắn của bạn không được vượt quá 100 ký tự.
-//               </Text>
-//             )}
-//             <View style={styles.modalActions}>
-//               <TouchableOpacity
-//                 style={[styles.modalButton, styles.cancelButton]}
-//                 onPress={() => {
-//                   setShowRejectModal(false);
-//                 }}
-//               >
-//                 <Text style={styles.modalButtonText}>Hủy</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity
-//                 style={[styles.modalButton, styles.confirmButton]}
-//                 onPress={() =>
-//                   selectedRequest?.id && handleReject(selectedRequest.id)
-//                 }
-//               >
-//                 <Text style={styles.modalButtonText}>Xác nhận</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         </View>
-//       </Modal>
-//       <Modal visible={showInfoUser} transparent animationType="slide">
-//         <View style={styles.modalContainer}>
-//           <View style={styles.modalContent}>
-//             <View style={styles.profileHeader}>
-//               <Image
-//                 source={{ uri: user.profilePicture }}
-//                 style={styles.profilePicture}
-//               />
-//               <Text style={styles.userName}>
-//                 {user.username}
-//               </Text>
-//             </View>
-
-//             <View style={styles.infoSection}>
-//               <View style={styles.infoRow}>
-//                 <Text style={styles.infoLabel}>Điểm:</Text>
-//                 <Text style={styles.infoValue}>{user.point}</Text>
-//               </View>
-
-//               <View style={styles.infoRow}>
-//                 <Text style={styles.infoLabel}>Là thành viên từ:</Text>
-//                 <Text style={styles.infoValue}>
-//                   {new Date(user.dateJoined as string).toLocaleDateString()}
-//                 </Text>
-//               </View>
-//             </View>
-
-//             <TouchableOpacity
-//               style={styles.closeButton}
-//               onPress={() => setShowInfoUser(false)}
-//             >
-//               <Text style={styles.closeButtonText}>Đóng</Text>
-//             </TouchableOpacity>
-//           </View>
-//         </View>
-//       </Modal>
-
-//       <ImagesModalViewer
-//         images={selectedImages}
-//         isVisible={isModalVisible}
-//         onClose={() => setModalVisible(false)}
-//       />
-
-//       <CustomAlert
-//         visible={showAlertDialog}
-//         title={alertData.title}
-//         message={alertData.message}
-//         onConfirm={() => setShowAlertDialog(false)}
-//         onCancel={() => setShowAlertDialog(false)}
-//       />
-//     </View>
-//   );
-// };
 
 const styles = StyleSheet.create({
   container: {
@@ -750,24 +706,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    padding: 16,
-  },
-  card: {
-    backgroundColor: "#fff",
-    marginBottom: 32,
-    borderRadius: 12,
-    padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    paddingHorizontal: 16,
   },
   cardHeader: {
     flexDirection: "row",
@@ -778,24 +717,13 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
   },
   statusDot: {
     width: 6,
@@ -813,49 +741,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16,
   },
-  itemCard: {
-    flex: 1,
-    padding: 8,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  itemImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  itemName: {
-    fontSize: 14,
-    textAlign: "center",
-    color: "#333",
-  },
+  // itemCard: {
+  //   flex: 1,
+  //   padding: 8,
+  //   borderRadius: 8,
+  //   alignItems: "center",
+  // },
+  // itemImage: {
+  //   width: 90,
+  //   height: 90,
+  //   borderRadius: 8,
+  //   marginBottom: 8,
+  // },
   itemPoint: {
     fontSize: 14,
     fontWeight: "600",
     color: Colors.orange500,
   },
-  exchangeIconContainer: {
-    width: 40,
-    alignItems: "center",
-  },
   exchangeIcon: {
     fontSize: 20,
-  },
-  timeSection: {
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  timeTitle: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
-    marginBottom: 8,
-  },
-  timeSlotList: {
-    flexDirection: "column",
-    gap: 8,
   },
   timeSlotChip: {
     backgroundColor: "#fff",
@@ -864,14 +768,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: "#eee",
-  },
-  timeSlotText: {
-    fontSize: 14,
-    color: "#333",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 12,
   },
   button: {
     flex: 1,
@@ -1078,6 +974,118 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  card: {
+    backgroundColor: "#fff",
+    marginBottom: 32,
+    borderRadius: 12,
+    padding: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 2,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  itemCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 8,
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+  },
+  itemImage: {
+    width: '100%',
+    maxWidth: 80,
+    maxHeight: 80,
+    aspectRatio: 1,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    textAlign: 'center',
+  },
+  headerDetail: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    marginLeft: 8,
+  },
+  exchangeIconContainer: {
+    width: 40,
+    alignItems: 'center',
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  messageText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  timeSection: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+  },
+  timeSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  timeTitle: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  timeSlotList: {
+    gap: 8,
+  },
+  timeSlotText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#1a1a1a',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
   },
 });
 

@@ -114,7 +114,28 @@ const ProfileScreen = () => {
     }
     navigation.navigate('ProfileDetail');
   }
-  
+
+  const menuItems = [
+    {
+      title: 'Sản phẩm của tôi',
+      icon: 'cube-outline',
+      description: 'Quản lý các sản phẩm bạn đã đăng',
+      onPress: () => handleAuthenticatedNavigation('MyProducts')
+    },
+    {
+      title: 'Yêu cầu của tôi',
+      icon: 'document-text-outline',
+      description: 'Xem và quản lý các yêu cầu trao đổi',
+      onPress: () => handleAuthenticatedNavigation('MyRequests')
+    },
+    {
+      title: 'Giao dịch của tôi',
+      icon: 'sync-outline',
+      description: 'Lịch sử các giao dịch đã thực hiện',
+      onPress: () => handleAuthenticatedNavigation('MyTransactions')
+    },
+  ];
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -123,235 +144,306 @@ const ProfileScreen = () => {
     );
   }
 
-  const menuItems = [
-    {
-      title: 'Sản phẩm của tôi',
-      icon: 'cube-outline',
-      onPress: () => handleAuthenticatedNavigation('MyProducts')
-    },
-    {
-      title: 'Quản lí các yêu cầu của tôi',
-      icon: 'cube-outline',
-      onPress: () => handleAuthenticatedNavigation('MyRequests')
-    },
-    {
-      title: 'Quản lí các giao dịch của tôi',
-      icon: 'cube-outline',
-      onPress: () => handleAuthenticatedNavigation('MyTransactions')
-    },
-  ];
-
-  const renderActionButtons = () => {
-    if (isAuthenticated) {
-      return (
-        <View style={styles.actionButtons}>
-          <Button
-            mode="contained"
-            onPress={handleEditProfile}
-            style={[styles.button, styles.editButton]}
-            labelStyle={styles.buttonLabel}
-          >
-            Chỉnh sửa thông tin
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={handleLogout}
-            style={[styles.button, styles.logoutButton]}
-            labelStyle={styles.logoutButtonLabel}
-          >
-            Đăng xuất
-          </Button>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.actionButtons}>
-        <Button
-          mode="contained"
-          onPress={() => navigation.navigate('LoginScreen')}
-          style={[styles.button, styles.editButton]}
-          labelStyle={styles.buttonLabel}
-        >
-          Đăng nhập
-        </Button>
-      </View>
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* User Avatar and Info */}
-        <View style={styles.profileHeader}>
+    <ScrollView 
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {/* Profile Header */}
+      <View style={styles.header}>
+        <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <Avatar.Image
-              size={100}
+              size={80}
               source={{ uri: userData?.profilePicture }}
               style={styles.avatar}
             />
+            {isAuthenticated && (
+              <TouchableOpacity 
+                style={styles.editAvatarButton}
+                onPress={handleEditProfile}
+              >
+                <Icon name="pencil-outline" size={16} color={Colors.orange500} />
+              </TouchableOpacity>
+            )}
           </View>
-          <View>
-            <Title style={styles.userName}>{userData?.username}</Title>
-            <Text style={styles.userEmail}>{userData?.phone}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.userName}>
+              {userData?.username || 'Khách'}
+            </Text>
+            {userData?.phone && (
+              <View style={styles.contactRow}>
+                <Icon name="call-outline" size={16} color={Colors.gray600} />
+                <Text style={styles.contactText}>{userData.phone}</Text>
+              </View>
+            )}
+            {userData?.email && (
+              <View style={styles.contactRow}>
+                <Icon name="mail-outline" size={16} color={Colors.gray600} />
+                <Text style={styles.contactText}>{userData.email}</Text>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* Menu Items */}
-        <View style={styles.menuSection}>
-          {menuItems.map((item, index) => (
-            <Card key={index} style={styles.menuCard}>
-              <TouchableOpacity onPress={item.onPress}>
-                <Card.Content style={styles.menuContent}>
-                  <View style={styles.menuLeft}>
-                    <Icon name={item.icon} size={24} color={Colors.orange500} />
-                    <Text style={styles.menuText}>{item.title}</Text>
-                  </View>
-                  <Icon name="chevron-forward-outline" size={24} color={Colors.orange500} style={{ marginRight: 12 }} />
-                </Card.Content>
-              </TouchableOpacity>
-            </Card>
-          ))}
-        </View>
-        
-        {/* Action Buttons */}
-        {renderActionButtons()}
-      </ScrollView>
-    </SafeAreaView>
+        {isAuthenticated && (
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{userData?.point || 0}</Text>
+              <Text style={styles.statLabel}>Điểm tích lũy</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {new Date(userData?.dateJoined as string).getFullYear() || '-'}
+              </Text>
+              <Text style={styles.statLabel}>Năm tham gia</Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Menu Section */}
+      <View style={styles.menuSection}>
+        {menuItems.map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.menuItem}
+            onPress={item.onPress}
+          >
+            <View style={styles.menuItemContent}>
+              <View style={styles.menuItemIcon}>
+                <Icon name={item.icon} size={24} color={Colors.orange500} />
+              </View>
+              <View style={styles.menuItemText}>
+                <Text style={styles.menuItemTitle}>{item.title}</Text>
+                <Text style={styles.menuItemDescription}>
+                  {item.description}
+                </Text>
+              </View>
+              <Icon name="chevron-forward-outline" size={20} color={Colors.gray400} />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+      {isAuthenticated ? (
+  <>
+    <TouchableOpacity
+      onPress={handleEditProfile}
+      style={[styles.touchableButton, styles.editButton]}
+    >
+      <Icon 
+        name="pencil-outline" 
+        size={20} 
+        color="#fff" 
+        style={styles.buttonIcon}
+      />
+      <Text style={styles.buttonText}>Chỉnh sửa thông tin</Text>
+    </TouchableOpacity>
+    
+    <TouchableOpacity
+      onPress={handleLogout}
+      style={[styles.touchableButton, styles.logoutButton]}
+    >
+      <Icon 
+        name="log-out-outline" 
+        size={20} 
+        color={Colors.orange500}
+        style={styles.buttonIcon} 
+      />
+      <Text style={[styles.buttonText, styles.logoutText]}>Đăng xuất</Text>
+    </TouchableOpacity>
+  </>
+) : (
+  <TouchableOpacity
+    onPress={() => navigation.navigate('LoginScreen')}
+    style={[styles.touchableButton, styles.loginButton]}
+  >
+    <Icon 
+      name="person-outline" 
+      size={20} 
+      color="#fff"
+      style={styles.buttonIcon}
+    />
+    <Text style={styles.buttonText}>Đăng nhập</Text>
+  </TouchableOpacity>
+)}
+
+      </View>
+    </ScrollView>
+  </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 24,
+    backgroundColor: '#f8f9fa',
   },
   scrollContent: {
-    padding: 16,
+    paddingBottom: 32,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.orange50,
   },
-  profileHeader: {
-    marginBottom: 24,
+  header: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  profileSection: {
     flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 24,
   },
   avatarContainer: {
     position: 'relative',
-    width: 100,
-    marginBottom: 16,
-    marginRight: 16,
   },
   avatar: {
+    backgroundColor: Colors.orange50,
+    // borderWidth: 3,
     borderColor: Colors.orange200,
   },
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: Colors.orange100,
-    borderRadius: 20,
+    backgroundColor: '#fff',
     padding: 8,
-    borderWidth: 2,
-    borderColor: Colors.orange200,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileInfo: {
+    marginLeft: 16,
+    flex: 1,
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.darkText,
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 8,
   },
-  userEmail: {
-    fontSize: 16,
-    color: Colors.darkText,
-  },
-  infoSection: {
-    marginBottom: 24,
-  },
-  infoCard: {
-    backgroundColor: 'white',
-    marginBottom: 12,
-    elevation: 2,
-    borderRadius: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  infoItem: {
-    alignItems: 'center',
-    flex: 1,
-    padding: 8,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: Colors.darkText,
-    marginTop: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.darkText,
-    marginTop: 4,
-  },
-  contactInfo: {
+  contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 4,
   },
   contactText: {
-    marginLeft: 12,
+    marginLeft: 8,
+    color: Colors.gray600,
+    fontSize: 14,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.orange50,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+  },
+  statItem: {
     flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.orange500,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: Colors.gray600,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: Colors.orange200,
+    marginHorizontal: 16,
   },
   menuSection: {
-    marginBottom: 24,
-  },
-  menuCard: {
-    backgroundColor: 'white',
-    marginBottom: 12,
-    elevation: 2,
-    borderRadius: 12,
-  },
-  menuContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  menuText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: Colors.darkText,
-    flex: 1,
-  },
-  actionButtons: {
+    padding: 16,
     gap: 12,
   },
-  button: {
-    paddingVertical: 8,
-    borderRadius: 8,
+  menuItem: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemIcon: {
+    backgroundColor: Colors.orange50,
+    padding: 12,
+    borderRadius: 12,
+    marginRight: 16,
+  },
+  menuItemText: {
+    flex: 1,
+  },
+  menuItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  menuItemDescription: {
+    fontSize: 13,
+    color: Colors.gray600,
+  },
+  actionButtons: {
+    padding: 16,
+    gap: 12,
+  },
+  touchableButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginVertical: 6,
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   editButton: {
     backgroundColor: Colors.orange500,
   },
   logoutButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
     borderColor: Colors.orange500,
   },
-  buttonLabel: {
-    fontSize: 16,
-    color: 'white',
+  logoutText: {
+    color: Colors.orange500,
   },
-  logoutButtonLabel: {
-    fontSize: 16,
-    color: Colors.darkText,
+  loginButton: {
+    backgroundColor: Colors.orange500,
   },
 });
 

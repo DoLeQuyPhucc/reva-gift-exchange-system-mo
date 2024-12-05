@@ -108,8 +108,7 @@ export default function Navigation() {
           headerShown: false,
         }}
       >
-        <Stack.Navigator initialRouteName={initialRoute}>
-          <Stack.Screen name="Main" options={{ headerShown: false }}>
+          <Stack.Screen name="Main" >
             {() => <CustomBottomTab tabs={tabBarProps} />}
           </Stack.Screen>
           <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
@@ -118,12 +117,12 @@ export default function Navigation() {
           <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
           {/* <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} /> */}
           <Stack.Screen name="OTPScreen" component={OTPScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
-          <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Thông tin cá nhân' }} />
-          <Stack.Screen name="MyProducts" component={MyProducts} options={{ title: 'Sản phẩm của tôi' }} />
-          <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ title: 'Quản lí các yêu cầu của tôi' }} />
-          <Stack.Screen name="RequestSubAction" component={RequestSubActionScreen} options={{ title: 'Quản lí các yêu cầu của tôi' }} />
-          <Stack.Screen name="MyTransactions" component={MyTransactions} options={{ title: 'Quản lí giao dịch của tôi' }} />
+          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Chi tiết sản phẩm' }} />
+          <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ headerShown: true, title: 'Thông tin cá nhân' }} />
+          <Stack.Screen name="MyProducts" component={MyProducts} options={{ headerShown: true, title: 'Sản phẩm của tôi' }} />
+          <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ headerShown: true, title: 'Quản lí các yêu cầu của tôi' }} />
+          <Stack.Screen name="RequestSubAction" component={RequestSubActionScreen} options={{ headerShown: true, title: 'Quản lí các yêu cầu của tôi' }} />
+          <Stack.Screen name="MyTransactions" component={MyTransactions} options={{ headerShown: true, title: 'Quản lí giao dịch của tôi' }} />
         </Stack.Navigator>
     </NavigationContainer>
   );

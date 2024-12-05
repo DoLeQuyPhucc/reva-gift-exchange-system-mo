@@ -738,7 +738,7 @@ export default function ProductDetailScreen() {
           </View>
         ) : (
           <View style={[styles.button, styles.outOfStockButton]}>
-            <Button title="Hết hàng" disabled />
+                <Text style={[styles.outOfStockText]}>Hết hàng</Text>
           </View>
         )}
       </View>
@@ -1197,8 +1197,13 @@ const styles = StyleSheet.create({
   },
   outOfStockButton: {
     backgroundColor: Colors.orange500,
-    color: "white",
-    opacity: 0.5,
+    opacity: 0.3,
+  },
+  outOfStockText: {
+    color: Colors.orange700,
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   loadingPlaceholder: {
     backgroundColor: "#f2f2f2",
