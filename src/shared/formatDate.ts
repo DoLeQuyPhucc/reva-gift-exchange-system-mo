@@ -35,3 +35,11 @@ export const formatDate_DD_MM_YYYY = (dateString: string) => {
   const day = String(date.getDate()).padStart(2, "0");
   return `${day}/${month}/${year}`;
 };
+
+export const formatDate_M_D_YYYY = (dateString: string) => {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1); // Months are zero-based
+  const day = String(date.getDate());
+  return `${month}/${day}/${year}`;
+};
