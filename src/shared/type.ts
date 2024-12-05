@@ -165,13 +165,13 @@ export interface AddressResponse {
 export interface CreatePostData {
   name: string;
   description: string;
-  subCategoryId: string;
+  categoryId: string;
   isGift: boolean;
   quantity: number;
   condition: string;
   images: string[];
   addressId: string;
-  desiredSubCategoryId: string | null;
+  desiredCategoryId: string | null;
 }
 
 export enum ItemCondition {

@@ -1,19 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from '@/src/hooks/useColorScheme';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import CustomBottomTab, { TabBarProps } from './BottomBar';
-import { Ionicons } from '@expo/vector-icons';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { RootStackParamList } from './types/navigationTypes';
+import React, { useEffect, useState } from "react";
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+} from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import { useColorScheme } from "@/src/hooks/useColorScheme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomBottomTab, { TabBarProps } from "./BottomBar";
+import { Ionicons } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { RootStackParamList } from "./types/navigationTypes";
 
 // Fonts
-import fonts from '@/config/fonts';
+import fonts from "@/config/fonts";
 
-// Screens
 import WelcomeScreen from '@/screens/Welcome/WelcomeScreen';
 import LoginScreen from '@/screens/Login/LoginScreen';
 import RegisterScreen from '@/screens/Register/RegisterScreen';
@@ -31,45 +34,43 @@ import MapScreen from '../components/Map/MapScreen';
 import MyRequestsScreen from '../screens/Request/MyRequests/MyRequests';
 import RequestSubActionScreen from '../screens/Request/RequestSubAction/RequestSubAction';
 
-
 const Stack = createStackNavigator<RootStackParamList>();
-
 
 const tabBarProps: TabBarProps[] = [
   {
-    route: 'Home',
+    route: "Home",
     component: HomeScreen,
-    tabBarLabel: 'Trang chủ',
+    tabBarLabel: "Trang chủ",
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'home',
+      iconName: "home",
     },
   },
   {
-    route: 'Favorites',
+    route: "Favorites",
     component: FavoritesScreen,
-    tabBarLabel: 'Yêu thích',
+    tabBarLabel: "Yêu thích",
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'favorite',
+      iconName: "favorite",
     },
   },
   {
-    route: 'Notifications',
+    route: "Notifications",
     component: NotificationsScreen,
-    tabBarLabel: 'Thông báo',
+    tabBarLabel: "Thông báo",
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'notifications',
+      iconName: "notifications",
     },
   },
   {
-    route: 'Profile',
+    route: "Profile",
     component: ProfileScreen,
-    tabBarLabel: 'Cá nhân',
+    tabBarLabel: "Cá nhân",
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: 'person',
+      iconName: "person",
     },
   },
 ];
@@ -78,7 +79,9 @@ export default function Navigation() {
   const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts(fonts);
   const [appIsReady, setAppIsReady] = useState(false);
-  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
+  const [initialRoute, setInitialRoute] = useState<
+    keyof RootStackParamList | null
+  >(null);
 
   useEffect(() => {
     if (appIsReady && fontsLoaded) {
@@ -87,7 +90,7 @@ export default function Navigation() {
   }, [appIsReady, fontsLoaded]);
 
   useEffect(() => {
-    setInitialRoute('Main');
+    setInitialRoute("Main");
     setAppIsReady(true);
   }, []);
 
@@ -97,7 +100,13 @@ export default function Navigation() {
 
   return (
     <NavigationContainer
-        theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
+      theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+    >
+      <Stack.Navigator
+        initialRouteName={initialRoute}
+        screenOptions={{
+          headerShown: false,
+        }}
       >
         <Stack.Navigator initialRouteName={initialRoute}>
           <Stack.Screen name="Main" options={{ headerShown: false }}>
