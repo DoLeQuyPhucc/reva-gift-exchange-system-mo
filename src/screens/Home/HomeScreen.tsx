@@ -74,12 +74,22 @@ const HomeScreen: React.FC = () => {
   ];
 
   const handleSearch = async () => {
+    console.log("Searching: ", searchTerm);
+
     if (!searchTerm) return;
 
-    const searchValue = `${searchMode}_${searchTerm}`;
     setLoading(true);
-
     try {
+      let searchValue = searchTerm;
+
+      if (searchMode === "default") {
+        searchValue = `default_${searchTerm}`;
+      } else if (searchMode === "need") {
+        searchValue = `need_${searchTerm}`;
+      } else if (searchMode === "have") {
+        searchValue = `have_${searchTerm}`;
+      }
+
       const response = await axiosInstance.get(
         `items/search?searchData=${searchValue}`
       );
@@ -93,6 +103,21 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  const handleSearchFocus = () => {
+    if (!isSearchFocused) {
+      setIsSearchFocused(true);
+    }
+  };
+
+  const handleEndEditing = (e: any) => {
+    const text = e.nativeEvent.text;
+    setSearchTerm(text);
+    setIsSearchFocused(false);
+    if (!text) {
+      fetchProducts();
+    }
+  };
+
   const renderSearchContainer = () => (
     <View>
       <View style={styles.searchContainer}>
@@ -100,12 +125,12 @@ const HomeScreen: React.FC = () => {
         <TextInput
           style={styles.searchInput}
           placeholder={getSearchPlaceholder()}
-          value={searchTerm}
-          onChangeText={setSearchTerm}
+          defaultValue={searchTerm}
+          onEndEditing={handleEndEditing}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => setIsSearchFocused(false)}
+          onFocus={handleSearchFocus}
+          onPressIn={(e) => e.stopPropagation()}
         />
         <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
           <Icon name="search" size={20} color={Colors.orange500} />
@@ -113,17 +138,32 @@ const HomeScreen: React.FC = () => {
         {searchTerm ? (
           <TouchableOpacity
             style={styles.clearButton}
-            onPress={() => setSearchTerm("")}
+            onPress={() => {
+              setSearchTerm("");
+              setSearchMode("default");
+              fetchProducts();
+            }}
           >
             <Icon name="close" size={20} />
           </TouchableOpacity>
         ) : null}
       </View>
 
-      {/* Search Suggestions Modal */}
+      {/* Search Mode Selector */}
       {isSearchFocused && (
         <View style={styles.suggestionsContainer}>
-          <Text style={styles.suggestionsTitle}>Gợi ý tìm kiếm:</Text>
+          <TouchableOpacity
+            style={styles.suggestionItem}
+            onPress={() => {
+              setSearchMode("default");
+              setIsSearchFocused(false);
+            }}
+          >
+            <Icon name="search" size={20} color={Colors.orange500} />
+            <Text style={styles.suggestionText}>
+              Tìm kiếm theo tên sản phẩm
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.suggestionItem}
             onPress={() => {
@@ -131,18 +171,10 @@ const HomeScreen: React.FC = () => {
               setIsSearchFocused(false);
             }}
           >
-            <Icon
-              name="search"
-              size={20}
-              color={Colors.orange500}
-              style={styles.suggestionIcon}
-            />
-            <View>
-              <Text style={styles.suggestionText}>Tìm kiếm đồ bạn cần</Text>
-              <Text style={styles.suggestionSubtext}>
-                Tìm kiếm đồ các bạn đang có
-              </Text>
-            </View>
+            <Icon name="category" size={20} color={Colors.orange500} />
+            <Text style={styles.suggestionText}>
+              Tìm kiếm theo danh mục cần
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.suggestionItem}
@@ -151,20 +183,8 @@ const HomeScreen: React.FC = () => {
               setIsSearchFocused(false);
             }}
           >
-            <Icon
-              name="people"
-              size={20}
-              color={Colors.orange500}
-              style={styles.suggestionIcon}
-            />
-            <View>
-              <Text style={styles.suggestionText}>
-                Tìm người đang cần món đồ của bạn
-              </Text>
-              <Text style={styles.suggestionSubtext}>
-                Tìm kiếm người đang cần món đồ của bạn
-              </Text>
-            </View>
+            <Icon name="people" size={20} color={Colors.orange500} />
+            <Text style={styles.suggestionText}>Tìm người cần đồ của bạn</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -174,11 +194,11 @@ const HomeScreen: React.FC = () => {
   const getSearchPlaceholder = () => {
     switch (searchMode) {
       case "need":
-        return "Tìm kiếm đồ bạn cần...";
+        return "Nhập tên danh mục bạn đang cần...";
       case "have":
-        return "Tìm người cần đồ của bạn...";
+        return "Nhập tên món đồ bạn đang có...";
       default:
-        return "Tìm kiếm sản phẩm...";
+        return "Tìm kiếm theo tên sản phẩm...";
     }
   };
 
@@ -191,26 +211,8 @@ const HomeScreen: React.FC = () => {
       );
     }
 
-    switch (searchMode) {
-      case "need":
-        filteredProducts = filteredProducts.filter(
-          (product) => product.category.name === "necessary items"
-        );
-        break;
-      case "have":
-        filteredProducts = filteredProducts.filter(
-          (product) => product.category.name === "available items"
-        );
-        break;
-    }
-
     filteredProducts = filteredProducts
       .filter((product) => product.available === true)
-      .filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
       .filter((product) =>
         selectedCategory ? product.category.name === selectedCategory : true
       )
@@ -397,7 +399,11 @@ const HomeScreen: React.FC = () => {
   }
 
   return (
-    <>
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={() => setIsSearchFocused(false)}
+      style={{ flex: 1 }}
+    >
       <FlatList
         data={filteredProducts}
         renderItem={renderProductCard}
@@ -411,7 +417,7 @@ const HomeScreen: React.FC = () => {
         onRefresh={fetchProducts}
       />
       {renderSortModal()}
-    </>
+    </TouchableOpacity>
   );
 };
 
@@ -649,20 +655,13 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: "absolute",
-    top: 48, // Height of search bar + margin
+    top: 50,
     left: 0,
     right: 0,
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     borderRadius: 8,
-    padding: 12,
+    padding: 8,
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     zIndex: 1000,
   },
   suggestionsTitle: {
@@ -681,8 +680,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   suggestionText: {
+    marginLeft: 12,
     fontSize: 14,
-    fontWeight: "500",
     color: "#000",
   },
   suggestionSubtext: {
@@ -694,11 +693,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    paddingLeft: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    paddingHorizontal: 12,
     elevation: 2,
-    zIndex: 1000,
+    marginBottom: 16,
   },
 });
 
