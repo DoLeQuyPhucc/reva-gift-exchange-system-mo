@@ -17,22 +17,23 @@ import { RootStackParamList } from "./types/navigationTypes";
 // Fonts
 import fonts from "@/config/fonts";
 
-import WelcomeScreen from '@/screens/Welcome/WelcomeScreen';
-import LoginScreen from '@/screens/Login/LoginScreen';
-import RegisterScreen from '@/screens/Register/RegisterScreen';
-import HomeScreen from '@/screens/Home/HomeScreen';
-import ProfileScreen from '@/screens/Profile/ProfileScreen';
-import NotificationsScreen from '@/screens/Notifications/Notifications';
-import FavoritesScreen from '@/screens/Favorites/FavoritesScreen';
-import ProductDetailScreen from '@/screens/ProductDetail/ProductDetailScreen';
-import CreatePostScreen from '@/screens/CreatePost/CreatePostScreen';
-import MyProducts from '../screens/MyProducts/MyProducts';
-import MyTransactions from '../screens/MyTransactions/MyTransactions';
-import ProfileDetailScreen from '../screens/ProfileDetail/ProfileDetailScreen';
-import OTPScreen from '../screens/OTP/OTPScreen';
-import MapScreen from '../components/Map/MapScreen';
-import MyRequestsScreen from '../screens/Request/MyRequests/MyRequests';
-import RequestSubActionScreen from '../screens/Request/RequestSubAction/RequestSubAction';
+import WelcomeScreen from "@/screens/Welcome/WelcomeScreen";
+import LoginScreen from "@/screens/Login/LoginScreen";
+import RegisterScreen from "@/screens/Register/RegisterScreen";
+import HomeScreen from "@/screens/Home/HomeScreen";
+import ProfileScreen from "@/screens/Profile/ProfileScreen";
+import NotificationsScreen from "@/screens/Notifications/Notifications";
+import FavoritesScreen from "@/screens/Favorites/FavoritesScreen";
+import ProductDetailScreen from "@/screens/ProductDetail/ProductDetailScreen";
+import CreatePostScreen from "@/screens/CreatePost/CreatePostScreen";
+import MyProducts from "../screens/MyProducts/MyProducts";
+import MyTransactions from "../screens/MyTransactions/MyTransactions";
+import ProfileDetailScreen from "../screens/ProfileDetail/ProfileDetailScreen";
+import OTPScreen from "../screens/OTP/OTPScreen";
+import MyRequestsScreen from "../screens/Request/MyRequests/MyRequests";
+import RequestSubActionScreen from "../screens/Request/RequestSubAction/RequestSubAction";
+import SearchScreen from "../screens/Search/SearchScreen";
+import SearchResultsScreen from "../screens/Search/SearchResultsScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -108,22 +109,76 @@ export default function Navigation() {
           headerShown: false,
         }}
       >
-          <Stack.Screen name="Main" >
-            {() => <CustomBottomTab tabs={tabBarProps} />}
-          </Stack.Screen>
-          <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="RegisterScreen" component={RegisterScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ headerShown: false }} />
-          {/* <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} /> */}
-          <Stack.Screen name="OTPScreen" component={OTPScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Chi tiết sản phẩm' }} />
-          <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ headerShown: true, title: 'Thông tin cá nhân' }} />
-          <Stack.Screen name="MyProducts" component={MyProducts} options={{ headerShown: true, title: 'Sản phẩm của tôi' }} />
-          <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ headerShown: true, title: 'Quản lí các yêu cầu của tôi' }} />
-          <Stack.Screen name="RequestSubAction" component={RequestSubActionScreen} options={{ headerShown: true, title: 'Quản lí các yêu cầu của tôi' }} />
-          <Stack.Screen name="MyTransactions" component={MyTransactions} options={{ headerShown: true, title: 'Quản lí giao dịch của tôi' }} />
-        </Stack.Navigator>
+        <Stack.Screen name="Main">
+          {() => <CustomBottomTab tabs={tabBarProps} />}
+        </Stack.Screen>
+        <Stack.Screen
+          name="LoginScreen"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RegisterScreen"
+          component={RegisterScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="WelcomeScreen"
+          component={WelcomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CreatePost"
+          component={CreatePostScreen}
+          options={{ headerShown: false }}
+        />
+        {/* <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} /> */}
+        <Stack.Screen
+          name="OTPScreen"
+          component={OTPScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SearchScreen"
+          component={SearchScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SearchResultsScreen"
+          component={SearchResultsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetailScreen}
+          options={{ headerShown: true, title: "Chi tiết sản phẩm" }}
+        />
+        <Stack.Screen
+          name="ProfileDetail"
+          component={ProfileDetailScreen}
+          options={{ headerShown: true, title: "Thông tin cá nhân" }}
+        />
+        <Stack.Screen
+          name="MyProducts"
+          component={MyProducts}
+          options={{ headerShown: true, title: "Sản phẩm của tôi" }}
+        />
+        <Stack.Screen
+          name="MyRequests"
+          component={MyRequestsScreen}
+          options={{ headerShown: true, title: "Quản lí các yêu cầu của tôi" }}
+        />
+        <Stack.Screen
+          name="RequestSubAction"
+          component={RequestSubActionScreen}
+          options={{ headerShown: true, title: "Quản lí các yêu cầu của tôi" }}
+        />
+        <Stack.Screen
+          name="MyTransactions"
+          component={MyTransactions}
+          options={{ headerShown: true, title: "Quản lí giao dịch của tôi" }}
+        />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

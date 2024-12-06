@@ -1,3 +1,4 @@
+import { SearchMode } from "@/src/screens/Search/SearchScreen";
 import { Category, Product, SubCategory } from "@/src/shared/type";
 
 export type RootStackParamList = {
@@ -33,7 +34,11 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   ProfileDetail: undefined;
   MyProducts: undefined;
-  // MyRequests: undefined;
+  SearchScreen: undefined;
+  SearchResultsScreen: {
+    searchTerm: string;
+    searchMode: SearchMode;
+  };
   MyRequests: { productId: string; type: string };
   RequestsForMe: { productId: string };
   RequestSubAction: undefined;
