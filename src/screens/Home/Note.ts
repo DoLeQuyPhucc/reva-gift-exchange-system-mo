@@ -73,15 +73,132 @@ const HomeScreen: React.FC = () => {
     ...new Set(products.map((product) => product.category.name)),
   ];
 
+  const handleSearch = async () => {
+    console.log("Searching: ", searchTerm);
+
+    if (!searchTerm) return;
+
+    setLoading(true);
+    try {
+      let searchValue = searchTerm;
+
+      if (searchMode === "default") {
+        searchValue = `default_${searchTerm}`;
+      } else if (searchMode === "need") {
+        searchValue = `need_${searchTerm}`;
+      } else if (searchMode === "have") {
+        searchValue = `have_${searchTerm}`;
+      }
+
+      const response = await axiosInstance.get(
+        `items/search?searchData=${searchValue}`
+      );
+      const productsData = response.data.data;
+      setProducts(productsData);
+      getFilterProducts(productsData);
+    } catch (error) {
+      console.error("Error searching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchFocus = () => {
+    if (!isSearchFocused) {
+      setIsSearchFocused(true);
+    }
+  };
+
+  const handleEndEditing = (e: any) => {
+    const text = e.nativeEvent.text;
+    setSearchTerm(text);
+    if (!text) {
+      fetchProducts();
+    }
+  };
+
   const renderSearchContainer = () => (
-    <TouchableOpacity
-      style={styles.searchContainer}
-      onPress={() => navigation.navigate("SearchScreen")}
-    >
-      <Icon name="search" size={20} style={styles.searchIcon} />
-      <Text style={styles.searchPlaceholder}>Tìm kiếm sản phẩm...</Text>
-    </TouchableOpacity>
+    <View>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder={getSearchPlaceholder()}
+          defaultValue={searchTerm}
+          onEndEditing={handleEndEditing}
+          onSubmitEditing={handleSearch}
+          returnKeyType="search"
+          onFocus={handleSearchFocus}
+        />
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <Icon name="search" size={20} color={Colors.orange500} />
+        </TouchableOpacity>
+        {searchTerm ? (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={() => {
+              setSearchTerm("");
+              setSearchMode("default");
+              fetchProducts();
+            }}
+          >
+            <Icon name="close" size={20} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Search Mode Selector */}
+      {isSearchFocused && (
+        <View style={styles.suggestionsContainer}>
+          <TouchableOpacity
+            style={styles.suggestionItem}
+            onPress={() => {
+              setSearchMode("default");
+              setIsSearchFocused(false);
+              fetchProducts();
+            }}
+          >
+            <Icon name="search" size={20} color={Colors.orange500} />
+            <Text style={styles.suggestionText}>
+              Tìm kiếm theo tên sản phẩm
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.suggestionItem}
+            onPress={() => {
+              setSearchMode("need");
+              setIsSearchFocused(false);
+            }}
+          >
+            <Icon name="category" size={20} color={Colors.orange500} />
+            <Text style={styles.suggestionText}>
+              Tìm kiếm theo danh mục cần
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.suggestionItem}
+            onPress={() => {
+              setSearchMode("have");
+              setIsSearchFocused(false);
+            }}
+          >
+            <Icon name="people" size={20} color={Colors.orange500} />
+            <Text style={styles.suggestionText}>Tìm người cần đồ của bạn</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   );
+
+  const getSearchPlaceholder = () => {
+    switch (searchMode) {
+      case "need":
+        return "Nhập tên danh mục bạn đang cần...";
+      case "have":
+        return "Nhập tên món đồ bạn đang có...";
+      default:
+        return "Tìm kiếm theo tên sản phẩm...";
+    }
+  };
 
   const getFilterProducts = (products: Product[]) => {
     let filteredProducts = products;
@@ -280,25 +397,27 @@ const HomeScreen: React.FC = () => {
   }
 
   return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={() => setIsSearchFocused(false)}
-      style={{ flex: 1 }}
-    >
-      <FlatList
-        data={filteredProducts}
-        renderItem={renderProductCard}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={renderHeader}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={fetchProducts}
-      />
-      {renderSortModal()}
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => setIsSearchFocused(false)}
+        style={{ flex: 1 }}
+      >
+        <FlatList
+          data={filteredProducts}
+          renderItem={renderProductCard}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={fetchProducts}
+        />
+        {renderSortModal()}
+      </TouchableOpacity>
+    </>
   );
 };
 
@@ -576,15 +695,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 12,
     elevation: 2,
     marginBottom: 16,
-  },
-  searchPlaceholder: {
-    flex: 1,
-    fontSize: 16,
-    color: "#666",
-    marginLeft: 8,
   },
 });
 
