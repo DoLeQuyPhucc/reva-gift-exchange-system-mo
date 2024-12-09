@@ -20,6 +20,27 @@ export const formatDate = (dateString: string): string => {
   return `${time} ${datePart}`;
 };
 
+export const formatDate_HHmm_DD_MM_YYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+
+  // Format time HH:mm
+  const time = new Intl.DateTimeFormat("vi", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+
+  // Format date DD/MM/YYYY
+  const datePart = new Intl.DateTimeFormat("vi", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+
+  // Combine time and date in desired format
+  return `${time} ${datePart}`;
+};
+
 export const formatDateOnlyDate = (dateString: string) => {
   const date = new Date(dateString);
   const year = date.getFullYear();
