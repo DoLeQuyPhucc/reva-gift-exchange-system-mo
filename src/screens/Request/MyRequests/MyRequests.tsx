@@ -1,4 +1,4 @@
-import { View, Text, Platform, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, TextInput } from 'react-native'
+import { View, Text, Platform, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, TextInput, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -37,6 +37,7 @@ export default function MyRequestsScreen() {
 
   const [requests, setRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectMessage, setRejectMessage] = useState<string>("");
@@ -209,307 +210,243 @@ export default function MyRequestsScreen() {
     }
   };
 
+  const handleSelectRequest = (request: Request) => {
+    setSelectedRequest(request);
+    setShowDetailModal(true);
+  };
+
+
+  const RequestListItem = ({ request, onPress }: { request: Request; onPress: () => void }) => {
+    const isExchangeRequest = request.requesterItem !== null;
   
-  const renderRequestCard = (request: Request, showActions = false) => (
-    <View style={styles.card} key={request.id}>
-      <View style={styles.cardHeader}>
-        <TouchableOpacity
-          onPress={() => handleShowInfoUser(request.requester.id)}
-        >
+    return (
+      <TouchableOpacity 
+        style={styles.listItem} 
+        onPress={onPress}
+      >
+        <View style={styles.listItemLeft}>
           <View style={styles.userInfo}>
-            <Image
-              source={{ uri: request.requester.image }}
-              style={styles.avatar}
+            <Image 
+              source={{ uri: request.requester.image }} 
+              style={styles.listItemAvatar} 
             />
-            <Text style={styles.name}>{request.requester.name}</Text>
+            <Text style={styles.listItemName}>{request.requester.name}</Text>
           </View>
-        </TouchableOpacity>
-        <View
-          style={[
+          <View style={[
             styles.statusBadge,
-            { backgroundColor: `${STATUS_COLORS[request.status]}15` },
-          ]}
-        >
-          <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: STATUS_COLORS[request.status] },
-            ]}
-          />
-          <Text
-            style={[
-              styles.statusText,
-              { color: STATUS_COLORS[request.status] },
-            ]}
-          >
-            {STATUS_LABELS[request.status]}
-          </Text>
-        </View>
-      </View>
-
-      {request.status === "Hold_On" && (
-          <Text style={styles.holdOnText}>*Tạm hoãn yêu cầu do sản phẩm đang được tiến hành giao dịch khác. Sẽ mở lại nếu như giao dịch đó không thành công</Text>
-        )}
-      <View style={styles.itemsContainer}>
-        {request.requesterItem?.itemId || request.requestImages.length > 0 ? (
-          // Trường hợp trao đổi bình thường
-          <>
-            <TouchableOpacity style={styles.itemCard} onPress={() => request.requesterItem?.itemId ? navigation.navigate("ProductDetail", { productId: request.requesterItem.itemId }) : handleImagePress(
-                    request.requesterItem?.itemId
-                      ? request.requesterItem?.itemImages
-                      : request.requestImages
-                  )}>
-              
-                <Image
-                  source={{
-                    uri:
-                      request.requesterItem?.itemImages[0] ||
-                      request.requestImages[0],
-                  }}
-                  style={styles.itemImage}
-                />
-              <Text style={styles.itemName} numberOfLines={2}>
-                {request.requesterItem?.itemName}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.exchangeIconContainer}>
-              <Icon name="swap-vert" size={24} color={Colors.orange500} />
-            </View>
-
-            <TouchableOpacity style={styles.itemCard} onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
-              
-                <Image
-                  source={{ uri: request.charitarianItem.itemImages[0] }}
-                  style={styles.itemImage}
-                />
-              <Text style={styles.itemName} numberOfLines={2}>
-                {request.charitarianItem.itemName}
-              </Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          // Trường hợp đăng ký nhận
-          <TouchableOpacity style={styles.singleItemContainer} onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}>
-            
-              <Image
-                source={{ uri: request.charitarianItem.itemImages[0] }}
-                style={styles.singleItemImage}
-              />
-            <Text style={styles.itemName} numberOfLines={2}>
-              {request.charitarianItem.itemName}
+            { backgroundColor: `${STATUS_COLORS[request.status]}15` }
+          ]}>
+            <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[request.status] }]} />
+            <Text style={[styles.listItemStatusText, { color: STATUS_COLORS[request.status] }]}>
+              {STATUS_LABELS[request.status]}
             </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {request.requestMessage ? (
-        <View style={styles.itemMessageContainer}>
-          <Text>Lời nhắn: {request.requestMessage}</Text>
+          </View>
         </View>
-      ) : (
-        <View style={styles.itemMessageContainer}>
-          <Text>*Không có lời nhắn nào được gửi tới bạn</Text>
+  
+        <View style={styles.listItemRight}>
+          
+          
+          <View style={styles.itemPreview}>
+            {isExchangeRequest ? (
+              <>
+                <Image 
+                  source={{ uri: request.requesterItem?.itemImages[0] }} 
+                  style={styles.previewImage} 
+                />
+                <Icon name="swap-horiz" size={16} color={Colors.orange500} />
+                <Image 
+                  source={{ uri: request.charitarianItem.itemImages[0] }} 
+                  style={styles.previewImage} 
+                />
+              </>
+            ) : (
+              <Image 
+                source={{ uri: request.charitarianItem.itemImages[0] }} 
+                style={styles.previewImage} 
+              />
+            )}
+          </View>
         </View>
-      )}
-
-      {request.rejectMessage && (
-        <Text style={styles.rejectMessage}>
-          Từ chối: {request.rejectMessage}
-        </Text>
-      )}
-
-      <View style={styles.timeSection}>
-        <Text style={styles.timeTitle}>Thời gian mong muốn:</Text>
-        <View style={styles.timeSlotList}>
-          {request.appointmentDate.map((time: string, index: number) => (
-            <View key={index} style={styles.timeSlotChip}>
-              <Text style={styles.timeSlotText}>{formatDate(time)}</Text>
+      </TouchableOpacity>
+    );
+  };
+  
+  const RequestDetailModal = ({
+    visible,
+    request,
+    onClose,
+    onApprove,
+    onReject,
+    isShowActions
+  }: {
+    visible: boolean;
+    request: Request | null;
+    onClose: () => void;
+    onApprove: (request: Request) => void;
+    onReject: (request: Request) => void;
+    isShowActions: boolean;
+  }) => {
+    if (!request) return null;
+  
+    const isExchangeRequest = request.requesterItem !== null;
+  
+    return (
+      <Modal 
+        visible={visible} 
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.centeredView}>
+        <View style={styles.modalView}>
+          <ScrollView style={styles.modalScrollView}>
+          <View style={styles.modalHeader}>
+            <View></View>
+            <Text style={styles.modalTitle}>
+              {isExchangeRequest ? "Chi tiết trao đổi" : "Chi tiết yêu cầu nhận"}
+            </Text>
+            <TouchableOpacity onPress={onClose}>
+              <Icon name="close" size={24} color="#000" style={{marginBottom: 15}} />
+            </TouchableOpacity>
+          </View>
+            {/* Requester Info */}
+            <View style={styles.userSection}>
+              <Image source={{ uri: request.requester.image }} style={styles.avatar} />
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{request.requester.name}</Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: `${STATUS_COLORS[request.status]}15` }]}>
+                <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[request.status] }]} />
+                <Text style={[styles.statusText, { color: STATUS_COLORS[request.status] }]}>
+                  {STATUS_LABELS[request.status]}
+                </Text>
+              </View>
             </View>
-          ))}
-        </View>
-      </View>
+  
+            {/* Items Section */}
+            <View style={styles.itemsSection}>
+              <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
+              {isExchangeRequest ? (
+                <View style={styles.exchangeItems}>
+                  <View style={styles.itemCard}>
+                    <Image 
+                      source={{ uri: request.requesterItem?.itemImages[0] }} 
+                      style={styles.itemImage} 
+                    />
+                    <Text style={styles.itemName}>{request.requesterItem?.itemName}</Text>
+                    <Text style={styles.itemQuantity}>Số lượng: {request.requesterItem?.itemQuantity}</Text>
+                  </View>
+                  <Icon name="swap-horiz" size={24} color={Colors.orange500} />
+                  <View style={styles.itemCard}>
+                    <Image 
+                      source={{ uri: request.charitarianItem.itemImages[0] }} 
+                      style={styles.itemImage} 
+                    />
+                    <Text style={styles.itemName}>{request.charitarianItem.itemName}</Text>
+                    <Text style={styles.itemQuantity}>Số lượng: {request.charitarianItem.itemQuantity}</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.singleItem}>
+                  <Image 
+                    source={{ uri: request.charitarianItem.itemImages[0] }} 
+                    style={styles.itemImage} 
+                  />
+                  <Text style={styles.itemName}>{request.charitarianItem.itemName}</Text>
+                  <Text style={styles.itemQuantity}>Số lượng: {request.charitarianItem.itemQuantity}</Text>
+                </View>
+              )}
+            </View>
+  
+            {/* Message Section */}
+            {request.requestMessage && (
+              <View style={styles.messageSection}>
+                <Text style={styles.sectionTitle}>Lời nhắn</Text>
+                <Text>{request.requestMessage}</Text>
+              </View>
+            )}
+  
+            {/* Reject Message if any */}
+            {request.rejectMessage && (
+              <View style={styles.rejectSection}>
+                <Text style={styles.sectionTitle}>Lý do từ chối</Text>
+                <Text>{request.rejectMessage}</Text>
+              </View>
+            )}
+  
+            {/* Appointment Times */}
+            <View style={styles.timeSection}>
+              <Text style={styles.sectionTitle}>Thời gian đề xuất</Text>
+              {request.appointmentDate.map((date, index) => (
+                <View key={index} style={styles.timeSlot}>
+                  <Icon name="access-time" size={20} color={Colors.orange500} />
+                  <Text style={styles.timeText}>{formatDate(date)}</Text>
+                </View>
+              ))}
+            </View>
+  
+            {/* Actions */}
+            {isShowActions && request.status === "Pending" && (
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={[styles.button, styles.rejectButton]}
+                  onPress={() => onReject(request)}
+                >
+                  <Text style={styles.buttonText}>Từ chối</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.approveButton]}
+                  onPress={() => onApprove(request)}
+                >
+                  <Text style={styles.buttonText}>Chấp nhận</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={{height: 50, width: '100%'}}></View>
+          </ScrollView>
 
-      {showActions && request.status === "Pending" && (
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.button, styles.rejectButton]}
-            onPress={() => {
-              setSelectedRequest(request);
-              setShowRejectModal(true);
-            }}
-          >
-            <Text style={styles.buttonText}>Từ chối</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.approveButton]}
-            onPress={() => {
-              setSelectedRequest(request);
-              setShowTimeModal(true);
-              setSelectedTime(request.appointmentDate[0]);
-            }}
-          >
-            <Text style={styles.buttonText}>Chấp nhận</Text>
-          </TouchableOpacity>
         </View>
-      )}
-    </View>
-  );
+        </View>
+      </Modal>
+    );
+  };
+  
   return (
     <View style={styles.container}>
-              <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-            <Text style={styles.resultCount}>
+        <Text style={styles.resultCount}>
               {requests.length} yêu cầu
             </Text>
+        <FlatList
+        data={requests}
+        keyExtractor={(item: any) => item.id}
+        renderItem={({ item }: { item: Request }) => (
+          <RequestListItem
+            request={item}
+            onPress={() => handleSelectRequest(item)}
+          />
+        )}
+        contentContainerStyle={styles.listContainer}
+      />
 
-          {requests.map((request) => (
-            <View key={request.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <TouchableOpacity
-                  style={styles.userInfo}
-                  onPress={() => handleShowInfoUser(request.requester.id)}
-                >
-                  <Image
-                    source={{ uri: request.requester.image }}
-                    style={styles.avatar}
-                  />
-                  <View>
-                    <Text style={styles.name}>{request.requester.name}</Text>
-                    <Text style={styles.timestamp}>
-                      {formatDate(request.createdAt)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                
-                <View style={[styles.statusBadge, { backgroundColor: `${STATUS_COLORS[request.status]}15` }]}>
-                  <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[request.status] }]} />
-                  <Text style={[styles.statusText, { color: STATUS_COLORS[request.status] }]}>
-                    {STATUS_LABELS[request.status]}
-                  </Text>
-                </View>
-              </View>
-
-              {request.requesterItem?.itemId || request.requestImages.length > 0 ? (
-                <>
-                
-                <Text style={styles.headerDetail} numberOfLines={2}>
-                      Trao đổi sản phẩm
-                    </Text>
-                  <View style={styles.itemsContainer}>
-                    <TouchableOpacity 
-                      style={styles.itemCard}
-                      onPress={() => request.requesterItem?.itemId ? navigation.navigate("ProductDetail", { productId: request.requesterItem.itemId }) : handleImagePress(
-                        request.requesterItem?.itemId
-                          ? request.requesterItem?.itemImages
-                          : request.requestImages
-                      )}
-                    >
-                      <Image
-                        source={{ uri: request.requesterItem?.itemImages[0] || request.requestImages[0] }}
-                        style={styles.itemImage}
-                      />
-                      <Text style={styles.itemName} numberOfLines={2}>
-                        {request.requesterItem?.itemName || "Sản phẩm đăng ký"}
-                      </Text>
-                    </TouchableOpacity>
-    
-                    <View style={styles.exchangeIconContainer}>
-                      <Icon name="swap-vert" size={24} color={Colors.orange500} />
-                    </View>
-    
-                    <TouchableOpacity 
-                      style={styles.itemCard}
-                      onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}
-                    >
-                      <Image
-                        source={{ uri: request.charitarianItem.itemImages[0] }}
-                        style={styles.itemImage}
-                      />
-                      <Text style={styles.itemName} numberOfLines={2}>
-                        {request.charitarianItem.itemName}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <>
-                
-                <Text style={styles.headerDetail} numberOfLines={2}>
-                      Đăng ký nhận
-                    </Text>
-                
-                <TouchableOpacity 
-                    style={styles.itemCard}
-                    onPress={() => request.charitarianItem?.itemId && navigation.navigate("ProductDetail", { productId: request.charitarianItem.itemId })}
-                  >
-                    <Image
-                      source={{ uri: request.charitarianItem.itemImages[0] }}
-                      style={styles.itemImage}
-                    />
-                    <Text style={styles.itemName} numberOfLines={2}>
-                      {request.charitarianItem.itemName}
-                    </Text>
-                  </TouchableOpacity>
-                  </>
-
-              )}
-
-
-              {request.requestMessage && (
-                <View style={styles.messageContainer}>
-                  <Icon
-                  name="question-answer"
-                  size={18}
-                  color={Colors.orange500}
-                />
-                  <Text style={styles.messageText}>{request.requestMessage}</Text>
-                </View>
-              )}
-
-              <View style={styles.timeSection}>
-                <View style={styles.timeSectionHeader}>
-                <Icon name="calendar-month" size={20} color={Colors.orange500} />
-                  <Text style={styles.timeTitle}>Thời gian mong muốn</Text>
-                </View>
-                <View style={styles.timeSlotList}>
-                  {request.appointmentDate.map((time, index) => (
-                    <View key={index} style={styles.timeSlotChip}>
-                      <Text style={styles.timeSlotText}>{formatDate(time)}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              {isShowActions && request.status === "Pending" && (
-                <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={[styles.button, styles.rejectButton]}
-                    onPress={() => {
-                      setSelectedRequest(request);
-                      setShowRejectModal(true);
-                    }}
-                  >
-                    <Text style={styles.buttonText}>Từ chối</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.approveButton]}
-                    onPress={() => {
-                      setSelectedRequest(request);
-                      setShowTimeModal(true);
-                      setSelectedTime(request.appointmentDate[0]);
-                    }}
-                  >
-                    <Text style={styles.buttonText}>Chấp nhận</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
+      <RequestDetailModal
+        visible={showDetailModal}
+        request={selectedRequest}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedRequest(null);
+        }}
+        onApprove={(request) => {
+          setSelectedRequest(request);
+          setShowTimeModal(true);
+          setShowDetailModal(false);
+          setSelectedTime(request.appointmentDate[0]);
+        }}
+        onReject={(request) => {
+          setSelectedRequest(request);
+          setShowDetailModal(false);
+          setShowRejectModal(true);
+        }}
+        isShowActions={isShowActions}
+      />
 
       <Modal visible={showTimeModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -674,6 +611,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+    padding: 16,
+    paddingHorizontal: 32,
   },
   resultCount: {
     color: "#666",
@@ -741,18 +680,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16,
   },
-  // itemCard: {
-  //   flex: 1,
-  //   padding: 8,
-  //   borderRadius: 8,
-  //   alignItems: "center",
-  // },
-  // itemImage: {
-  //   width: 90,
-  //   height: 90,
-  //   borderRadius: 8,
-  //   marginBottom: 8,
-  // },
   itemPoint: {
     fontSize: 14,
     fontWeight: "600",
@@ -811,7 +738,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 10,
-    width: "80%",
+    width: '80%',
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: "white",
+    borderTopRightRadius: 24,
+    borderTopLeftRadius: 24,
+    height: "90%",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalScrollView: {
+    flex: 1,
+    padding: 24,
   },
   modalTitle: {
     fontSize: 18,
@@ -822,11 +770,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   timeSlot: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
-    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.gray100,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   selectedTimeSlot: {
     backgroundColor: "#e3f2fd",
@@ -901,12 +850,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#666",
   },
-  rejectMessage: {
-    backgroundColor: "#ffe3e3",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
-  },
   modalDescription: {
     fontSize: 16,
     marginBottom: 16,
@@ -935,7 +878,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
   },
   infoSection: {
@@ -956,13 +899,6 @@ const styles = StyleSheet.create({
   infoValue: {
     flex: 2,
     textAlign: "right",
-  },
-  closeButton: {
-    marginTop: 20,
-    backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
   },
   closeButtonText: {
     color: "white",
@@ -1016,7 +952,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 12,
     padding: 8,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.gray100,
     alignItems: 'center',
   },
   itemImage: {
@@ -1032,6 +968,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1a1a1a',
     textAlign: 'center',
+    marginBottom: 4,
   },
   headerDetail: {
     fontSize: 14,
@@ -1085,7 +1022,152 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
+    marginBottom: 50
   },
-});
+  listItem: {
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    borderRadius: 8,
+    padding: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  listItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listItemAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  listItemInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  listItemName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 8
+  },
+  listItemTime: {
+    fontSize: 12,
+    color: '#666',
+  },
+  listItemStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  listItemStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  listContainer: {
+
+  },
+    listItemLeft: {
+      flexDirection: 'row',
+      flex: 1,
+    },
+    listItemType: {
+      fontSize: 14,
+      color: Colors.orange500,
+      marginBottom: 4,
+    },
+    listItemRight: {
+      alignItems: 'flex-end',
+    },
+    itemPreview: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    previewImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      marginHorizontal: 4,
+    },
+    
+    // Section Styles
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 12,
+      color: Colors.gray800,
+    },
+    
+    // User Section
+    userSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    userAvatar: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+    },    
+    // Items Section
+    itemsSection: {
+      padding: 16,
+    },
+    exchangeItems: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    singleItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    itemQuantity: {
+      fontSize: 12,
+      color: Colors.gray600,
+      textAlign: 'center',
+    },
+    
+    // Other sections...
+    messageSection: {
+      padding: 16,
+      backgroundColor: Colors.gray100,
+      marginHorizontal: 16,
+      borderRadius: 12,
+    },
+    timeText: {
+      marginLeft: 8,
+      fontSize: 14,
+    },
+    rejectSection: {
+      padding: 16,
+      backgroundColor: '#ffe3e3',
+      marginHorizontal: 16,
+      borderRadius: 12,
+      marginTop: 16,
+    },
+    
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  });
 

@@ -30,6 +30,7 @@ import { CustomAlert } from "@/src/components/CustomAlert";
 import DateTimePickerCustom, {
   convertDayOfWeek,
 } from "@/src/components/modal/DateTimePickerCustom";
+import CalendarPickerCustom from "@/src/components/modal/CalendarPickerCustom";
 
 type TimeSlot = {
   id: string;
@@ -447,7 +448,7 @@ export default function ProductDetailScreen() {
 
   // Add time slot
   const addTimeSlot = () => {
-    if (!!validateTimeInput()) return;
+    if (!validateTimeInput()) return;
 
     if (selectedTimeSlots.length >= 1) {
       setTimeInputError("Bạn chỉ được chọn tối đa 1 khung thời gian");
@@ -1026,7 +1027,16 @@ export default function ProductDetailScreen() {
       })} */}
                         </View>
                       )}
-                      {showDatePicker && (
+                      
+                      <CalendarPickerCustom
+                        visible={showDatePicker}
+                          date={selectedDate}
+                          setDate={setSelectedDate}
+                          allowedDays={daysOnly}
+                          timeRanges={timeRanges}
+                          onClose={() => setShowDatePicker(false)}
+                        />
+                      {/* {showDatePicker && (
                         <DateTimePickerCustom
                           date={selectedDate}
                           setDate={setSelectedDate}
@@ -1034,7 +1044,7 @@ export default function ProductDetailScreen() {
                           timeRanges={timeRanges}
                           onClose={() => setShowDatePicker(false)}
                         />
-                      )}
+                      )} */}
 
                       {/* Time Input */}
                       <View style={styles.inputContainer}>
