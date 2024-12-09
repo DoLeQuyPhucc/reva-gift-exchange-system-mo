@@ -52,7 +52,7 @@ export default function ProductDetailScreen() {
   const route = useRoute<ProductDetailScreenRouteProp>();
   const itemId = route.params.productId;
 
-  const { isAuthenticated } = useAuthCheck();
+  const { isAuthenticated, userData } = useAuthCheck();
   const navigation = useNavigation();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -798,24 +798,27 @@ export default function ProductDetailScreen() {
             </View>
           )}
         </View>
-
-        {product.available ? (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.requestButton]}
-              onPress={handleRequest}
-            >
-              {product.isGift ? (
-                <Text style={styles.buttonText}>Đăng ký nhận</Text>
-              ) : (
-                <Text style={styles.buttonText}>Yêu cầu trao đổi</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={[styles.button, styles.outOfStockButton]}>
-            <Text style={[styles.outOfStockText]}>Hết hàng</Text>
-          </View>
+        {userData.userId !== product.owner_id && (
+          <>
+            {product.available ? (
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, styles.requestButton]}
+                  onPress={handleRequest}
+                >
+                  {product.isGift ? (
+                    <Text style={styles.buttonText}>Đăng ký nhận</Text>
+                  ) : (
+                    <Text style={styles.buttonText}>Yêu cầu trao đổi</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={[styles.button, styles.outOfStockButton]}>
+                <Text style={[styles.outOfStockText]}>Hết hàng</Text>
+              </View>
+            )}
+          </>
         )}
       </View>
 
