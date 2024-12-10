@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Modal,
@@ -18,6 +18,7 @@ import { Category, SubCategory } from "@/shared/type";
 import { useNavigation } from "@/hooks/useNavigation";
 import useCategories from "@/hooks/useCategories";
 import { useAuthStore } from "@/src/stores/authStore";
+import { useNotificationStore } from "../stores/notificationStore";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -47,6 +48,14 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
     new Animated.Value(SCREEN_HEIGHT)
   ).current;
   const navigation = useNavigation();
+  const { notifications, fetchInitialNotifications } = useNotificationStore();
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchInitialNotifications();
+    }
+  }, [isAuthenticated]);
 
   const showModal = () => {
     if (!isAuthenticated) {
@@ -252,6 +261,14 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
                   size={20}
                 />
               ),
+              tabBarBadge:
+                tabProps.route === "Notifications" && unreadCount > 0
+                  ? unreadCount
+                  : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: Colors.orange600,
+                fontSize: 12,
+              },
             }}
           />
         ))}

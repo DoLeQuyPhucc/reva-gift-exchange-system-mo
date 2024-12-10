@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { useAuthStore } from "./authStore";
 import Toast from "react-native-toast-message";
+import axiosInstance from "../api/axiosInstance";
 export interface Notification {
   id?: string;
   type?: string;
@@ -20,6 +21,7 @@ interface NotificationState {
   disconnectSignalR: () => Promise<void>;
   setNotifications: (notifications: Notification[]) => void;
   addNotification: (notification: Notification) => void;
+  fetchInitialNotifications: () => Promise<void>;
 }
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   connection: null,
@@ -29,16 +31,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     if (!userId) return;
     const newConnection = new HubConnectionBuilder()
       .withUrl(SIGNALR_URL, {
-        // Add access token if needed
         accessTokenFactory: () => useAuthStore.getState().accessToken || "",
       })
-      .withAutomaticReconnect([0, 2000, 5000, 10000, 20000]) // Retry strategy
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
       .build();
     try {
       await newConnection.start();
-      console.log("SignalR Connected!");
+
       await newConnection.invoke("JoinNotificationGroup", userId);
-      console.log("Joined notification group with userId:", userId);
+
+      await get().fetchInitialNotifications();
+
       newConnection.on("ReceiveNotification", (notification: string) => {
         const notificationObj: Notification = { data: notification };
         get().addNotification(notificationObj);
@@ -63,11 +66,24 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   setNotifications: (notifications) => set({ notifications }),
   addNotification: (notification) =>
     set((state) => ({
-      notifications: [notification, ...state.notifications].slice(
-        0,
-        MAX_NOTIFICATIONS
-      ),
+      notifications: [
+        {
+          ...notification,
+          read: false,
+          createdAt: new Date(),
+        },
+        ...state.notifications,
+      ].slice(0, MAX_NOTIFICATIONS),
     })),
-
+  fetchInitialNotifications: async () => {
+    try {
+      const response = await axiosInstance.get("notification/all");
+      if (response.data.isSuccess) {
+        set({ notifications: response.data.data });
+      }
+    } catch (error) {
+      console.error("Error fetching initial notifications:", error);
+    }
+  },
   clearNotifications: () => set({ notifications: [] }),
 }));
