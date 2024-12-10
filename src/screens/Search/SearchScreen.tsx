@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   Modal,
+  FlatList,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Colors from "@/src/constants/Colors";
@@ -156,14 +157,18 @@ const SearchScreen: React.FC = () => {
         </View>
       </View>
 
-      <SectionList
-        sections={[{ title: "Gợi ý tìm kiếm", data: recentProducts }]}
+      <FlatList
+        data={recentProducts}
         renderItem={renderProductItem}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.sectionHeader}>{title}</Text>
+        keyExtractor={(item: Product) => item.id}
+        ListHeaderComponent={() => (
+          <Text style={styles.sectionHeader}>Gợi ý tìm kiếm</Text>
         )}
-        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        initialNumToRender={10}
       />
 
       {renderSearchModeModal()}

@@ -27,6 +27,9 @@ const SearchResultsScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { searchTerm, searchMode } = route.params as RouteParams;
+
+  console.log("Search Term: ", searchTerm);
+  console.log("Search Mode: ", searchMode);
   const { userData } = useAuthCheck();
 
   const [loading, setLoading] = useState(true);
@@ -46,10 +49,17 @@ const SearchResultsScreen: React.FC = () => {
         `items/search?searchData=${searchValue}`
       );
       const productsData = response.data.data;
+
+      console.log("Products Data: ", productsData);
+
       setProducts(productsData);
       filterProducts(productsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error searching products:", error);
+
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
     } finally {
       setLoading(false);
     }
@@ -64,13 +74,14 @@ const SearchResultsScreen: React.FC = () => {
   const filterProducts = (products: Product[]) => {
     let filtered = products;
 
-    if (userData.userId) {
+    if (searchMode === "default") {
       filtered = filtered.filter(
-        (product) => product.owner_id !== userData.userId
+        (product) =>
+          product.status === "Approved" || product.status === "In_Transaction"
       );
     }
 
-    filtered = filtered.filter((product) => product.available === true);
+    console.log("Filtered Products: ", filtered);
     setFilteredProducts(filtered);
   };
 
@@ -107,6 +118,9 @@ const SearchResultsScreen: React.FC = () => {
     <View style={styles.emptyContainer}>
       <Icon name="search-off" size={64} color="#666" />
       <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
+      <Text style={styles.emptyDescription}>
+        Không có sản phẩm nào liên quan đến "{searchTerm}"
+      </Text>
       <Text style={styles.emptyDescription}>
         Thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc
       </Text>
