@@ -164,8 +164,6 @@ export default function MyRequestsScreen() {
 
   const handleApprove = async (requestId: string) => {
     if (!selectedTime) return;
-    console.log(requestId);
-    console.log(selectedTime);
     try {
       const requestResponse = await axiosInstance.post(
         `request/approve/${requestId}`,
@@ -251,7 +249,14 @@ export default function MyRequestsScreen() {
   const handleSelectRequest = (request: Request) => {
     setSelectedRequest(request);
     setShowDetailModal(true);
+    setSelectedTime(request.appointmentDate[0]);
   };
+
+  const handleNavigateToProductDetail = (productId: string) => {
+    if (!productId) return;
+    navigation.navigate("ProductDetail", { productId });
+    setShowDetailModal(false);
+  }
 
   const RequestListItem = ({
     request,
@@ -332,7 +337,7 @@ export default function MyRequestsScreen() {
         <View>
           <View>
             {request.appointmentDate.map((date, index) => (
-              <View key={index} style={styles.timeSlotList}>
+              <View key={date} style={styles.timeSlotList}>
                 <Icon name="access-time" size={16} color={Colors.orange500} />
                 <Text style={styles.timeSlotTextList}>{formatDate(date)}</Text>
               </View>
@@ -371,8 +376,8 @@ export default function MyRequestsScreen() {
                 <View></View>
                 <Text style={styles.modalTitle}>
                   {isExchangeRequest
-                    ? "Chi tiết trao đổi"
-                    : "Chi tiết yêu cầu nhận"}
+                    ? "Chi tiết trao đổi sản phẩm"
+                    : "Chi tiết yêu cầu nhận sản phẩm"}
                 </Text>
                 <TouchableOpacity onPress={onClose}>
                   <Icon
@@ -385,13 +390,15 @@ export default function MyRequestsScreen() {
               </View>
               {/* Requester Info */}
               <View style={styles.userSection}>
+                <TouchableOpacity onPress={() => handleShowInfoUser(request.requester.id)}>
                 <Image
                   source={{ uri: request.requester.image }}
                   style={styles.avatar}
                 />
-                <View style={styles.userInfo}>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleShowInfoUser(request.requester.id)} style={styles.userInfo}>
                   <Text style={styles.userName}>{request.requester.name}</Text>
-                </View>
+                </TouchableOpacity>
                 <View
                   style={[
                     styles.statusBadge,
@@ -420,24 +427,24 @@ export default function MyRequestsScreen() {
                 <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
                 {isExchangeRequest ? (
                   <View style={styles.exchangeItems}>
-                    <View style={styles.itemCard}>
-                      <Image
-                        source={{ uri: request.requesterItem?.itemImages[0] }}
-                        style={styles.itemImage}
-                      />
-                      <Text style={styles.itemName}>
-                        {request.requesterItem?.itemName}
-                      </Text>
-                      <Text style={styles.itemQuantity}>
-                        Số lượng: {request.requesterItem?.itemQuantity}
-                      </Text>
-                    </View>
+                      <TouchableOpacity onPress={() => handleNavigateToProductDetail(request.requesterItem?.itemId as string)} style={styles.itemCard}>
+                        <Image
+                          source={{ uri: request.requesterItem?.itemImages[0] }}
+                          style={styles.itemImage}
+                        />
+                        <Text style={styles.itemName}>
+                          {request.requesterItem?.itemName}
+                        </Text>
+                        <Text style={styles.itemQuantity}>
+                          Số lượng: {request.requesterItem?.itemQuantity}
+                        </Text>
+                        </TouchableOpacity>
                     <Icon
                       name="swap-horiz"
                       size={24}
                       color={Colors.orange500}
                     />
-                    <View style={styles.itemCard}>
+                      <TouchableOpacity onPress={() => handleNavigateToProductDetail(request.charitarianItem?.itemId as string)} style={styles.itemCard}>
                       <Image
                         source={{ uri: request.charitarianItem.itemImages[0] }}
                         style={styles.itemImage}
@@ -448,10 +455,10 @@ export default function MyRequestsScreen() {
                       <Text style={styles.itemQuantity}>
                         Số lượng: {request.charitarianItem.itemQuantity}
                       </Text>
-                    </View>
+                      </TouchableOpacity>
                   </View>
                 ) : (
-                  <View style={styles.singleItem}>
+                  <TouchableOpacity onPress={() => handleNavigateToProductDetail(request.charitarianItem?.itemId as string)} style={styles.itemCard}>
                     <Image
                       source={{ uri: request.charitarianItem.itemImages[0] }}
                       style={styles.itemImage}
@@ -462,7 +469,7 @@ export default function MyRequestsScreen() {
                     <Text style={styles.itemQuantity}>
                       Số lượng: {request.charitarianItem.itemQuantity}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 )}
               </View>
 
@@ -533,6 +540,7 @@ export default function MyRequestsScreen() {
             style={styles.searchIcon}
           />
           <TextInput
+            placeholderTextColor="#c4c4c4"
             style={styles.searchInput}
             placeholder="Tìm kiếm theo tên sản phẩm..."
             value={searchQuery}
@@ -558,6 +566,7 @@ export default function MyRequestsScreen() {
             onPress={() => handleSelectRequest(item)}
           />
         )}
+        style={styles.scrollView}
       />
 
       <RequestDetailModal
@@ -568,7 +577,6 @@ export default function MyRequestsScreen() {
           setSelectedRequest(null);
         }}
         onApprove={(request) => {
-          setSelectedRequest(request);
           setShowTimeModal(true);
           setShowDetailModal(false);
           setSelectedTime(request.appointmentDate[0]);
@@ -589,22 +597,22 @@ export default function MyRequestsScreen() {
             </Text>
 
             <ScrollView style={styles.timeSlotScrollView}>
-              {selectedRequest?.appointmentDate.map(
-                (time: string, index: number) => (
-                  <Text
-                    style={[
-                      styles.modalTimeSlotText,
-                      selectedTime === time && styles.selectedTimeSlotText,
-                    ]}
-                  >
-                    {formatTimeSlot(time)}
-                  </Text>
-                )
-              )}
+            {selectedRequest?.appointmentDate.map((time: string) => (
+  <Text
+    key={time} // If time string is unique
+    style={[
+      styles.modalTimeSlotText,
+      selectedTime === time && styles.selectedTimeSlotText,
+    ]}
+  >
+    {formatTimeSlot(time)}
+  </Text>
+))}
             </ScrollView>
 
             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
             <TextInput
+            placeholderTextColor="#c4c4c4"
               style={styles.requestInput}
               placeholder="Nhập tin nhắn..."
               value={approveMessage}
@@ -625,6 +633,7 @@ export default function MyRequestsScreen() {
                   setSelectedRequest(null);
                   setSelectedTime(null);
                   setApproveMessage("");
+                  setShowDetailModal(false);
                 }}
               >
                 <Text style={styles.modalButtonText}>Hủy</Text>
@@ -655,6 +664,7 @@ export default function MyRequestsScreen() {
             </Text>
             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
             <TextInput
+              placeholderTextColor="#c4c4c4"
               style={styles.requestInput}
               placeholder="Nhập tin nhắn..."
               value={rejectMessage}
@@ -743,12 +753,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    padding: 16,
-    paddingHorizontal: 32,
   },
   resultCount: {
     color: "#666",
     marginBottom: 16,
+    marginHorizontal: 32
   },
   tabContainer: {
     flexDirection: "row",
@@ -989,11 +998,13 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   requestInput: {
-    backgroundColor: "#f2f2f2",
+    borderColor: "#c4c4c4",
+    borderWidth: 1,
     borderRadius: 8,
     padding: 12,
     textAlignVertical: "top",
     width: "100%",
+    marginBottom: 16,
   },
   textErrorMessage: {
     color: "#e53e3e",
@@ -1084,7 +1095,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 12,
     padding: 8,
-    backgroundColor: Colors.gray100,
     alignItems: "center",
   },
   itemImage: {
@@ -1130,7 +1140,7 @@ const styles = StyleSheet.create({
   timeSection: {
     backgroundColor: "#f8f9fa",
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 16,
   },
   timeSectionHeader: {
     flexDirection: "row",
@@ -1244,7 +1254,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: 16,
     color: Colors.gray800,
   },
 
@@ -1281,7 +1291,7 @@ const styles = StyleSheet.create({
   messageSection: {
     padding: 16,
     backgroundColor: Colors.gray100,
-    marginHorizontal: 16,
+    // marginHorizontal: 16,
     borderRadius: 12,
   },
   timeText: {
@@ -1291,7 +1301,7 @@ const styles = StyleSheet.create({
   rejectSection: {
     padding: 16,
     backgroundColor: "#ffe3e3",
-    marginHorizontal: 16,
+    // marginHorizontal: 16,
     borderRadius: 12,
     marginTop: 16,
   },
@@ -1304,7 +1314,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   searchContainer: {
-    marginBottom: 16,
+    margin: 16
   },
   searchWrapper: {
     flexDirection: "row",
@@ -1332,7 +1342,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: Colors.gray800,
-    paddingVertical: 4,
+    // paddingVertical: 4,
   },
   clearButton: {
     padding: 4,

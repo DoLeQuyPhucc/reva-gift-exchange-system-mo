@@ -55,6 +55,7 @@ const UserReportModal: React.FC<UserReportModalProps> = ({
 
           <TextInput
             style={styles.commentInput}
+            placeholderTextColor="#c4c4c4"
             placeholder="Nhập báo cáo của bạn"
             multiline
             numberOfLines={4}
@@ -116,12 +117,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   commentInput: {
-    width: "100%",
+    borderColor: "#c4c4c4",
     borderWidth: 1,
-    borderColor: "#D3D3D3",
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 15,
+    padding: 12,
+    textAlignVertical: "top",
+    width: "100%",
+    marginBottom: 16,
   },
   buttonContainer: {
     flexDirection: "row",

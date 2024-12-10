@@ -206,6 +206,7 @@ const ProfileDetailScreen = () => {
       <View style={styles.formGroup}>
           <Text style={styles.label}>Email</Text>
           <TextInput
+            placeholderTextColor="#c4c4c4"
             style={styles.input}
             value={formData.email}
             onChangeText={(text) => {
@@ -231,6 +232,7 @@ const ProfileDetailScreen = () => {
           <Text style={styles.label}>Verification Code</Text>
           <View style={styles.otpContainer}>
             <TextInput
+              placeholderTextColor="#c4c4c4"
               style={[styles.input, styles.otpInput]}
               value={otpInput}
               onChangeText={handleOtpInput}
@@ -248,6 +250,7 @@ const ProfileDetailScreen = () => {
         <View style={styles.formGroup}>
           <Text style={styles.label}>Phone</Text>
           <TextInput
+            placeholderTextColor="#c4c4c4"
             style={styles.input}
             value={formData.phone}
             onChangeText={(text) => setFormData({ ...formData, phone: text })}
@@ -259,6 +262,7 @@ const ProfileDetailScreen = () => {
         <View style={styles.formGroup}>
           <Text style={styles.label}>Address</Text>
           <TextInput
+            placeholderTextColor="#c4c4c4"
             style={styles.input}
             value={formData.address.address}
             onChangeText={(text) => setFormData({ ...formData, address: { ...formData.address, address: text } })}
@@ -344,11 +348,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   input: {
+    borderColor: "#c4c4c4",
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
+    padding: 12,
+    textAlignVertical: "top",
+    width: "100%",
+    marginBottom: 16,
   },
   picker: {
     borderWidth: 1,

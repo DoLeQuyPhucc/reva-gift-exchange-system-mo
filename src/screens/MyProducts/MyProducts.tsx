@@ -10,7 +10,9 @@ const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
   Approved: Colors.lightGreen,
   Rejected: Colors.lightRed,
-  Out_of_date: "#48494d"
+  Out_of_date: "#48494d",
+  In_Transaction: Colors.blue500,
+  Exchanged: Colors.purple500,
 };
 
 const REQUEST_COLORS: { [key: string]: string } = {
@@ -22,7 +24,9 @@ const STATUS_LABELS = {
   Pending: "Đang chờ",
   Approved: "Đã duyệt",
   Rejected: "Từ chối",
-  Out_of_date: "Hết hạn"
+  Out_of_date: "Hết hạn",
+  In_Transaction: "Đang trao đổi",
+  Exchanged: "Đã trao đổi",
 };
 
 const MyProducts = () => {
@@ -31,7 +35,9 @@ const MyProducts = () => {
     approved: [],
     rejected: [],
     pending: [],
-    outOfDate: []
+    outOfDate: [],
+    exchanged: [],
+    inTransaction: [],
   });
   const navigation = useNavigation();
 
@@ -44,7 +50,9 @@ const MyProducts = () => {
           approved: data['ApprovedItems'],
           rejected: data['RejectedItems'],
           pending: data['PendingItems'],
-          outOfDate: data['OutOfDateItems']
+          outOfDate: data['OutOfDateItems'],
+          exchanged: data['ExchangedItems'],
+          inTransaction: data['InTransactionItems'],
         });
       })
       .catch(error => {
@@ -174,7 +182,7 @@ const MyProducts = () => {
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.tabContent}>
-        {activeTab === 'approved' && renderProducts(products.approved)}
+        {activeTab === 'approved' && renderProducts([...products.approved, ...products.inTransaction, ...products.exchanged])}
         {activeTab === 'pending' && renderProducts(products.pending)}
         {activeTab === 'outOfDate' && renderProducts([...products.outOfDate, ...products.rejected])}
       </ScrollView>

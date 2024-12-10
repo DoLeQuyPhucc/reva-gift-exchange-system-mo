@@ -27,13 +27,15 @@ import FavoritesScreen from "@/screens/Favorites/FavoritesScreen";
 import ProductDetailScreen from "@/screens/ProductDetail/ProductDetailScreen";
 import CreatePostScreen from "@/screens/CreatePost/CreatePostScreen";
 import MyProducts from "../screens/MyProducts/MyProducts";
-import MyTransactions from "../screens/MyTransactions/MyTransactions";
+import MyTransactions from "../screens/Transactions/MyTransactions/MyTransactions";
 import ProfileDetailScreen from "../screens/ProfileDetail/ProfileDetailScreen";
 import OTPScreen from "../screens/OTP/OTPScreen";
 import MyRequestsScreen from "../screens/Request/MyRequests/MyRequests";
 import RequestSubActionScreen from "../screens/Request/RequestSubAction/RequestSubAction";
 import SearchScreen from "../screens/Search/SearchScreen";
 import SearchResultsScreen from "../screens/Search/SearchResultsScreen";
+import QRScanner from "../components/QRScanner";
+import ResultScanTransaction from "../screens/Transactions/ResultScanTransaction/ResultScanTransaction";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -177,6 +179,16 @@ export default function Navigation() {
           name="MyTransactions"
           component={MyTransactions}
           options={{ headerShown: true, title: "Quản lí giao dịch của tôi" }}
+        />
+        <Stack.Screen 
+          name="ResultScanTransaction" 
+          component={ResultScanTransaction}
+          options={{ title: 'Transaction Details', headerShown: true }}
+        />
+        <Stack.Screen 
+          name="QRScanner" 
+          component={QRScanner}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
