@@ -746,7 +746,7 @@ export default function ProductDetailScreen() {
           <View style={[styles.badge, { backgroundColor: Colors.lightGreen }]}>
             <Text style={styles.badgeText}>{product.condition}</Text>
           </View>
-          {product.available ? (
+          {product.status === 'Approved' ? (
             <View style={[styles.badge, { backgroundColor: "green" }]}>
               <Text style={styles.badgeText}>Còn hàng</Text>
             </View>
@@ -801,7 +801,7 @@ export default function ProductDetailScreen() {
         </View>
         {userData.userId !== product.owner_id && (
           <>
-            {product.available ? (
+            {product.status === 'Approved' ? (
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   style={[styles.button, styles.requestButton]}

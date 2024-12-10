@@ -93,7 +93,7 @@ const HomeScreen: React.FC = () => {
     }
 
     filteredProducts = filteredProducts
-      .filter((product) => product.available === true)
+      .filter((product) => product.status === 'Approved')
       .filter((product) =>
         selectedCategory ? product.category.name === selectedCategory : true
       )
@@ -128,13 +128,13 @@ const HomeScreen: React.FC = () => {
           style={styles.image}
           resizeMode="cover"
         />
-        {!product.available && (
+        {/* {!product.available && (
           <View style={styles.unavailableOverlay}>
             <View style={styles.badgeDestructive}>
               <Text style={styles.badgeText}>Hết hàng</Text>
             </View>
           </View>
-        )}
+        )} */}
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.productName} numberOfLines={1}>
