@@ -13,11 +13,13 @@ import {
 } from "react-native";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { DayTimeRange, Product } from "@/src/shared/type";
 import axiosInstance from "@/src/api/axiosInstance";
-import { Button } from "react-native";
-import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
+import {
+  formatDate,
+  formatDate_DD_MM_YYYY,
+  formatDate_M_D_YYYY,
+} from "@/src/shared/formatDate";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/src/constants/Colors";
 import MediaUploadSection from "@/src/components/MediaUploadSection";
@@ -28,11 +30,18 @@ import { CustomAlert } from "@/src/components/CustomAlert";
 import DateTimePickerCustom, {
   convertDayOfWeek,
 } from "@/src/components/modal/DateTimePickerCustom";
+import CalendarPickerCustom from "@/src/components/modal/CalendarPickerCustom";
 
 type TimeSlot = {
   id: string;
   dateTime: string;
   displayText: string;
+};
+
+type BusyTimeRange = {
+  startTime: string;
+  endTime: string;
+  date: string;
 };
 
 type ProductDetailScreenRouteProp = RouteProp<
@@ -44,7 +53,7 @@ export default function ProductDetailScreen() {
   const route = useRoute<ProductDetailScreenRouteProp>();
   const itemId = route.params.productId;
 
-  const { isAuthenticated } = useAuthCheck();
+  const { isAuthenticated, userData } = useAuthCheck();
   const navigation = useNavigation();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -58,6 +67,7 @@ export default function ProductDetailScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [userItems, setUserItems] = useState<Product[]>([]);
+  const [busyTime, setBusyTime] = useState<string[]>([]);
   const [selectedUserItem, setSelectedUserItem] = useState<Product | null>(
     null
   );
@@ -95,7 +105,6 @@ export default function ProductDetailScreen() {
       try {
         setLoading(true);
         const response = await axiosInstance.get(`/items/${itemId}`);
-
         if (response.data.isSuccess && response.data.data) {
           console.log("Product data:", response.data.data.id);
           setProduct(response.data.data);
@@ -114,6 +123,8 @@ export default function ProductDetailScreen() {
     };
 
     fetchProduct();
+
+    fetchBusyTime();
   }, [itemId]);
 
   const uploadImageToCloudinary = async (uri: string): Promise<string> => {
@@ -234,6 +245,49 @@ export default function ProductDetailScreen() {
           endHour: end,
         };
       });
+  };
+
+  const parseBusyTimes = (busyTimes: string[]): BusyTimeRange[] => {
+    return busyTimes.map((busyTime) => {
+      const [timeRange, date] = busyTime.split(" | ");
+      const [startTime, endTime] = timeRange.split("_");
+      return {
+        startTime,
+        endTime,
+        date,
+      };
+    });
+  };
+
+  const isTimeInBusyRange = (
+    hour: number,
+    minute: number,
+    date: Date,
+    busyTimes: string[]
+  ): boolean => {
+    const formattedDate = formatDate_M_D_YYYY(date.toISOString());
+    const currentTime = `${hour.toString().padStart(2, "0")}:${minute
+      .toString()
+      .padStart(2, "0")}`;
+
+    const parsedBusyTimes = parseBusyTimes(busyTimes);
+
+    return parsedBusyTimes.some((busyRange) => {
+      console.log(busyRange.date);
+      console.log(formattedDate);
+      if (busyRange.date !== formattedDate) return false;
+
+      const [startHour, startMinute] = busyRange.startTime
+        .split(":")
+        .map(Number);
+      const [endHour, endMinute] = busyRange.endTime.split(":").map(Number);
+
+      const start = startHour * 60 + startMinute;
+      const end = endHour * 60 + endMinute;
+      const current = hour * 60 + minute;
+
+      return current >= start && current <= end;
+    });
   };
 
   const parseOfficeHours = (range: string): DayTimeRange[] => {
@@ -358,7 +412,8 @@ export default function ProductDetailScreen() {
   // Generate hour and minute arrays
   const hours = generateHourRange();
   const minutes = Array.from({ length: 60 }, (_, i) => i);
-  const validateTimeInput = () => {
+
+  const validateTimeInput = async () => {
     // Kiểm tra xem đã chọn cả giờ và phút chưa
     if (selectedHour === null || selectedMinute === null) {
       setTimeInputError("Vui lòng chọn đầy đủ giờ và phút");
@@ -378,6 +433,13 @@ export default function ProductDetailScreen() {
       setTimeInputError(`Giờ phải từ ${start}:00 đến ${end - 1}:59`);
       return false;
     }
+    // Kiểm tra xem thời gian có nằm trong busy time không
+    if (
+      isTimeInBusyRange(selectedHour, selectedMinute, selectedDate, busyTime)
+    ) {
+      setTimeInputError("Khung giờ này đã có người đặt");
+      return false;
+    }
 
     // Xóa lỗi nếu có
     setTimeInputError("");
@@ -386,7 +448,6 @@ export default function ProductDetailScreen() {
 
   // Add time slot
   const addTimeSlot = () => {
-    // Validate input before adding
     if (!validateTimeInput()) return;
 
     if (selectedTimeSlots.length >= 1) {
@@ -432,6 +493,22 @@ export default function ProductDetailScreen() {
       }
     } catch (error) {
       console.error("Error fetching user items:", error);
+    } finally {
+      setLoadingUserItems(false);
+    }
+  };
+
+  const fetchBusyTime = async () => {
+    setLoadingUserItems(true);
+    try {
+      const busyTimeResponse = await axiosInstance.get(
+        `/items/get-busy-time?itemId=${itemId}`
+      );
+      if (busyTimeResponse.data.isSuccess) {
+        setBusyTime(busyTimeResponse.data.data[0].busyTimes);
+      }
+    } catch (error) {
+      console.error("Error fetching busy time:", error);
     } finally {
       setLoadingUserItems(false);
     }
@@ -722,24 +799,27 @@ export default function ProductDetailScreen() {
             </View>
           )}
         </View>
-
-        {product.available ? (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.requestButton]}
-              onPress={handleRequest}
-            >
-              {product.isGift ? (
-                <Text style={styles.buttonText}>Đăng ký nhận</Text>
-              ) : (
-                <Text style={styles.buttonText}>Yêu cầu trao đổi</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={[styles.button, styles.outOfStockButton]}>
+        {userData.userId !== product.owner_id && (
+          <>
+            {product.available ? (
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, styles.requestButton]}
+                  onPress={handleRequest}
+                >
+                  {product.isGift ? (
+                    <Text style={styles.buttonText}>Đăng ký nhận</Text>
+                  ) : (
+                    <Text style={styles.buttonText}>Yêu cầu trao đổi</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={[styles.button, styles.outOfStockButton]}>
                 <Text style={[styles.outOfStockText]}>Hết hàng</Text>
-          </View>
+              </View>
+            )}
+          </>
         )}
       </View>
 
@@ -815,8 +895,8 @@ export default function ProductDetailScreen() {
                   )}
 
                   <Text style={styles.moreItemText}>
-                    Sản phẩm khác, vui lòng chụp lại sản phẩm và ghi rõ thông tin
-                    sản phẩm
+                    Sản phẩm khác, vui lòng chụp lại sản phẩm và ghi rõ thông
+                    tin sản phẩm
                   </Text>
                   {selectedUserItem && (
                     <View style={styles.selectedItemInfo}>
@@ -919,28 +999,44 @@ export default function ProductDetailScreen() {
 
                       {/* Hiển thị khung giờ cho ngày đã chọn */}
                       {selectedDate && (
-                        <Text style={styles.timeRangeText}>
-                          {(() => {
-                            const timeRange =
-                              getTimeRangeForSelectedDate(selectedDate);
-                            if (timeRange) {
-                              return `Khung giờ cho phép: ${
-                                timeRange.start
-                              }:00 - ${timeRange.end - 1}:59`;
-                            }
-                            return "Không có khung giờ cho phép trong ngày này";
-                          })()}
-                        </Text>
-                      )}
-                      {showDatePicker && (
-                        // <DateTimePicker
-                        //   value={selectedDate}
-                        //   mode="date"
-                        //   display="default"
-                        //   onChange={handleDateChange}
-                        //   minimumDate={new Date()}
-                        // />
+                        <View>
+                          <Text style={styles.timeRangeText}>
+                            {(() => {
+                              const timeRange =
+                                getTimeRangeForSelectedDate(selectedDate);
+                              if (timeRange) {
+                                return `Khung giờ cho phép: ${
+                                  timeRange.start
+                                }:00 - ${timeRange.end - 1}:59`;
+                              }
+                              return "Không có khung giờ cho phép trong ngày này";
+                            })()}
+                          </Text>
 
+                          {/* Hiển thị busy time cho ngày đã chọn */}
+                          {/* {busyTime && busyTime
+      .filter(time => time.includes(formatDate_DD_MM_YYYY(selectedDate.toISOString())))
+      .map((time, index) => {
+        const [timeRange] = time.split(" | ");
+        const [start, end] = timeRange.split("_");
+        return (
+          <Text key={index} style={styles.busyTimeText}>
+            Đã có người đặt: {start} - {end}
+          </Text>
+        );
+      })} */}
+                        </View>
+                      )}
+                      
+                      <CalendarPickerCustom
+                        visible={showDatePicker}
+                          date={selectedDate}
+                          setDate={setSelectedDate}
+                          allowedDays={daysOnly}
+                          timeRanges={timeRanges}
+                          onClose={() => setShowDatePicker(false)}
+                        />
+                      {/* {showDatePicker && (
                         <DateTimePickerCustom
                           date={selectedDate}
                           setDate={setSelectedDate}
@@ -948,7 +1044,7 @@ export default function ProductDetailScreen() {
                           timeRanges={timeRanges}
                           onClose={() => setShowDatePicker(false)}
                         />
-                      )}
+                      )} */}
 
                       {/* Time Input */}
                       <View style={styles.inputContainer}>
@@ -1016,12 +1112,11 @@ export default function ProductDetailScreen() {
                       </View>
                     </View>
                   )}
-                  
+
                   <Text style={styles.modalDescriptionSub}>
                     Thời gian này sẽ được gửi chủ sở hữu, nếu phù hợp sẽ tiến
                     hành trao đổi.
                   </Text>
-
                 </>
               )}
             </ScrollView>
@@ -1572,5 +1667,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: Colors.orange500,
     fontSize: 14,
+  },
+  busyTimeText: {
+    color: "#e53e3e",
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: "center",
   },
 });

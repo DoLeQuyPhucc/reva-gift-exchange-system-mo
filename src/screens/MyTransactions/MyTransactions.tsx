@@ -286,6 +286,7 @@ const MyTransactions = () => {
   const renderStars = (rating: number) => {
     return [1, 2, 3, 4, 5].map((star) => (
       <Icon
+        key={star}
         name="star"
         size={30}
         color={star <= rating ? "#FFD700" : "#D3D3D3"}

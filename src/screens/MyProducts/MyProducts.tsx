@@ -110,41 +110,43 @@ const MyProducts = () => {
             )}
           </View>
         </View>
-        <View style={styles.cardFooter}>
-          
-        <TouchableOpacity
-          style={[
-            styles.statusBadge,
-            { backgroundColor: `${Colors.orange500}15` },
-          ]}
-          onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'itemRequestTo' })}
-        >
-          <Text
-            style={[
-              styles.statusText,
-              { color: Colors.orange500 },
-            ]}
-          >
-            {item.itemRequestTo} yêu cầu đã gửi đi
-          </Text>
-        </TouchableOpacity>
+        {activeTab === 'approved' && (
+          <View style={styles.cardFooter}>
+            
           <TouchableOpacity
-          style={[
-            styles.statusBadge,
-            { backgroundColor: `${Colors.lightRed}15` },
-          ]}
-          onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'requestsForMe' })}
-        >
-          <Text
             style={[
-              styles.statusText,
-              { color: Colors.lightRed },
+              styles.statusBadge,
+              { backgroundColor: `${Colors.orange500}15` },
             ]}
+            onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'itemRequestTo' })}
           >
-            {item.requestForItem} yêu cầu được gửi tới
-          </Text>
-        </TouchableOpacity>
-        </View>
+            <Text
+              style={[
+                styles.statusText,
+                { color: Colors.orange500 },
+              ]}
+            >
+              {item.itemRequestTo} yêu cầu đã gửi đi
+            </Text>
+          </TouchableOpacity>
+            <TouchableOpacity
+            style={[
+              styles.statusBadge,
+              { backgroundColor: `${Colors.lightRed}15` },
+            ]}
+            onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'requestsForMe' })}
+          >
+            <Text
+              style={[
+                styles.statusText,
+                { color: Colors.lightRed },
+              ]}
+            >
+              {item.requestForItem} yêu cầu được gửi tới
+            </Text>
+          </TouchableOpacity>
+          </View>
+        )}
       </TouchableOpacity>
     ));
   };
