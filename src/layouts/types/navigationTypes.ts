@@ -1,5 +1,5 @@
-import { SearchMode } from "@/src/screens/Search/SearchScreen";
 import { Category, Product, SubCategory } from "@/src/shared/type";
+import { SearchMode } from "@/src/utils/search";
 
 export type RootStackParamList = {
   Main: {
@@ -49,6 +49,8 @@ export type RootStackParamList = {
   OTPScreen: {
     phoneNumber: string;
   };
+  QRScanner: undefined;
+  ResultScanTransaction: { transactionResult: any };
 };
 
 export type BottomTabParamList = {

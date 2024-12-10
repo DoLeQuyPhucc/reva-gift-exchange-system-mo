@@ -95,7 +95,7 @@ const RequestSubActionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 16,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -129,9 +129,7 @@ const styles = StyleSheet.create({
     color: Colors.darkText,
     flex: 1,
   },
-
   menuSection: {
-    paddingHorizontal: 8,
     gap: 12,
   },
   menuItem: {

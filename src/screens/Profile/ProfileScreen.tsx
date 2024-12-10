@@ -149,6 +149,14 @@ const ProfileScreen = () => {
     },
   ];
 
+  const getPointColor = (point: number) => {
+    if (point < 50) return "#990000"; // Đỏ đậm - Rất không uy tín
+    if (point < 75) return "#ff4d4d"; // Đỏ nhạt - Không uy tín
+    if (point < 100) return "#e67300"; // Cam - Cần cải thiện
+    if (point <= 120) return "#00e600"; // Xanh lá - Tốt
+    return "#ffcc00"; // Xanh lá đậm - Rất tốt
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -207,7 +215,14 @@ const ProfileScreen = () => {
           {isAuthenticated && (
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{userData?.point || 0}</Text>
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: getPointColor(userData?.point || 0) },
+                  ]}
+                >
+                  {userData?.point || 0}
+                </Text>
                 <Text style={styles.statLabel}>Điểm tích lũy</Text>
               </View>
               <View style={styles.statDivider} />
@@ -325,6 +340,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    paddingTop: 40,
   },
   profileSection: {
     flexDirection: "row",
@@ -435,8 +451,8 @@ const styles = StyleSheet.create({
     color: Colors.gray600,
   },
   actionButtons: {
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    gap: 8,
   },
   touchableButton: {
     flexDirection: "row",

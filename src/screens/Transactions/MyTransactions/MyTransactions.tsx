@@ -8,7 +8,6 @@ import {
   Modal,
   Alert,
   Image,
-  TextInput,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -26,6 +25,7 @@ import { useAuthCheck } from "@/src/hooks/useAuth";
 import { TouchableWithoutFeedback } from "react-native";
 import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 import ReportModal from "@/src/components/ReportModal";
+import { useNavigation } from "@/src/hooks/useNavigation";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -47,6 +47,8 @@ const MyTransactions = () => {
 
   const [showInputRejectMessage, setShowInputRejectMessage] = useState(false);
   const [rejectMessage, setRejectMessage] = useState<string>("");
+  
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchTransactions();
@@ -445,16 +447,16 @@ const MyTransactions = () => {
               <Text>
                 <Icon
                   name="question-answer"
-                  size={18}
+                  size={14}
                   color={Colors.orange500}
-                />{" "}
+                />{"  "}
                 Lời nhắn từ người cho: {transaction.requestNote}
               </Text>
             </View>
 
             <View style={styles.dateInfo}>
               <Text>
-                <Icon name="info" size={18} color={Colors.orange500} /> Lưu ý:
+                <Icon name="info" size={14} color={Colors.orange500} /> Lưu ý:
                 Bạn nên tới vào lúc{" "}
                 {formatTimeRange(transaction.appointmentDate)} để có thể thấy
                 được mã xác nhận và hoàn thành giao dịch.
@@ -526,9 +528,7 @@ const MyTransactions = () => {
                   <TouchableOpacity
                     style={styles.verifyButton}
                     onPress={() => {
-                      setSelectedTransaction(transaction);
-                      setShowModal(true);
-                      setVerificationInput("");
+                      navigation.navigate("QRScanner")
                     }}
                   >
                     <Text style={styles.verifyButtonText}>
@@ -634,85 +634,9 @@ const MyTransactions = () => {
                 </View>
               )}
 
-              {selectedTransaction &&
-                checkRole(selectedTransaction) === "charitarian" && (
-                  <>
-                    {showInputRejectMessage && (
-                      <>
-                        <Text style={styles.modalDescription}>
-                          Vui lòng nhập lý do từ chối:
-                        </Text>
-                        <TextInput
-                          style={styles.requestInput}
-                          placeholder="Nhập tin nhắn..."
-                          value={rejectMessage}
-                          onChangeText={setRejectMessage}
-                          multiline
-                        />
-                        {rejectMessage.length > 99 && (
-                          <Text style={styles.textErrorMessage}>
-                            Lời nhắn của bạn không được vượt quá 100 ký tự.
-                          </Text>
-                        )}
-                        {rejectMessage.length === 0 && (
-                          <Text style={styles.textErrorMessage}>
-                            Bạn phải nhập lí do từ chối
-                          </Text>
-                        )}
-                      </>
-                    )}
-
-                    <View style={styles.modalButtonContainer}>
-                      <View style={styles.topButtonRow}>
-                        <TouchableOpacity
-                          style={[styles.modalButton, styles.cancelButton]}
-                          onPress={() => {
-                            setShowModal(false);
-                            setVerificationInput("");
-                          }}
-                        >
-                          <Text style={styles.buttonText}>Hủy</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.modalButton,
-                            styles.rejectButton,
-                            rejectMessage.length === 0 &&
-                              showInputRejectMessage &&
-                              styles.disabledButton,
-                          ]}
-                          disabled={
-                            rejectMessage.length === 0 && showInputRejectMessage
-                          }
-                          onPress={
-                            showInputRejectMessage
-                              ? () => handleReject(selectedTransaction.id)
-                              : () => setShowInputRejectMessage(true)
-                          }
-                        >
-                          <Text
-                            style={[
-                              styles.buttonText,
-                              rejectMessage.length === 0 &&
-                                showInputRejectMessage &&
-                                styles.disabledButtonText,
-                            ]}
-                          >
-                            Từ chối
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.verifyButton, styles.bottomButton]}
-                        onPress={handleVerification}
-                      >
-                        <Text style={styles.buttonText}>
-                          Xác nhận giao dịch
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
+              <Text style={{color: "#ababab", fontStyle: 'italic',textAlign: 'center'}}>
+                *Sử dụng mã định danh này để xác nhận giao dịch khi bạn đến
+              </Text>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -734,23 +658,6 @@ const MyTransactions = () => {
           transactionId: selectedTransaction?.id || "",
         }}
       />
-      {/* 
-      <UserReportModal
-        isVisible={isReportModalVisible}
-        onClose={() => setIsReportModalVisible(false)}
-        onSubmitRating={handleReport}
-        userTransactionToRate={{
-          userId:
-            userId === selectedTransaction?.charitarian.id
-              ? selectedTransaction?.requester.id
-              : selectedTransaction?.charitarian.id || "",
-          userName:
-            userId === selectedTransaction?.charitarian.id
-              ? selectedTransaction?.requester.name || ""
-              : selectedTransaction?.charitarian.name || "",
-          transactionId: selectedTransaction?.id || "",
-        }}
-      /> */}
 
       <ReportModal
         isVisible={isReportModalVisible}
@@ -780,6 +687,7 @@ const styles = StyleSheet.create({
   resultCount: {
     color: "#666",
     marginBottom: 16,
+    marginHorizontal: 16,
   },
   card: {
     backgroundColor: "white",
@@ -825,7 +733,6 @@ const styles = StyleSheet.create({
   productCard: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
     padding: 12,
     borderRadius: 8,
   },
@@ -1068,7 +975,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
+    // paddingHorizontal: 16,
   },
   scrollContent: {
     padding: 16,
