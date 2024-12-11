@@ -9,10 +9,11 @@ export interface Notification {
   data: string;
   read?: boolean;
   createdAt?: string | Date;
+  status?: string;
 }
 
 const SIGNALR_URL = "http://103.142.139.142:6900/notificationsHub";
-const MAX_NOTIFICATIONS = 100; // Giới hạn số lượng thông báo để tránh memory leaks
+const MAX_NOTIFICATIONS = 100;
 
 interface NotificationState {
   connection: HubConnection | null;
@@ -63,7 +64,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       set({ connection: null });
     }
   },
-  setNotifications: (notifications) => set({ notifications }),
+  setNotifications: (notifications) => {
+    const processedNotifications = notifications.map((notification) => ({
+      ...notification,
+      createdAt: notification.createdAt
+        ? new Date(notification.createdAt)
+        : new Date(),
+    }));
+    set({ notifications: processedNotifications });
+  },
   addNotification: (notification) =>
     set((state) => ({
       notifications: [
@@ -79,7 +88,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const response = await axiosInstance.get("notification/all");
       if (response.data.isSuccess) {
-        set({ notifications: response.data.data });
+        const processedNotifications = response.data.data.map(
+          (notification: Notification) => ({
+            ...notification,
+            createdAt: notification.createdAt
+              ? new Date(notification.createdAt)
+              : new Date(),
+          })
+        );
+        set({ notifications: processedNotifications });
       }
     } catch (error) {
       console.error("Error fetching initial notifications:", error);
