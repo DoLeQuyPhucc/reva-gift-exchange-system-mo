@@ -9,6 +9,7 @@ import {
   Animated,
 } from "react-native";
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Notification,
   useNotificationStore,
@@ -18,15 +19,29 @@ import { formatDate } from "@/src/shared/formatDate";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { Alert } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
+import Checkbox from "expo-checkbox";
+import Toast from "react-native-toast-message";
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications } = useNotificationStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const { isAuthenticated } = useAuthCheck();
   const navigation = useNavigation();
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setIsSelectionMode(false);
+        setSelectedItems([]);
+      };
+    }, [])
+  );
 
   const handleAuthenticatedNavigation = () => {
     if (!isAuthenticated) {
@@ -52,7 +67,63 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleDeleteSingle = async (notificationId: string) => {
+    try {
+      const response = await axiosInstance.put(
+        `notification/clear/${notificationId}`
+      );
+      if (response.data.isSuccess) {
+        setNotifications(notifications.filter((n) => n.id !== notificationId));
+        Toast.show({
+          type: "success",
+          text1: "Thành công",
+          text2: "Đã xóa thông báo",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      Alert.alert("Lỗi", "Không thể xóa thông báo");
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) return;
+
+    Alert.alert(
+      "Xác nhận xóa",
+      "Bạn có chắc chắn muốn xóa các thông báo đã chọn?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await axiosInstance.put(
+                "notification/clear-all"
+              );
+              if (response.data.isSuccess) {
+                setNotifications([]);
+                setSelectedItems([]);
+                setIsSelectionMode(false);
+                Toast.show({
+                  type: "success",
+                  text1: "Thành công",
+                  text2: `Đã xóa ${selectedItems.length} thông báo`,
+                });
+              }
+            } catch (error) {
+              console.error("Error deleting notifications:", error);
+              Alert.alert("Lỗi", "Không thể xóa thông báo");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
   const fadeIn = useCallback(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -60,6 +131,7 @@ export default function NotificationsScreen() {
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
+
   const fetchNotifications = async () => {
     try {
       if (!isAuthenticated) {
@@ -81,11 +153,13 @@ export default function NotificationsScreen() {
       setLoading(false);
     }
   };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchNotifications();
     setRefreshing(false);
   };
+
   const markAsRead = async (notificationId: string) => {
     try {
       await axiosInstance.put(`notification/mark-as-read/${notificationId}`);
@@ -100,11 +174,22 @@ export default function NotificationsScreen() {
       console.error("Error marking notification as read:", error);
     }
   };
+
   useEffect(() => {
     fetchNotifications();
   }, []);
+
   const renderNotification = useCallback(
     ({ item: notification, index }: { item: Notification; index: number }) => {
+      const renderRightActions = () => (
+        <TouchableOpacity
+          style={styles.deleteAction}
+          onPress={() => notification.id && handleDeleteSingle(notification.id)}
+        >
+          <Text style={styles.deleteActionText}>Xóa</Text>
+        </TouchableOpacity>
+      );
+
       const formattedDate = notification.createdAt
         ? formatDate(notification.createdAt.toLocaleString())
         : "Unknown date";
@@ -142,33 +227,68 @@ export default function NotificationsScreen() {
             },
           ]}
         >
-          <TouchableOpacity
-            onPress={() =>
-              !notification.read &&
-              notification.id &&
-              markAsRead(notification.id)
-            }
-            style={[
-              styles.notificationContent,
-              !notification.read && styles.unreadNotification,
-            ]}
-          >
-            <View style={styles.notificationHeader}>
-              <Text style={styles.notificationTime}>{formattedDate}</Text>
-              {!notification.read && <View style={styles.unreadIndicator} />}
-            </View>
+          <Swipeable renderRightActions={renderRightActions}>
+            <TouchableOpacity
+              onPress={() =>
+                !notification.read &&
+                notification.id &&
+                markAsRead(notification.id)
+              }
+              style={[
+                styles.notificationContent,
+                !notification.read && styles.unreadNotification,
+              ]}
+            >
+              <View style={styles.notificationHeader}>
+                {isSelectionMode && (
+                  <View style={styles.checkboxContainer}>
+                    <Checkbox
+                      value={
+                        notification.id
+                          ? selectedItems.includes(notification.id)
+                          : false
+                      }
+                      onValueChange={(newValue) => {
+                        if (notification.id) {
+                          if (newValue) {
+                            setSelectedItems([
+                              ...selectedItems,
+                              notification.id,
+                            ]);
+                          } else {
+                            setSelectedItems(
+                              selectedItems.filter(
+                                (id) => id !== notification.id
+                              )
+                            );
+                          }
+                        }
+                      }}
+                      color={
+                        selectedItems.includes(notification.id || "")
+                          ? "#007AFF"
+                          : undefined
+                      }
+                    />
+                  </View>
+                )}
+                <Text style={styles.notificationTime}>{formattedDate}</Text>
+                {!notification.read && <View style={styles.unreadIndicator} />}
+              </View>
 
-            <Text style={styles.notificationText}>{parsedData.message}</Text>
+              <Text style={styles.notificationText}>{parsedData.message}</Text>
 
-            {!notification.read && (
-              <Text style={styles.tapToMark}>Nhấn để đánh dấu đã đọc!</Text>
-            )}
-          </TouchableOpacity>
+              {!notification.read && (
+                <Text style={styles.tapToMark}>Nhấn để đánh dấu đã đọc!</Text>
+              )}
+            </TouchableOpacity>
+          </Swipeable>
         </Animated.View>
       );
     },
-    [fadeAnim, markAsRead]
+    [fadeAnim, markAsRead, isSelectionMode, selectedItems]
   );
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -176,6 +296,7 @@ export default function NotificationsScreen() {
       </View>
     );
   }
+
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -189,6 +310,7 @@ export default function NotificationsScreen() {
       </View>
     );
   }
+
   return (
     <ScrollView
       style={styles.container}
@@ -201,7 +323,31 @@ export default function NotificationsScreen() {
       }
     >
       <View style={styles.notificationContainer}>
-        <Text style={styles.title}>Thông báo</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Thông báo</Text>
+          {notifications.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setIsSelectionMode(!isSelectionMode)}
+              style={styles.selectButton}
+            >
+              <Text style={styles.selectButtonText}>
+                {isSelectionMode ? "Hủy" : "Chọn"}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {isSelectionMode && selectedItems.length > 0 && (
+          <TouchableOpacity
+            style={styles.deleteSelectedButton}
+            onPress={handleDeleteSelected}
+          >
+            <Text style={styles.deleteSelectedText}>
+              Xóa ({selectedItems.length})
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {notifications.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Không có thông báo nào hết</Text>
@@ -215,6 +361,7 @@ export default function NotificationsScreen() {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -308,5 +455,48 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  selectButton: {
+    padding: 8,
+  },
+  selectButtonText: {
+    color: "#007AFF",
+    fontSize: 16,
+  },
+  deleteSelectedButton: {
+    backgroundColor: "#DC3545",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  deleteSelectedText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  deleteAction: {
+    backgroundColor: "#DC3545",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: "100%",
+  },
+  deleteActionText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  checkboxContainer: {
+    marginRight: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
   },
 });
