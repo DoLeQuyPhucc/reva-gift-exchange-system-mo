@@ -205,5 +205,7 @@ export interface NotificationGlobal {
 export interface DayTimeRange {
   day: string;
   startHour: number;
+  startMinute: number;
   endHour: number;
+  endMinute: number;
 }

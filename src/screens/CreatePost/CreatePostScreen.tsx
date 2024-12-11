@@ -114,7 +114,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   const [condition, setCondition] = useState<ItemCondition | "">("");
   const [isExchange, setIsExchange] = useState<boolean>(false);
   const [isGift, setIsGift] = useState<boolean>(false);
-  const [isFreeGift, setIsFreeGift] = useState<boolean>(false);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -533,7 +532,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         name: title.trim(),
         description: description.trim(),
         categoryId: selectedSubCategory!.id,
-        isGift: isFreeGift,
+        isGift: isGift,
         quantity: 1,
         condition: condition,
         images,
