@@ -233,16 +233,19 @@ export default function ProductDetailScreen() {
       .split("|")
       .map((dayRange) => {
         const [hours, day] = dayRange.trim().split(" ");
-        const [start, end] = hours.split("_").map((hour) => {
-          // Chuyển đổi format "HH:mm" thành số
-          const [h] = hour.split(":");
-          return parseInt(h);
-        });
+        const [start, end] = hours.split("_");
+
+        // Tách giờ và phút cho thời gian bắt đầu
+        const [startHour, startMinute] = start.split(":").map(Number);
+        // Tách giờ và phút cho thời gian kết thúc
+        const [endHour, endMinute] = end.split(":").map(Number);
 
         return {
           day: day,
-          startHour: start,
-          endHour: end,
+          startHour,
+          startMinute,
+          endHour,
+          endMinute,
         };
       });
   };
@@ -297,7 +300,9 @@ export default function ProductDetailScreen() {
     return daysOnly.split("_").map((day) => ({
       day: day,
       startHour: start,
+      startMinute: 0,
       endHour: end,
+      endMinute: 0,
     }));
   };
 
@@ -327,7 +332,10 @@ export default function ProductDetailScreen() {
 
   const getTimeRangeForSelectedDate = (
     date: Date
-  ): { start: number; end: number } | null => {
+  ): {
+    start: { hour: number; minute: number };
+    end: { hour: number; minute: number };
+  } | null => {
     const dayIndex = date.getDay();
     const dayMap: { [key: string]: number } = {
       sun: 0,
@@ -349,36 +357,82 @@ export default function ProductDetailScreen() {
 
       if (timeRange) {
         return {
-          start: timeRange.startHour,
-          end: timeRange.endHour,
+          start: {
+            hour: timeRange.startHour,
+            minute: timeRange.startMinute,
+          },
+          end: {
+            hour: timeRange.endHour,
+            minute: timeRange.endMinute,
+          },
         };
       }
       return null;
-    } else {
-      return {
-        start: startHour,
-        end: endHour,
-      };
     }
+
+    return {
+      start: { hour: startHour, minute: 0 },
+      end: { hour: endHour, minute: 0 },
+    };
   };
 
   const generateHourRange = () => {
     const timeRange = getTimeRangeForSelectedDate(selectedDate);
-
-    if (!timeRange) return []; // Trả về mảng rỗng nếu không có khung giờ hợp lệ
+    if (!timeRange) return [];
 
     const { start, end } = timeRange;
 
     // Nếu start <= end, tạo range bình thường
-    if (start <= end) {
-      return Array.from({ length: end - start }, (_, i) => start + i);
+    if (start.hour <= end.hour) {
+      return Array.from({ length: end.hour - start.hour + 1 }, (_, i) => ({
+        hour: start.hour + i,
+        // Với giờ đầu tiên, bắt đầu từ phút đã định
+        minStart: i === 0 ? start.minute : 0,
+        // Với giờ cuối cùng, kết thúc tại phút đã định
+        minEnd: i === end.hour - start.hour ? end.minute : 59,
+      }));
     }
-    // Nếu start > end (qua nửa đêm), tạo range bao quanh 24h
+    // Nếu start > end (qua nửa đêm)
     else {
       return [
-        ...Array.from({ length: 24 - start }, (_, i) => start + i),
-        ...Array.from({ length: end + 1 }, (_, i) => i),
+        // Từ giờ bắt đầu đến 23:59
+        ...Array.from({ length: 24 - start.hour }, (_, i) => ({
+          hour: start.hour + i,
+          minStart: i === 0 ? start.minute : 0,
+          minEnd: 59,
+        })),
+        // Từ 00:00 đến giờ kết thúc
+        ...Array.from({ length: end.hour + 1 }, (_, i) => ({
+          hour: i,
+          minStart: 0,
+          minEnd: i === end.hour ? end.minute : 59,
+        })),
       ];
+    }
+  };
+
+  const generateMinuteRange = (selectedHour: number | null) => {
+    if (selectedHour === null) return [];
+
+    const timeRange = getTimeRangeForSelectedDate(selectedDate);
+    if (!timeRange) return [];
+
+    const { start, end } = timeRange;
+
+    // Nếu đang ở giờ bắt đầu
+    if (selectedHour === start.hour) {
+      return Array.from(
+        { length: 60 - start.minute },
+        (_, i) => start.minute + i
+      );
+    }
+    // Nếu đang ở giờ kết thúc
+    else if (selectedHour === end.hour) {
+      return Array.from({ length: end.minute }, (_, i) => i);
+    }
+    // Các giờ ở giữa
+    else {
+      return Array.from({ length: 60 }, (_, i) => i);
     }
   };
 
@@ -391,22 +445,109 @@ export default function ProductDetailScreen() {
 
     // Nhóm các ngày theo khung giờ
     const groupedRanges: Record<string, string[]> = {};
-    timeRanges.forEach(({ startHour, endHour, day }) => {
-      const key = `${startHour}-${endHour}`;
-      if (!groupedRanges[key]) {
-        groupedRanges[key] = [];
+    timeRanges.forEach(
+      ({ startHour, startMinute, endHour, endMinute, day }) => {
+        // Format thời gian với cả giờ và phút
+        const key = `${startHour.toString().padStart(2, "0")}:${startMinute
+          .toString()
+          .padStart(2, "0")}-${endHour.toString().padStart(2, "0")}:${endMinute
+          .toString()
+          .padStart(2, "0")}`;
+        if (!groupedRanges[key]) {
+          groupedRanges[key] = [];
+        }
+        groupedRanges[key].push(day);
       }
-      groupedRanges[key].push(day);
-    });
+    );
 
     // Tạo chuỗi mô tả
     return Object.entries(groupedRanges)
       .map(([key, days]) => {
         const [start, end] = key.split("-");
         const dayNames = days.map(convertDayOfWeek).join(", ");
-        return `${start}:00-${parseInt(end) - 1}:59 ${dayNames}`;
+
+        // Tính toán thời gian kết thúc hiển thị (trừ 1 phút)
+        const [endHour, endMinute] = end.split(":").map(Number);
+        let displayEndHour = endHour;
+        let displayEndMinute = endMinute - 1;
+
+        if (displayEndMinute < 0) {
+          displayEndMinute = 59;
+          displayEndHour = displayEndHour - 1;
+        }
+
+        const displayEnd = `${displayEndHour
+          .toString()
+          .padStart(2, "0")}:${displayEndMinute.toString().padStart(2, "0")}`;
+
+        return `${start} - ${displayEnd} ${dayNames}`;
       })
       .join("; ");
+  };
+
+  const formatTimeRangesText = (timeRanges: DayTimeRange[]): JSX.Element => {
+    // Nhóm các time range theo giờ giống nhau
+    const groupedRanges = timeRanges.reduce((acc, curr) => {
+      const key = `${curr.startHour}:${curr.startMinute}-${curr.endHour}:${curr.endMinute}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(curr.day);
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    // Convert days number to text
+    const getDayText = (day: string): string => {
+      const daysMap: Record<string, string> = {
+        mon: "Thứ Hai",
+        tue: "Thứ Ba",
+        wed: "Thứ Tư",
+        thu: "Thứ Năm",
+        fri: "Thứ Sáu",
+        sat: "Thứ Bảy",
+        sun: "Chủ Nhật",
+      };
+      return daysMap[day] || day;
+    };
+
+    return (
+      <View>
+        {Object.entries(groupedRanges).map(([timeRange, days], index) => {
+          const [time, endTime] = timeRange.split("-");
+          const [startHour, startMinute] = time.split(":");
+          const [endHour, endMinute] = endTime.split(":");
+
+          // Format time với padding 0
+          const formattedStartTime = `${startHour.padStart(
+            2,
+            "0"
+          )}:${startMinute.padStart(2, "0")}`;
+          // Trừ 1 phút từ thời gian kết thúc để hiển thị
+          let displayEndHour = parseInt(endHour);
+          let displayEndMinute = parseInt(endMinute) - 1;
+
+          if (displayEndMinute < 0) {
+            displayEndMinute = 59;
+            displayEndHour -= 1;
+          }
+
+          const formattedEndTime = `${displayEndHour
+            .toString()
+            .padStart(2, "0")}:${displayEndMinute.toString().padStart(2, "0")}`;
+
+          return (
+            <View key={index} style={styles.timeRangeRow}>
+              <Text style={styles.timeText}>
+                {`${formattedStartTime} - ${formattedEndTime}`}
+              </Text>
+              <Text style={styles.daysText}>
+                {days.map((day) => getDayText(day)).join(", ")}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
   };
 
   // Generate hour and minute arrays
@@ -414,7 +555,6 @@ export default function ProductDetailScreen() {
   const minutes = Array.from({ length: 60 }, (_, i) => i);
 
   const validateTimeInput = async () => {
-    // Kiểm tra xem đã chọn cả giờ và phút chưa
     if (selectedHour === null || selectedMinute === null) {
       setTimeInputError("Vui lòng chọn đầy đủ giờ và phút");
       return false;
@@ -426,22 +566,31 @@ export default function ProductDetailScreen() {
       return false;
     }
 
-    const { start, end } = timeRange;
+    // Chuyển đổi thời gian sang phút để so sánh dễ dàng hơn
+    const selectedTimeInMinutes = selectedHour * 60 + selectedMinute;
+    const startTimeInMinutes =
+      timeRange.start.hour * 60 + timeRange.start.minute;
+    const endTimeInMinutes = timeRange.end.hour * 60 + timeRange.end.minute;
 
-    // Kiểm tra giờ có nằm trong khung giờ cho phép không
-    if (selectedHour < start || selectedHour >= end) {
-      setTimeInputError(`Giờ phải từ ${start}:00 đến ${end - 1}:59`);
-      return false;
-    }
-    // Kiểm tra xem thời gian có nằm trong busy time không
     if (
-      isTimeInBusyRange(selectedHour, selectedMinute, selectedDate, busyTime)
+      selectedTimeInMinutes < startTimeInMinutes ||
+      selectedTimeInMinutes >= endTimeInMinutes
     ) {
-      setTimeInputError("Khung giờ này đã có người đặt");
+      setTimeInputError(
+        `Giờ phải từ ${timeRange.start.hour
+          .toString()
+          .padStart(2, "0")}:${timeRange.start.minute
+          .toString()
+          .padStart(2, "0")} đến ${(timeRange.end.hour - 1)
+          .toString()
+          .padStart(2, "0")}:${timeRange.end.minute
+          .toString()
+          .padStart(2, "0")}`
+      );
       return false;
     }
 
-    // Xóa lỗi nếu có
+    // Kiểm tra busy time...
     setTimeInputError("");
     return true;
   };
@@ -583,43 +732,80 @@ export default function ProductDetailScreen() {
   };
 
   // Render modal for hour or minute selection
-  const renderPickerModal = (
-    visible: boolean,
-    setVisible: (show: boolean) => void,
-    items: number[],
-    selectedItem: number | null,
-    setSelectedItem: (item: number) => void,
-    title: string
-  ) => (
+  const renderHourPickerModal = () => (
     <Modal
       animationType="slide"
       transparent={true}
-      visible={visible}
-      onRequestClose={() => setVisible(false)}
+      visible={showHourModal}
+      onRequestClose={() => setShowHourModal(false)}
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{title}</Text>
+          <Text style={styles.modalTitle}>Chọn giờ</Text>
           <ScrollView>
-            {items.map((item) => (
+            {generateHourRange().map(({ hour, minStart, minEnd }) => (
               <TouchableOpacity
-                key={item}
+                key={hour}
                 style={[
                   styles.pickerItem,
-                  selectedItem === item && styles.selectedPickerItem,
+                  selectedHour === hour && styles.selectedPickerItem,
                 ]}
                 onPress={() => {
-                  setSelectedItem(item);
-                  setVisible(false);
+                  setSelectedHour(hour);
+                  setSelectedMinute(null); // Reset phút khi chọn giờ mới
+                  setShowHourModal(false);
                 }}
               >
                 <Text
                   style={[
                     styles.pickerItemText,
-                    selectedItem === item && styles.selectedPickerItemText,
+                    selectedHour === hour && styles.selectedPickerItemText,
                   ]}
                 >
-                  {item.toString().padStart(2, "0")}
+                  {`${hour.toString().padStart(2, "0")}:${minStart
+                    .toString()
+                    .padStart(2, "0")} - ${hour
+                    .toString()
+                    .padStart(2, "0")}:${minEnd.toString().padStart(2, "0")}`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderMinutePickerModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showMinuteModal}
+      onRequestClose={() => setShowMinuteModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Chọn phút</Text>
+          <ScrollView>
+            {generateMinuteRange(selectedHour).map((minute) => (
+              <TouchableOpacity
+                key={minute}
+                style={[
+                  styles.pickerItem,
+                  selectedMinute === minute && styles.selectedPickerItem,
+                ]}
+                onPress={() => {
+                  setSelectedMinute(minute);
+                  setShowMinuteModal(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.pickerItemText,
+                    selectedMinute === minute && styles.selectedPickerItemText,
+                  ]}
+                >
+                  {minute.toString().padStart(2, "0")}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -746,15 +932,69 @@ export default function ProductDetailScreen() {
           <View style={[styles.badge, { backgroundColor: Colors.lightGreen }]}>
             <Text style={styles.badgeText}>{product.condition}</Text>
           </View>
-          {product.status === 'Approved' ? (
-            <View style={[styles.badge, { backgroundColor: "green" }]}>
-              <Text style={styles.badgeText}>Còn hàng</Text>
-            </View>
-          ) : (
-            <View style={[styles.badge, { backgroundColor: Colors.orange700 }]}>
-              <Text style={styles.badgeText}>Hết hàng</Text>
-            </View>
-          )}
+          {(() => {
+            switch (product.status) {
+              case "Approved":
+                return (
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: Colors.lightGreen },
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>Còn hàng</Text>
+                  </View>
+                );
+              case "Pending":
+                return (
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: Colors.orange500 },
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>Chờ phê duyệt</Text>
+                  </View>
+                );
+              case "Rejected":
+                return (
+                  <View
+                    style={[styles.badge, { backgroundColor: Colors.lightRed }]}
+                  >
+                    <Text style={styles.badgeText}>Bị từ chối</Text>
+                  </View>
+                );
+              case "Out_of_date":
+                return (
+                  <View
+                    style={[styles.badge, { backgroundColor: Colors.gray500 }]}
+                  >
+                    <Text style={styles.badgeText}>Hết hạn</Text>
+                  </View>
+                );
+              case "In_Transaction":
+                return (
+                  <View
+                    style={[styles.badge, { backgroundColor: Colors.blue500 }]}
+                  >
+                    <Text style={styles.badgeText}>Đang trao đổi</Text>
+                  </View>
+                );
+              case "Exchanged":
+                return (
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: Colors.purple500 },
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>Đã trao đổi</Text>
+                  </View>
+                );
+              default:
+                return null;
+            }
+          })()}
         </View>
 
         <Text style={styles.description}>{product.description}</Text>
@@ -776,11 +1016,17 @@ export default function ProductDetailScreen() {
               Tình trạng: {product.condition}
             </Text>
           </View>
-          <View style={styles.detailItem}>
-            <Icon name="access-time" size={20} />
-            <Text style={styles.detailText}>
-              Khung giờ: {formatTimeRanges(timeRanges)}
-            </Text>
+          {/* Hiển thị khung giờ */}
+          <View style={styles.timeRangeContainer}>
+            <View style={styles.detailItemSub}>
+              <Icon name="access-time" size={20} />
+              <Text style={styles.detailText}>Khung giờ:</Text>
+            </View>
+            {timeRanges.length > 0 ? (
+              formatTimeRangesText(timeRanges)
+            ) : (
+              <Text style={styles.noTimeRangeText}>Không có khung giờ</Text>
+            )}
           </View>
           {product.isGift === false && (
             <View style={styles.detailItem}>
@@ -801,7 +1047,7 @@ export default function ProductDetailScreen() {
         </View>
         {userData.userId !== product.owner_id && (
           <>
-            {product.status === 'Approved' ? (
+            {product.status === "Approved" && (
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   style={[styles.button, styles.requestButton]}
@@ -813,10 +1059,6 @@ export default function ProductDetailScreen() {
                     <Text style={styles.buttonText}>Yêu cầu trao đổi</Text>
                   )}
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={[styles.button, styles.outOfStockButton]}>
-                <Text style={[styles.outOfStockText]}>Hết hàng</Text>
               </View>
             )}
           </>
@@ -964,10 +1206,19 @@ export default function ProductDetailScreen() {
                   <Text style={styles.modalDescription}>
                     Vui lòng chọn thời gian bạn sẽ tời nhận sản phẩm:
                   </Text>
-
-                  <Text style={styles.description}>
-                    Khung giờ: {formatTimeRanges(timeRanges)}
-                  </Text>
+                  <View style={styles.timeRangeContainer}>
+                    <View style={styles.detailItemSub}>
+                      <Icon name="access-time" size={20} />
+                      <Text style={styles.detailText}>Khung giờ:</Text>
+                    </View>
+                    {timeRanges.length > 0 ? (
+                      formatTimeRangesText(timeRanges)
+                    ) : (
+                      <Text style={styles.noTimeRangeText}>
+                        Không có khung giờ
+                      </Text>
+                    )}
+                  </View>
                   {/* Selected Time Slots */}
                   <View style={styles.selectedSlotsContainer}>
                     {selectedTimeSlots.map((slot) => (
@@ -1000,20 +1251,56 @@ export default function ProductDetailScreen() {
 
                       {/* Hiển thị khung giờ cho ngày đã chọn */}
                       {selectedDate && (
-                        <View>
-                          <Text style={styles.timeRangeText}>
-                            {(() => {
-                              const timeRange =
-                                getTimeRangeForSelectedDate(selectedDate);
-                              if (timeRange) {
-                                return `Khung giờ cho phép: ${
-                                  timeRange.start
-                                }:00 - ${timeRange.end - 1}:59`;
-                              }
-                              return "Không có khung giờ cho phép trong ngày này";
-                            })()}
+                        <View style={styles.timeRangeContainer}>
+                          <Text style={styles.timeRangeLabel}>
+                            Khung giờ có sẵn:
                           </Text>
+                          {(() => {
+                            const timeRange =
+                              getTimeRangeForSelectedDate(selectedDate);
+                            if (!timeRange) {
+                              return (
+                                <Text style={styles.noTimeRangeText}>
+                                  Không có khung giờ cho ngày này
+                                </Text>
+                              );
+                            }
 
+                            const { start, end } = timeRange;
+                            const startTime = `${start.hour
+                              .toString()
+                              .padStart(2, "0")}:${start.minute
+                              .toString()
+                              .padStart(2, "0")}`;
+                            // Trừ 1 phút từ thời gian kết thúc để hiển thị
+                            let displayEndHour = end.hour;
+                            let displayEndMinute = end.minute - 1;
+
+                            if (displayEndMinute < 0) {
+                              displayEndMinute = 59;
+                              displayEndHour = displayEndHour - 1;
+                            }
+
+                            const endTime = `${displayEndHour
+                              .toString()
+                              .padStart(2, "0")}:${displayEndMinute
+                              .toString()
+                              .padStart(2, "0")}`;
+
+                            return (
+                              <View style={styles.timeRangeInfo}>
+                                <Text style={styles.timeRangeText}>
+                                  {`${startTime} - ${endTime}`}
+                                </Text>
+                                <Text style={styles.selectedDateText}>
+                                  {`Ngày ${formatDate_DD_MM_YYYY(
+                                    selectedDate.toISOString()
+                                  )}`}
+                                </Text>
+                              </View>
+                            );
+                          })()}
+                          
                           {/* Hiển thị busy time cho ngày đã chọn */}
                           {/* {busyTime && busyTime
       .filter(time => time.includes(formatDate_DD_MM_YYYY(selectedDate.toISOString())))
@@ -1028,15 +1315,15 @@ export default function ProductDetailScreen() {
       })} */}
                         </View>
                       )}
-                      
+
                       <CalendarPickerCustom
                         visible={showDatePicker}
-                          date={selectedDate}
-                          setDate={setSelectedDate}
-                          allowedDays={daysOnly}
-                          timeRanges={timeRanges}
-                          onClose={() => setShowDatePicker(false)}
-                        />
+                        date={selectedDate}
+                        setDate={setSelectedDate}
+                        allowedDays={daysOnly}
+                        timeRanges={timeRanges}
+                        onClose={() => setShowDatePicker(false)}
+                      />
                       {/* {showDatePicker && (
                         <DateTimePickerCustom
                           date={selectedDate}
@@ -1065,7 +1352,13 @@ export default function ProductDetailScreen() {
 
                           <TouchableOpacity
                             style={styles.timeInput}
-                            onPress={() => setShowMinuteModal(true)}
+                            onPress={() => {
+                              if (selectedHour === null) {
+                                setTimeInputError("Vui lòng chọn giờ trước");
+                                return;
+                              }
+                              setShowMinuteModal(true);
+                            }}
                           >
                             <Text style={styles.timeInputText}>
                               {selectedMinute !== null
@@ -1075,32 +1368,21 @@ export default function ProductDetailScreen() {
                           </TouchableOpacity>
 
                           <TouchableOpacity
-                            style={styles.addButton}
+                            style={[
+                              styles.addButton,
+                              (!selectedHour || !selectedMinute) &&
+                                styles.disabledButton,
+                            ]}
                             onPress={addTimeSlot}
+                            disabled={!selectedHour || !selectedMinute}
                           >
                             <Text style={styles.addButtonText}>Chọn</Text>
                           </TouchableOpacity>
                         </View>
 
-                        {/* Hour Modal */}
-                        {renderPickerModal(
-                          showHourModal,
-                          setShowHourModal,
-                          hours,
-                          selectedHour,
-                          setSelectedHour,
-                          "Chọn giờ"
-                        )}
-
-                        {/* Minute Modal */}
-                        {renderPickerModal(
-                          showMinuteModal,
-                          setShowMinuteModal,
-                          minutes,
-                          selectedMinute,
-                          setSelectedMinute,
-                          "Chọn phút"
-                        )}
+                        {/* Render the modals */}
+                        {renderHourPickerModal()}
+                        {renderMinutePickerModal()}
 
                         {/* Error Message */}
                         {timeInputError ? (
@@ -1236,6 +1518,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginBottom: 12,
+    padding: 12,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 8,
+  },
+  detailItemSub: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     padding: 12,
     backgroundColor: "#f8f8f8",
     borderRadius: 8,
@@ -1390,17 +1680,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.orange500,
     padding: 12,
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   datePickerButtonText: {
     color: "white",
     fontSize: 16,
     textAlign: "center",
   },
-  // timeSlotsContainer: {
-  //   height: 700,
-  //   marginBottom: 200,
-  // },
   timeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1676,5 +1962,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     textAlign: "center",
+  },
+  timeRangeContainer: {
+    marginBottom: 16,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 8,
+  },
+  timeRangeLabel: {
+    fontSize: 16,
+    color: "#666",
+    paddingLeft: 12,
+    paddingTop: 12,
+  },
+  timeRangeInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+  },
+  selectedDateText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  noTimeRangeText: {
+    fontSize: 14,
+    color: "#e53e3e",
+    fontStyle: "italic",
+  },
+  timeRangeRow: {
+    paddingHorizontal: 16,
+    marginVertical: 4,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 6,
+  },
+  timeText: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: Colors.orange500,
+    marginBottom: 4,
+  },
+  daysText: {
+    fontSize: 14,
+    color: "#666",
   },
 });
