@@ -15,7 +15,6 @@ import {
   useNotificationStore,
 } from "@/src/stores/notificationStore";
 import axiosInstance from "@/src/api/axiosInstance";
-import { formatDate } from "@/src/shared/formatDate";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { Alert } from "react-native";
@@ -179,6 +178,45 @@ export default function NotificationsScreen() {
     fetchNotifications();
   }, []);
 
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+      if (diffInSeconds < 60) {
+        return "Vừa xong";
+      }
+      if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} phút trước`;
+      }
+      if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} giờ trước`;
+      }
+      if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} ngày trước`;
+      }
+
+      return date.toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
   const renderNotification = useCallback(
     ({ item: notification, index }: { item: Notification; index: number }) => {
       const renderRightActions = () => (
@@ -191,22 +229,17 @@ export default function NotificationsScreen() {
       );
 
       const formattedDate = notification.createdAt
-        ? formatDate(notification.createdAt.toLocaleString())
+        ? formatDate(notification.createdAt.toString())
         : "Unknown date";
 
       let parsedData;
       try {
-        // Kiểm tra xem data có phải là string JSON không
         parsedData =
           typeof notification.data === "string"
             ? JSON.parse(notification.data)
-            : notification.data;
+            : { message: notification.data };
       } catch (error) {
-        console.error("Error parsing notification data:", error);
-        // Fallback nếu parse thất bại
-        parsedData = {
-          message: notification.data || "Invalid notification data",
-        };
+        parsedData = { message: notification.data };
       }
 
       return (
@@ -337,15 +370,43 @@ export default function NotificationsScreen() {
           )}
         </View>
 
-        {isSelectionMode && selectedItems.length > 0 && (
-          <TouchableOpacity
-            style={styles.deleteSelectedButton}
-            onPress={handleDeleteSelected}
-          >
-            <Text style={styles.deleteSelectedText}>
-              Xóa ({selectedItems.length})
+        {isSelectionMode && notifications.length > 0 && (
+          <View style={styles.selectionHeader}>
+            <View style={styles.selectionActions}>
+              <TouchableOpacity
+                style={styles.selectAllButton}
+                onPress={() => {
+                  if (selectedItems.length === notifications.length) {
+                    setSelectedItems([]);
+                  } else {
+                    setSelectedItems(
+                      notifications.map((n) => n.id || "").filter(Boolean)
+                    );
+                  }
+                }}
+              >
+                <Text style={styles.selectAllText}>
+                  {selectedItems.length === notifications.length
+                    ? "Bỏ chọn tất cả"
+                    : "Chọn tất cả"}
+                </Text>
+              </TouchableOpacity>
+
+              {selectedItems.length > 0 && (
+                <TouchableOpacity
+                  style={styles.deleteSelectedButton}
+                  onPress={handleDeleteSelected}
+                >
+                  <Text style={styles.deleteSelectedText}>
+                    Xóa ({selectedItems.length})
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <Text style={styles.selectionCount}>
+              Đã chọn: {selectedItems.length}/{notifications.length}
             </Text>
-          </TouchableOpacity>
+          </View>
         )}
 
         {notifications.length === 0 ? (
@@ -353,9 +414,16 @@ export default function NotificationsScreen() {
             <Text style={styles.emptyText}>Không có thông báo nào hết</Text>
           </View>
         ) : (
-          notifications.map((notification, index) =>
-            renderNotification({ item: notification, index })
-          )
+          notifications.map((notification) => (
+            <View
+              key={notification.id || `temp-${Date.now()}-${Math.random()}`}
+            >
+              {renderNotification({
+                item: notification,
+                index: notifications.indexOf(notification),
+              })}
+            </View>
+          ))
         )}
       </View>
     </ScrollView>
@@ -469,18 +537,6 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontSize: 16,
   },
-  deleteSelectedButton: {
-    backgroundColor: "#DC3545",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  deleteSelectedText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
   deleteAction: {
     backgroundColor: "#DC3545",
     justifyContent: "center",
@@ -498,5 +554,46 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 20,
     height: 20,
+  },
+  selectionHeader: {
+    backgroundColor: "#F8F9FA",
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
+  },
+  selectionActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  selectAllButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: "#E9ECEF",
+  },
+  selectAllText: {
+    color: "#495057",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  deleteSelectedButton: {
+    backgroundColor: "#DC3545",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  deleteSelectedText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  selectionCount: {
+    fontSize: 12,
+    color: "#6C757D",
+    textAlign: "right",
   },
 });
