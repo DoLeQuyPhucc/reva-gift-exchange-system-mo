@@ -943,6 +943,7 @@ export default function ProductDetailScreen() {
                   </Text>
                   <TextInput
                     style={styles.requestInput}
+                    placeholderTextColor="#c4c4c4"
                     placeholder="Nhập tin nhắn..."
                     value={requestMessage}
                     onChangeText={setRequestMessage}
@@ -1225,7 +1226,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     color: "#666",
-    // marginBottom: 8,
+    marginBottom: 16,
   },
   detailsContainer: {
     marginBottom: 8,
@@ -1331,11 +1332,13 @@ const styles = StyleSheet.create({
     color: "#7B7B7B",
   },
   requestInput: {
-    backgroundColor: "#f2f2f2",
+    borderColor: "#c4c4c4",
+    borderWidth: 1,
     borderRadius: 8,
     padding: 12,
     textAlignVertical: "top",
     width: "100%",
+    marginBottom: 16,
   },
   textErrorMessage: {
     color: "#e53e3e",

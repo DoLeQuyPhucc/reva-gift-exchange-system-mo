@@ -33,6 +33,9 @@ const gray700 = "#374151";
 const gray800 = "#1f2937";
 const gray900 = "#111827";
 
+const blue500 = "#0ea5e9";
+const purple500 = "#a855f7";
+
 export const Colors = {
   light: {
     text: "#11181C",
@@ -81,4 +84,6 @@ export default {
   gray700: gray700,
   gray800: gray800,
   gray900: gray900,
+  blue500: blue500,
+  purple500: purple500,
 };

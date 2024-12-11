@@ -1,40 +1,43 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, Button, Alert } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import React, { useState } from "react";
+import { StyleSheet, View, TextInput, Button, Alert } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 
 // Hàm gọi Geocoding API để tìm tọa độ
 const fetchCoordinates = async (address: string) => {
-  const API_KEY = 'AIzaSyCINoldLz1xCfN4XSJ4ti5d4Lt4hBGzots'; // Thay bằng API Key của bạn
+  const API_KEY = "AIzaSyCINoldLz1xCfN4XSJ4ti5d4Lt4hBGzots"; // Thay bằng API Key của bạn
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
     address
   )}&key=${API_KEY}`;
 
-  console.log(url)
+  console.log(url);
 
   try {
     const response = await fetch(url);
     const data = await response.json();
-    if (data.status === 'OK') {
+    if (data.status === "OK") {
       const { lat, lng } = data.results[0].geometry.location;
       return { latitude: lat, longitude: lng };
     } else {
-      Alert.alert('Error', 'Không thể tìm thấy địa chỉ.');
+      Alert.alert("Error", "Không thể tìm thấy địa chỉ.");
       return null;
     }
   } catch (error) {
-    Alert.alert('Error', 'Lỗi kết nối với Geocoding API.');
+    Alert.alert("Error", "Lỗi kết nối với Geocoding API.");
     console.error(error);
     return null;
   }
 };
 
 const MapScreen = () => {
-  const [address, setAddress] = useState('');
-  const [markerPosition, setMarkerPosition] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [address, setAddress] = useState("");
+  const [markerPosition, setMarkerPosition] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   // Xử lý khi nhấn nút tìm kiếm
   const handleSearch = async () => {
-    console.log('Searching for:', address);
+    console.log("Searching for:", address);
     const coordinates = await fetchCoordinates(address);
     if (coordinates) {
       setMarkerPosition(coordinates);
@@ -46,6 +49,7 @@ const MapScreen = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.input}
+          placeholderTextColor="#c4c4c4"
           placeholder="Nhập địa chỉ (VD: Thủ Đức, Hồ Chí Minh)"
           value={address}
           onChangeText={setAddress}
@@ -92,16 +96,17 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     padding: 10,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     zIndex: 1,
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
+    borderColor: "#c4c4c4",
     borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+    borderRadius: 8,
+    padding: 12,
+    textAlignVertical: "top",
+    width: "100%",
+    marginBottom: 16,
   },
   mapContainer: {
     flex: 0.5,

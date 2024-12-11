@@ -32,7 +32,7 @@ export interface Product {
   requestForItem: number;
 }
 
-interface SubInfoAddress {
+export interface SubInfoAddress {
   addressId: string;
   address: string;
   addressCoordinates: AddressCoordinates;
@@ -73,12 +73,12 @@ export interface Request {
   appointmentDate: string[];
 }
 
-interface SubInfoUser {
+export interface SubInfoUser {
   id: string;
   name: string;
   image: string;
 }
-interface SubInfoItem {
+export interface SubInfoItem {
   itemId: string;
   itemName: string;
   itemVideo: string;
