@@ -1096,9 +1096,11 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.detailText}>
-                    Mong muốn trao đổi với: {product.desiredCategory?.name}
-                  </Text>
+                  {product.desiredCategory !== null && (
+                    <Text style={styles.detailText}>
+                      Mong muốn trao đổi với: {product.desiredCategory?.name}
+                    </Text>
+                  )}
                 </>
               ) : (
                 <>
@@ -1115,9 +1117,11 @@ export default function ProductDetailScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.detailText}>
-                    Mong muốn trao đổi với: {product.desiredCategory?.name}
-                  </Text>
+                  {product.desiredCategory !== null && (
+                    <Text style={styles.detailText}>
+                      Mong muốn trao đổi với: {product.desiredCategory?.name}
+                    </Text>
+                  )}
                 </>
               )}
 
@@ -1375,11 +1379,11 @@ export default function ProductDetailScreen() {
                           <TouchableOpacity
                             style={[
                               styles.addButton,
-                              (!selectedHour || !selectedMinute) &&
+                              (!selectedHour || (selectedMinute === 0 ? false : !selectedMinute)) &&
                                 styles.disabledButton,
                             ]}
                             onPress={addTimeSlot}
-                            disabled={!selectedHour || !selectedMinute}
+                            disabled={!selectedHour || (selectedMinute === 0 ? false : !selectedMinute)}
                           >
                             <Text style={styles.addButtonText}>Chọn</Text>
                           </TouchableOpacity>
@@ -1639,7 +1643,7 @@ const styles = StyleSheet.create({
     padding: 12,
     textAlignVertical: "top",
     width: "100%",
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   textErrorMessage: {
     color: "#e53e3e",
