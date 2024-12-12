@@ -140,6 +140,11 @@ const SearchResultsScreen: React.FC = () => {
         <Text style={styles.productDescription} numberOfLines={2}>
           {item.description}
         </Text>
+        {item.owner_id === userData?.userId && (
+          <Text style={styles.ownProductWarning}>
+            Bạn không thể trao đổi hoặc đăng ký nhận với sản phẩm của mình
+          </Text>
+        )}
         <View style={styles.badgeContainer}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{item.condition}</Text>
@@ -310,6 +315,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginRight: 4,
+  },
+  ownProductWarning: {
+    fontSize: 12,
+    color: Colors.orange500,
+    fontStyle: "italic",
+    marginBottom: 8,
   },
 });
 
