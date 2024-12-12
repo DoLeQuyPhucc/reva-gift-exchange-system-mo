@@ -643,18 +643,18 @@ const MyTransactions = () => {
                       <TouchableOpacity
                         style={styles.detailsButton}
                         onPress={() => {
-                          const data: LocationMap = {
-                            latitude: parseFloat(
-                              transaction.charitarianAddress.addressCoordinates
-                                .latitude
-                            ),
-                            longitude: parseFloat(
-                              transaction.charitarianAddress.addressCoordinates
-                                .longitude
-                            ),
-                          };
-                          setLocation(data);
-                          setShowMapModal(true);
+                          // const data: LocationMap = {
+                          //   latitude: parseFloat(
+                          //     transaction.charitarianAddress.addressCoordinates
+                          //       .latitude
+                          //   ),
+                          //   longitude: parseFloat(
+                          //     transaction.charitarianAddress.addressCoordinates
+                          //       .longitude
+                          //   ),
+                          // };
+                          // setLocation(data);
+                          // setShowMapModal(true);
                         }}
                       >
                         <View style={styles.detailsButtonContent}>
@@ -704,7 +704,7 @@ const MyTransactions = () => {
                           }
                         >
                           <Text style={styles.verifyButtonText}>
-                            Từ chối giao dịch
+                            Từ chối
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -720,7 +720,7 @@ const MyTransactions = () => {
                           }
                         >
                           <Text style={styles.verifyButtonText}>
-                            Xác nhận giao dịch
+                            Xác nhận
                           </Text>
                         </TouchableOpacity>
                       </View>
