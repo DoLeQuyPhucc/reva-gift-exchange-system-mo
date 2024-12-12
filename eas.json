@@ -6,7 +6,15 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "withoutCredentials": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.14:8081"
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
