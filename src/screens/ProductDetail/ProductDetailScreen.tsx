@@ -1028,7 +1028,7 @@ export default function ProductDetailScreen() {
               <Text style={styles.noTimeRangeText}>Không có khung giờ</Text>
             )}
           </View>
-          {product.isGift === false && (
+          {product.isGift === false && product.desiredCategory !== null && (
             <View style={styles.detailItem}>
               <Icon name="compare-arrows" size={20} />
               <Text style={styles.detailText}>
@@ -1045,6 +1045,11 @@ export default function ProductDetailScreen() {
             </View>
           )}
         </View>
+        
+        {userData.userId === product.owner_id && (
+          <Text style={styles.isOwner}>Bạn là chủ sở hữu của món đồ này</Text>
+        )}
+
         {userData.userId !== product.owner_id && (
           <>
             {product.status === "Approved" && (
@@ -1504,6 +1509,12 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontWeight: "bold",
     marginBottom: 8,
+  },
+  isOwner: {
+    fontSize: 16,
+    color: Colors.orange500,
+    fontWeight: "bold",
+    marginBottom: 16,
   },
   description: {
     fontSize: 16,

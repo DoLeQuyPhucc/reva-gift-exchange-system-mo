@@ -31,6 +31,8 @@ const STATUS_COLORS: { [key: string]: string } = {
   Approved: Colors.lightGreen,
   Rejected: Colors.lightRed,
   Hold_On: Colors.gray600,
+  Completed: Colors.lightGreen,
+  Not_Completed: Colors.lightRed,
 };
 
 const STATUS_LABELS = {
@@ -38,6 +40,8 @@ const STATUS_LABELS = {
   Approved: "Đã duyệt",
   Rejected: "Từ chối",
   Hold_On: "Tạm hoãn",
+  Completed: "Hoàn thành",
+  Not_Completed: "Không thành công",
 };
 
 type MyRequestsScreenRouteProp = RouteProp<RootStackParamList, "MyRequests">;
@@ -108,6 +112,7 @@ export default function MyRequestsScreen() {
       }
 
       if (requestsResponse?.data?.data) {
+        console.log("Requests data:", requestsResponse.data.data);
         const sortedRequests = requestsResponse.data.data.sort(
           (a: Request, b: Request) => {
             const statusOrder: { [key: string]: number } = {
@@ -115,6 +120,8 @@ export default function MyRequestsScreen() {
               Hold_On: 2,
               Approved: 3,
               Rejected: 4,
+              Completed: 5,
+              Not_Completed: 6,
             };
             return statusOrder[a.status] - statusOrder[b.status];
           }
@@ -256,7 +263,7 @@ export default function MyRequestsScreen() {
     if (!productId) return;
     navigation.navigate("ProductDetail", { productId });
     setShowDetailModal(false);
-  }
+  };
 
   const RequestListItem = ({
     request,
@@ -390,13 +397,18 @@ export default function MyRequestsScreen() {
               </View>
               {/* Requester Info */}
               <View style={styles.userSection}>
-                <TouchableOpacity onPress={() => handleShowInfoUser(request.requester.id)}>
-                <Image
-                  source={{ uri: request.requester.image }}
-                  style={styles.avatar}
-                />
+                <TouchableOpacity
+                  onPress={() => handleShowInfoUser(request.requester.id)}
+                >
+                  <Image
+                    source={{ uri: request.requester.image }}
+                    style={styles.avatar}
+                  />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleShowInfoUser(request.requester.id)} style={styles.userInfo}>
+                <TouchableOpacity
+                  onPress={() => handleShowInfoUser(request.requester.id)}
+                  style={styles.userInfo}
+                >
                   <Text style={styles.userName}>{request.requester.name}</Text>
                 </TouchableOpacity>
                 <View
@@ -421,30 +433,54 @@ export default function MyRequestsScreen() {
                   </Text>
                 </View>
               </View>
+              {request.status === "Hold_On" && (
+                <View style={styles.holdOnMessage}>
+                  <Text style={styles.holdOnMessageText}>
+                    Yêu cầu tạm hoãn - Sản phẩm đang trong giao dịch khác.
+                  </Text>
+                  <Text style={styles.holdOnMessageText}>
+                    Sẽ tiếp tục nếu giao dịch hiện tại thất bại.
+                  </Text>
+                </View>
+              )}
 
               {/* Items Section */}
               <View style={styles.itemsSection}>
                 <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
                 {isExchangeRequest ? (
                   <View style={styles.exchangeItems}>
-                      <TouchableOpacity onPress={() => handleNavigateToProductDetail(request.requesterItem?.itemId as string)} style={styles.itemCard}>
-                        <Image
-                          source={{ uri: request.requesterItem?.itemImages[0] }}
-                          style={styles.itemImage}
-                        />
-                        <Text style={styles.itemName}>
-                          {request.requesterItem?.itemName}
-                        </Text>
-                        <Text style={styles.itemQuantity}>
-                          Số lượng: {request.requesterItem?.itemQuantity}
-                        </Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleNavigateToProductDetail(
+                          request.requesterItem?.itemId as string
+                        )
+                      }
+                      style={styles.itemCard}
+                    >
+                      <Image
+                        source={{ uri: request.requesterItem?.itemImages[0] }}
+                        style={styles.itemImage}
+                      />
+                      <Text style={styles.itemName}>
+                        {request.requesterItem?.itemName}
+                      </Text>
+                      <Text style={styles.itemQuantity}>
+                        Số lượng: {request.requesterItem?.itemQuantity}
+                      </Text>
+                    </TouchableOpacity>
                     <Icon
                       name="swap-horiz"
                       size={24}
                       color={Colors.orange500}
                     />
-                      <TouchableOpacity onPress={() => handleNavigateToProductDetail(request.charitarianItem?.itemId as string)} style={styles.itemCard}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleNavigateToProductDetail(
+                          request.charitarianItem?.itemId as string
+                        )
+                      }
+                      style={styles.itemCard}
+                    >
                       <Image
                         source={{ uri: request.charitarianItem.itemImages[0] }}
                         style={styles.itemImage}
@@ -455,10 +491,17 @@ export default function MyRequestsScreen() {
                       <Text style={styles.itemQuantity}>
                         Số lượng: {request.charitarianItem.itemQuantity}
                       </Text>
-                      </TouchableOpacity>
+                    </TouchableOpacity>
                   </View>
                 ) : (
-                  <TouchableOpacity onPress={() => handleNavigateToProductDetail(request.charitarianItem?.itemId as string)} style={styles.itemCard}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleNavigateToProductDetail(
+                        request.charitarianItem?.itemId as string
+                      )
+                    }
+                    style={styles.itemCard}
+                  >
                     <Image
                       source={{ uri: request.charitarianItem.itemImages[0] }}
                       style={styles.itemImage}
@@ -597,22 +640,22 @@ export default function MyRequestsScreen() {
             </Text>
 
             <ScrollView style={styles.timeSlotScrollView}>
-            {selectedRequest?.appointmentDate.map((time: string) => (
-  <Text
-    key={time} // If time string is unique
-    style={[
-      styles.modalTimeSlotText,
-      selectedTime === time && styles.selectedTimeSlotText,
-    ]}
-  >
-    {formatTimeSlot(time)}
-  </Text>
-))}
+              {selectedRequest?.appointmentDate.map((time: string) => (
+                <Text
+                  key={time} // If time string is unique
+                  style={[
+                    styles.modalTimeSlotText,
+                    selectedTime === time && styles.selectedTimeSlotText,
+                  ]}
+                >
+                  {formatTimeSlot(time)}
+                </Text>
+              ))}
             </ScrollView>
 
             <Text style={styles.modalDescription}>Nhập lời nhắn của bạn:</Text>
             <TextInput
-            placeholderTextColor="#c4c4c4"
+              placeholderTextColor="#c4c4c4"
               style={styles.requestInput}
               placeholder="Nhập tin nhắn..."
               value={approveMessage}
@@ -757,7 +800,7 @@ const styles = StyleSheet.create({
   resultCount: {
     color: "#666",
     marginBottom: 16,
-    marginHorizontal: 32
+    marginHorizontal: 32,
   },
   tabContainer: {
     flexDirection: "row",
@@ -1314,7 +1357,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   searchContainer: {
-    margin: 16
+    margin: 16,
   },
   searchWrapper: {
     flexDirection: "row",
@@ -1346,5 +1389,14 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     padding: 4,
+  },
+  holdOnMessage: {
+    backgroundColor: "#f8f9fa",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  holdOnMessageText: {
+    color: "#666",
   },
 });

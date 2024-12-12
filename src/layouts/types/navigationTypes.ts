@@ -51,6 +51,7 @@ export type RootStackParamList = {
   };
   QRScanner: undefined;
   ResultScanTransaction: { transactionResult: any };
+  CharitarianRequestItem: undefined;
 };
 
 export type BottomTabParamList = {

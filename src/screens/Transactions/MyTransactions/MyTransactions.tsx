@@ -26,6 +26,7 @@ import { TouchableWithoutFeedback } from "react-native";
 import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 import ReportModal from "@/src/components/ReportModal";
 import { useNavigation } from "@/src/hooks/useNavigation";
+import { TextInput } from "react-native";
 
 const MyTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -46,6 +47,7 @@ const MyTransactions = () => {
   const [isConfirm, setIsConfirm] = useState(false);
 
   const [showInputRejectMessage, setShowInputRejectMessage] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [rejectMessage, setRejectMessage] = useState<string>("");
   
   const navigation = useNavigation();
@@ -124,47 +126,47 @@ const MyTransactions = () => {
     return "";
   };
 
-  const handleVerification = async () => {
-    if (selectedTransaction) {
+  const handleVerification = async (transactionId: string) => {
+    try {
       const res = await axiosInstance.put(
-        `transaction/approve/${selectedTransaction.id}`
+        `transaction/approve/${transactionId}`
       );
-      if (res.data.isSuccess === true) {
-        Alert.alert("Thành công", "Xác nhận giao dịch thành công.");
-        setShowModal(false);
-        setIsConfirm(!isConfirm);
-      }
-    } else {
-      Alert.alert("Lỗi", "Không tìm thấy giao dịch, vui lòng thử lại.");
+      console.log(res.data);
+      Alert.alert("Thành công", "Đã xác nhận giao dịch", [
+        {
+          text: "OK",
+          onPress: () => navigation.navigate("MyTransactions"),
+        },
+      ]);
+      setShowConfirmModal(false);
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể xác nhận giao dịch. Vui lòng thử lại sau.");
     }
   };
 
-  const handleReject = (transactionId: string) => {
-    Alert.alert(
-      "Bạn có chắc chắn muốn từ chối giao dịch?",
-      `Lí do: ${rejectMessage}`,
-      [
+  const handleReject = async (transactionId: string) => {
+    try {
+      await axiosInstance.put(`transaction/reject/${transactionId}?message=${rejectMessage}`);
+      Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
-          text: "Hủy",
-          style: "cancel",
+          text: "OK",
+          onPress: () => navigation.navigate("MyTransactions"),
         },
-        {
-          text: "Xác nhận",
-          onPress: async () => {
-            const res = await axiosInstance.put(
-              `transaction/reject/${transactionId}?message=${rejectMessage}`
-            );
-            if (res.data.isSuccess === true) {
-              Alert.alert("Thành công", "Bạn đã từ chối giao dịch.");
-              setShowModal(false);
-              setVerificationInput("");
-              setIsConfirm(!isConfirm);
-            }
-          },
-        },
-      ]
-    );
+      ]);
+      setShowInputRejectMessage(false);
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể từ chối giao dịch. Vui lòng thử lại sau.");
+    }
   };
+
+  const handleOpenActionModal = (transaction: Transaction, action: string) => {
+    setSelectedTransaction(transaction);
+    if (action === "confirm") {
+      setShowConfirmModal(true);
+    } else if (action === "reject") {
+      setShowInputRejectMessage(true);
+    }
+  }
 
   const formatTimeRange = (dateString: string) => {
     const date = new Date(dateString);
@@ -535,6 +537,26 @@ const MyTransactions = () => {
                       Xác thực giao dịch
                     </Text>
                   </TouchableOpacity>
+                  <View style={styles.topButtonRow}>
+
+                                      
+                                      <TouchableOpacity
+                                        style={[styles.modalButton, styles.rejectButton]}
+                                        onPress={() => handleOpenActionModal(transaction, "reject")}
+                                      >
+                                        <Text style={styles.verifyButtonText}>
+                                          Từ chối giao dịch
+                                        </Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        style={[styles.modalButton, { backgroundColor: Colors.lightGreen, alignItems: 'center' }]}
+                                        onPress={() => handleOpenActionModal(transaction, "confirm")}
+                                      >
+                                        <Text style={styles.verifyButtonText}>
+                                          Xác nhận giao dịch
+                                        </Text>
+                                      </TouchableOpacity>
+                  </View>
 
                   <TouchableOpacity
                     style={styles.detailsButton}
@@ -641,6 +663,117 @@ const MyTransactions = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      <Modal
+                    visible={showConfirmModal}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setShowConfirmModal(false)}
+                  >
+                    <View style={styles.modalContainer}>
+                      <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Xác nhận giao dịch</Text>
+      
+                        <View style={styles.modalButtonContainer}>
+                          <View style={styles.topButtonRow}>
+                            <TouchableOpacity
+                              style={[styles.modalButton, styles.cancelButton]}
+                              onPress={() => {
+                                setShowConfirmModal(false);
+                                setShowInputRejectMessage(false);
+                                setRejectMessage("");
+                              }}
+                            >
+                              <Text style={styles.cancleButtonText}>Hủy</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.modalButton, styles.verifyButton]}
+                              onPress={() => {
+                                if (selectedTransaction) {
+                                  handleVerification(selectedTransaction.id);
+                                }
+                              }}
+                            >
+                              <Text style={styles.buttonText}>Xác nhận</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
+                  <Modal
+                    visible={showInputRejectMessage}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setShowInputRejectMessage(false)}
+                  >
+                    <View style={styles.modalContainer}>
+                      <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Từ chối giao dịch</Text>
+      
+                        <Text style={styles.modalDescription}>
+                          Vui lòng nhập lý do từ chối:
+                        </Text>
+                        <TextInput
+                          placeholderTextColor="#c4c4c4"
+                          style={styles.requestInput}
+                          placeholder="Nhập tin nhắn..."
+                          value={rejectMessage}
+                          onChangeText={setRejectMessage}
+                          multiline
+                        />
+                        {rejectMessage.length > 99 && (
+                          <Text style={styles.textErrorMessage}>
+                            Lời nhắn của bạn không được vượt quá 100 ký tự.
+                          </Text>
+                        )}
+                        {rejectMessage.length === 0 && (
+                          <Text style={styles.textErrorMessage}>
+                            Bạn phải nhập lí do từ chối
+                          </Text>
+                        )}
+      
+                        <View style={styles.modalButtonContainer}>
+                          <View style={styles.topButtonRow}>
+                            <TouchableOpacity
+                              style={[styles.modalButton, styles.cancelButton]}
+                              onPress={() => {
+                                setShowConfirmModal(false);
+                                setShowInputRejectMessage(false);
+                                setRejectMessage("");
+                              }}
+                            >
+                              <Text style={styles.cancleButtonText}>Hủy</Text>
+                            </TouchableOpacity>
+      
+                            <TouchableOpacity
+                              style={[
+                                styles.modalButton,
+                                styles.rejectButton,
+                                rejectMessage.length === 0 && styles.disabledButton,
+                              ]}
+                              disabled={rejectMessage.length === 0}
+                              onPress={() => {
+                                if (selectedTransaction) {
+                                  handleReject(selectedTransaction.id);
+                                }
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.buttonText,
+                                  rejectMessage.length === 0 &&
+                                    styles.disabledButtonText,
+                                ]}
+                              >
+                                Từ chối
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
 
       <UserRatingModal
         isVisible={isRatingModalVisible}
@@ -857,7 +990,7 @@ const styles = StyleSheet.create({
   topButtonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginTop: 8,
   },
   bottomButton: {
     width: "100%",
@@ -868,6 +1001,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     flex: 0.48, // For top row buttons
+    alignItems: "center",
   },
   verifyButton: {
     padding: 12,
@@ -881,10 +1015,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   rejectButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
     backgroundColor: "#f00",
   },
   cancelButton: {
     backgroundColor: "#666",
+  },
+  cancleButtonText: {
+    color: "#eee",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
   },
   buttonText: {
     color: "white",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, Platform, TextInput } from 'react-native';
 import axiosInstance from '@/src/api/axiosInstance';
 import Colors from '@/src/constants/Colors';
 import { Product } from '@/src/shared/type';
@@ -31,6 +31,7 @@ const STATUS_LABELS = {
 
 const MyProducts = () => {
   const [activeTab, setActiveTab] = useState('approved');
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [products, setProducts] = useState({
     approved: [],
     rejected: [],
@@ -59,6 +60,36 @@ const MyProducts = () => {
         console.error('Error fetching data:', error);
       });
   }, []);
+
+  const getFilteredProducts = (products: Product[], searchQuery: string) => {
+    if (!searchQuery.trim()) return products;
+    
+    const searchLower = searchQuery.toLowerCase().trim();
+    return products.filter(product => {
+      return (
+        product.name.toLowerCase().includes(searchLower) ||
+        product.description.toLowerCase().includes(searchLower) ||
+        product.category?.name?.toLowerCase().includes(searchLower) ||
+        product.condition.toLowerCase().includes(searchLower)
+      );
+    });
+  };
+
+  const getActiveProducts = () => {
+    switch (activeTab) {
+      case 'approved':
+        return [...products.approved, ...products.inTransaction, ...products.exchanged];
+      case 'pending':
+        return products.pending;
+      case 'outOfDate':
+        return [...products.outOfDate, ...products.rejected];
+      default:
+        return [];
+    }
+  };
+
+  const currentProducts = getActiveProducts();
+  const filteredProducts = getFilteredProducts(currentProducts, searchQuery);
 
   const renderProducts = (items: Product[]) => {
     return items.map(item => (
@@ -181,10 +212,44 @@ const MyProducts = () => {
           <Text style={{fontSize: 16}}>Đã huỷ</Text>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchWrapper}>
+          <Icon
+            name="search"
+            size={20}
+            color={Colors.gray500}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            placeholderTextColor="#c4c4c4"
+            style={styles.searchInput}
+            placeholder="Tìm kiếm theo tên, mô tả, danh mục..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery !== "" && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              style={styles.clearButton}
+            >
+              <Icon name="close" size={20} color={Colors.gray500} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <ScrollView style={styles.tabContent}>
-        {activeTab === 'approved' && renderProducts([...products.approved, ...products.inTransaction, ...products.exchanged])}
-        {activeTab === 'pending' && renderProducts(products.pending)}
-        {activeTab === 'outOfDate' && renderProducts([...products.outOfDate, ...products.rejected])}
+        {filteredProducts.length > 0 ? (
+          renderProducts(filteredProducts)
+        ) : (
+          <View style={styles.emptyState}>
+            <Icon name="search-off" size={48} color={Colors.gray500} />
+            <Text style={styles.emptyStateText}>
+              Không tìm thấy sản phẩm nào phù hợp
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -320,6 +385,53 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontWeight: "bold",
   },
+    searchContainer: {
+      margin: 16,
+      marginTop: 0
+    },
+    searchWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#fff",
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 2,
+        },
+      }),
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: Colors.gray800,
+      // paddingVertical: 4,
+    },
+    clearButton: {
+      padding: 4,
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 32,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      color: Colors.gray500,
+      marginTop: 12,
+      textAlign: 'center',
+    },
 });
 
 export default MyProducts;
