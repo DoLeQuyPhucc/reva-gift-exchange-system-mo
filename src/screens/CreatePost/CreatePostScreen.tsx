@@ -17,6 +17,7 @@ import { RouteProp, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import * as ImagePicker from "expo-image-picker";
 import { CustomAlert } from "@/src/components/CustomAlert";
+import { Dropdown } from "react-native-element-dropdown";
 
 import MediaUploadSection from "@/src/components/MediaUploadSection";
 import {
@@ -30,7 +31,6 @@ import useCategories from "@/src/hooks/useCategories";
 import useCreatePost from "@/src/hooks/useCreatePost";
 import { useCategoryStore } from "@/src/stores/categoryStore";
 import Colors from "@/src/constants/Colors";
-import { CustomTimeSection } from "@/src/components/CustomTimeSection";
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, "CreatePost">;
@@ -62,6 +62,29 @@ interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, "CreatePost">;
   navigation: NavigationProp<RootStackParamList>;
 }
+
+const CustomCheckbox = ({
+  checked,
+  onPress,
+  label,
+}: {
+  checked: boolean;
+  onPress: () => void;
+  label: string;
+}) => {
+  return (
+    <TouchableOpacity
+      style={styles.customCheckboxContainer}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+        {checked && <Text style={styles.checkmark}>✓</Text>}
+      </View>
+      <Text style={styles.checkboxLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   navigation,
@@ -113,7 +136,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   const [video, setVideo] = useState<string | null>(null);
   const [condition, setCondition] = useState<ItemCondition | "">("");
   const [isExchange, setIsExchange] = useState<boolean>(false);
-  const [isGift, setIsGift] = useState<boolean>(false);
+  const [isGift, setIsGift] = useState<boolean>(true);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -135,6 +158,9 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>("");
   const [frameStartTime, setFrameStartTime] = useState<string>("09:00");
   const [frameEndTime, setFrameEndTime] = useState<string>("21:00");
+
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   useEffect(() => {
     if (addressData.length > 0) {
@@ -502,7 +528,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     }
   };
 
-  // Update the removeVideo function to log the action
   const removeVideo = () => {
     console.log("Removing video from state");
     setVideo("");
@@ -544,19 +569,27 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
       console.log("Form Data: ", postData);
 
-      const response = await submitPost(postData);
+      // const response = await submitPost(postData);
 
-      console.log("Submit response:", response);
+      // console.log("Submit response:", response);
 
-      if (response === true) {
-        setShowSuccessAlert(true);
-      }
+      // if (response === true) {
+      //   setShowSuccessAlert(true);
+      // }
     } catch (error) {
       Alert.alert("Error", "Failed to create post");
       console.error("Submit error:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleStartTimePress = () => {
+    setShowStartTimePicker(true);
+  };
+
+  const handleEndTimePress = () => {
+    setShowEndTimePicker(true);
   };
 
   const CustomPerDayTimeSection = () => {
@@ -628,38 +661,76 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             <View style={styles.timePickersRow}>
               <View style={styles.timePickerWrapper}>
                 <Text style={styles.timeLabel}>Từ</Text>
-                <Picker
-                  selectedValue={frameStartTime}
-                  onValueChange={setFrameStartTime}
-                  style={styles.enhancedTimePicker}
-                >
-                  {TIME_SLOTS.map((slot) => (
-                    <Picker.Item
-                      key={slot.value}
-                      label={slot.label}
-                      value={slot.value}
-                    />
-                  ))}
-                </Picker>
+                <View style={styles.timeInputContainer}>
+                  <TextInput
+                    style={styles.timeInput}
+                    value={frameStartTime}
+                    editable={false}
+                    placeholder="00:00"
+                  />
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={handleStartTimePress}
+                  >
+                    <Text style={styles.timePickerButtonText}>▼</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.timePickerWrapper}>
                 <Text style={styles.timeLabel}>Đến</Text>
-                <Picker
-                  selectedValue={frameEndTime}
-                  onValueChange={setFrameEndTime}
-                  style={styles.enhancedTimePicker}
-                >
-                  {TIME_SLOTS.map((slot) => (
-                    <Picker.Item
-                      key={slot.value}
-                      label={slot.label}
-                      value={slot.value}
-                    />
-                  ))}
-                </Picker>
+                <View style={styles.timeInputContainer}>
+                  <TextInput
+                    style={styles.timeInput}
+                    value={frameEndTime}
+                    editable={false}
+                    placeholder="00:00"
+                  />
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={handleEndTimePress}
+                  >
+                    <Text style={styles.timePickerButtonText}>▼</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
+
+            {showStartTimePicker && (
+              <Picker
+                selectedValue={frameStartTime}
+                onValueChange={(itemValue) => {
+                  setFrameStartTime(itemValue);
+                  setShowStartTimePicker(false);
+                }}
+              >
+                {TIME_SLOTS.map((slot) => (
+                  <Picker.Item
+                    key={slot.value}
+                    label={slot.label}
+                    value={slot.value}
+                  />
+                ))}
+              </Picker>
+            )}
+
+            {showEndTimePicker && (
+              <Picker
+                selectedValue={frameEndTime}
+                onValueChange={(itemValue) => {
+                  setFrameEndTime(itemValue);
+                  setShowEndTimePicker(false);
+                }}
+              >
+                {TIME_SLOTS.map((slot) => (
+                  <Picker.Item
+                    key={slot.value}
+                    label={slot.label}
+                    value={slot.value}
+                  />
+                ))}
+              </Picker>
+            )}
 
             <TouchableOpacity
               style={styles.addFrameButton}
@@ -700,6 +771,22 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     );
   };
 
+  // Định dạng data cho dropdown
+  const categoryData = categories.map((cat) => ({
+    label: cat.name,
+    value: cat.id,
+  }));
+
+  const subCategoryData = subCategories.map((subCat) => ({
+    label: subCat.name,
+    value: subCat.id,
+  }));
+
+  const conditionData = conditions.map((condition) => ({
+    label: condition.name,
+    value: condition.id,
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -716,48 +803,55 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Danh Mục</Text>
           <View style={styles.categoryContainer}>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedCategory?.id || ""}
-                onValueChange={handleCategoryChange}
-              >
-                <Picker.Item label="Chọn danh mục" value="" />
-                {categories.map((category) => (
-                  <Picker.Item
-                    key={category.id}
-                    label={category.name}
-                    value={category.id}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <Dropdown
+              style={styles.dropdown}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              data={categoryData}
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Chọn danh mục"
+              value={selectedCategory?.id}
+              onChange={(item) => {
+                handleCategoryChange(item.value);
+              }}
+            />
 
             {selectedCategory && (
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedSubCategory?.id || ""}
-                  onValueChange={handleSubCategoryChange}
-                >
-                  <Picker.Item label="Chọn danh mục phụ" value="" />
-                  {subCategories.map((subCategory) => (
-                    <Picker.Item
-                      key={subCategory.id}
-                      label={subCategory.name}
-                      value={subCategory.id}
-                    />
-                  ))}
-                </Picker>
-              </View>
+              <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={subCategoryData}
+                maxHeight={300}
+                labelField="label"
+                valueField="value"
+                placeholder="Chọn danh mục phụ"
+                value={selectedSubCategory?.id}
+                onChange={(item) => {
+                  handleSubCategoryChange(item.value);
+                }}
+              />
             )}
+          </View>
 
-            {selectedCategory && selectedSubCategory && (
-              <View style={styles.selectedCategoryDisplay}>
-                <Text style={styles.selectedCategoryText}>
-                  Danh mục đã chọn: {selectedCategory.name} -{" "}
-                  {selectedSubCategory.name}
-                </Text>
-              </View>
-            )}
+          {/* Condition Dropdown */}
+          <View style={[styles.pickerWrapper, styles.conditionWrapper]}>
+            <Dropdown
+              style={styles.dropdown}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              data={conditionData}
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Chọn tình trạng sản phẩm"
+              value={condition}
+              onChange={(item) => {
+                setCondition(item.value);
+              }}
+            />
           </View>
         </View>
 
@@ -776,18 +870,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             onRemoveImage={removeImage}
             onRemoveVideo={removeVideo}
           />
-
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={condition}
-              onValueChange={(value: ItemCondition | "") => setCondition(value)}
-            >
-              <Picker.Item label="Tình trạng" value="" />
-              {conditions.map((item) => (
-                <Picker.Item key={item.id} label={item.name} value={item.id} />
-              ))}
-            </Picker>
-          </View>
         </View>
 
         {/* Post Type Selection */}
@@ -817,60 +899,45 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             </RadioButton.Group>
           </View>
 
+          {/* Desired Category Dropdown (for exchange) */}
           {isExchange && (
-            <Text style={styles.exchangeHint}>
-              Bạn nên ghi rõ món đồ mình cần trao đổi để có được trải nghiệm tốt
-              nhất.
-            </Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Danh mục muốn trao đổi</Text>
+              <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={categoryData}
+                maxHeight={300}
+                labelField="label"
+                valueField="value"
+                placeholder="Chọn danh mục"
+                value={desiredCategoryId}
+                onChange={(item) => {
+                  setDesiredCategoryId(item.value);
+                  setDesiredSubCategoryId(null);
+                }}
+              />
+
+              {desiredCategoryId && (
+                <Dropdown
+                  style={[styles.dropdown, { marginTop: 12 }]}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  data={subCategoryData}
+                  maxHeight={300}
+                  labelField="label"
+                  valueField="value"
+                  placeholder="Chọn danh mục phụ"
+                  value={desiredSubCategoryId}
+                  onChange={(item) => {
+                    setDesiredSubCategoryId(item.value);
+                  }}
+                />
+              )}
+            </View>
           )}
         </View>
-
-        {/* New section for categories and subcategories */}
-        {isExchange && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Danh mục muốn trao đổi</Text>
-
-            <Picker
-              selectedValue={desiredCategoryId}
-              onValueChange={async (itemValue) => {
-                setDesiredCategoryId(itemValue);
-                setDesiredSubCategoryId("");
-                if (itemValue) {
-                  await getSubCategories(itemValue);
-                }
-              }}
-              style={styles.picker}
-            >
-              <Picker.Item label="Chọn danh mục" value="" />
-              {categories.map((category) => (
-                <Picker.Item
-                  key={category.id}
-                  label={category.name}
-                  value={category.id}
-                />
-              ))}
-            </Picker>
-
-            {desiredCategoryId && (
-              <Picker
-                selectedValue={desiredSubCategoryId}
-                onValueChange={(itemValue) =>
-                  setDesiredSubCategoryId(itemValue)
-                }
-                style={styles.picker}
-              >
-                <Picker.Item label="Chọn danh mục phụ" value="" />
-                {subCategories.map((subCategory) => (
-                  <Picker.Item
-                    key={subCategory.id}
-                    label={subCategory.name}
-                    value={subCategory.id}
-                  />
-                ))}
-              </Picker>
-            )}
-          </View>
-        )}
 
         {/* Title and Description */}
         <View style={styles.section}>
@@ -988,15 +1055,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
         {/* Terms and Conditions Checkbox */}
         <View style={styles.section}>
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              status={isTermsAccepted ? "checked" : "unchecked"}
-              onPress={() => setIsTermsAccepted(!isTermsAccepted)}
-            />
-            <Text style={styles.checkboxLabel}>
-              Tôi đồng ý với các điều khoản và điều kiện
-            </Text>
-          </View>
+          <CustomCheckbox
+            checked={isTermsAccepted}
+            onPress={() => setIsTermsAccepted(!isTermsAccepted)}
+            label="Tôi cam kết các thông tin là chính xác và đúng với thực tế"
+          />
         </View>
       </ScrollView>
 
@@ -1263,51 +1326,52 @@ const styles = StyleSheet.create({
   timePickersRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 16,
+    marginTop: 8,
   },
   timePickerWrapper: {
     flex: 1,
   },
   timeLabel: {
+    fontSize: 15,
+    color: Colors.gray700,
     marginBottom: 8,
   },
-  enhancedTimePicker: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    height: 48,
-  },
-  weekdayGrid: {
+  timeInputContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.gray300,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    overflow: "hidden",
   },
-  weekdayChip: {
-    marginBottom: 8,
+  timeInput: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: Colors.gray800,
   },
-  customPerDayContainer: {
-    marginTop: 16,
-    gap: 16,
+  timePickerButton: {
+    padding: 12,
+    borderLeftWidth: 1,
+    borderLeftColor: Colors.gray300,
   },
-  timeFrameSelectionContainer: {
-    backgroundColor: "#f5f5f5",
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  timeFrameLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 8,
+  timePickerButtonText: {
+    fontSize: 12,
+    color: Colors.gray600,
   },
   addFrameButton: {
     backgroundColor: Colors.orange500,
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 14,
+    marginTop: 16,
   },
   addFrameButtonText: {
     color: "white",
+    fontSize: 16,
     fontWeight: "500",
   },
   selectedFramesContainer: {
@@ -1424,13 +1488,94 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  checkboxLabel: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#333",
-  },
   disabledButton: {
     backgroundColor: "#ccc",
+  },
+  customPerDayContainer: {
+    padding: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+  },
+  timeFrameLabel: {
+    fontSize: 15,
+    color: Colors.gray700,
+    marginBottom: 12,
+  },
+  pickerWrapper: {
+    marginBottom: 12,
+  },
+  customInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.gray300,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+  },
+  customInput: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: Colors.gray800,
+  },
+  dropdownButton: {
+    padding: 12,
+    borderLeftWidth: 1,
+    borderLeftColor: Colors.gray300,
+  },
+  dropdownButtonText: {
+    fontSize: 12,
+    color: Colors.gray600,
+  },
+  conditionWrapper: {
+    marginTop: 16,
+  },
+  customCheckboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 8,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.orange500,
+    backgroundColor: "white",
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.orange500,
+  },
+  checkmark: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    color: Colors.gray800,
+    flex: 1,
+  },
+  dropdown: {
+    height: 50,
+    borderColor: Colors.gray300,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "white",
+  },
+  placeholderStyle: {
+    fontSize: 16,
+    color: Colors.gray500,
+  },
+  selectedTextStyle: {
+    fontSize: 16,
+    color: Colors.gray800,
   },
 });
 
