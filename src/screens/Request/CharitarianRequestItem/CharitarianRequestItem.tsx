@@ -68,12 +68,16 @@ const CharitarianRequestItem = () => {
         key={item.id}
         style={styles.card}
         onPress={() =>
-          navigation.navigate("ProductDetail", { productId: item.id })
+          navigation.navigate("MyRequests", {
+            productId: item.id,
+            type: "requestsForMe",
+          })
         }
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.name}</Text>
-          <View
+          <View></View>
+          {/* <View
             style={[
               styles.statusBadge,
               { backgroundColor: `${STATUS_COLORS[item?.status]}15` },
@@ -93,7 +97,7 @@ const CharitarianRequestItem = () => {
             >
               {STATUS_LABELS[item?.status as keyof typeof STATUS_LABELS]}
             </Text>
-          </View>
+          </View> */}
         </View>
         <View style={styles.productInfo}>
           <Image source={{ uri: item.images[0] }} style={styles.image} />
@@ -122,33 +126,11 @@ const CharitarianRequestItem = () => {
         {activeTab === "approved" && (
           <View style={styles.cardFooter}>
             <View></View>
-            {/* <TouchableOpacity
-            style={[
-              styles.statusBadge,
-              { backgroundColor: `${Colors.orange500}15` },
-            ]}
-            onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'itemRequestTo' })}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                { color: Colors.orange500 },
-              ]}
-            >
-              {item.itemRequestTo} yêu cầu đã gửi đi
-            </Text>
-          </TouchableOpacity> */}
             <TouchableOpacity
               style={[
                 styles.statusBadge,
                 { backgroundColor: `${Colors.lightRed}15` },
               ]}
-              onPress={() =>
-                navigation.navigate("MyRequests", {
-                  productId: item.id,
-                  type: "requestsForMe",
-                })
-              }
             >
               <Text style={[styles.statusText, { color: Colors.lightRed }]}>
                 {item.requestForItem} yêu cầu được gửi tới

@@ -56,13 +56,13 @@ export default function ResultScanTransaction() {
         `transaction/own-transactions/${transactionResult.transactionId}`
       );
 
-      console.log("response", response.data.data);
+      console.log("response", response.data.data[0]);
 
       if (!response.data.data) {
         setError("Không tìm thấy thông tin giao dịch");
         return;
       }
-      setTransaction(response.data.data);
+      setTransaction(response.data.data[0]);
     } catch (error) {
       setError("Có lỗi xảy ra khi tải thông tin giao dịch");
       console.error("Error fetching transaction:", error);
@@ -163,7 +163,8 @@ export default function ResultScanTransaction() {
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
           text: "OK",
-          onPress: () => navigation.navigate("MyTransactions"),
+          onPress: () =>
+            navigation.navigate("MyTransactions", { requestId: "" }),
         },
       ]);
       setShowConfirmModal(false);
@@ -174,11 +175,14 @@ export default function ResultScanTransaction() {
 
   const handleReject = async (transactionId: string) => {
     try {
-      await axiosInstance.put(`transaction/reject/${transactionId}?message=${rejectMessage}`);
+      await axiosInstance.put(
+        `transaction/reject/${transactionId}?message=${rejectMessage}`
+      );
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
-          onPress: () => navigation.navigate("MyTransactions"),
+          onPress: () =>
+            navigation.navigate("MyTransactions", { requestId: "" }),
         },
       ]);
       setShowInputRejectMessage(false);
@@ -365,17 +369,19 @@ export default function ResultScanTransaction() {
                 </View>
               </View>
 
-              <View style={styles.dateInfo}>
-                <Text>
-                  <Icon
-                    name="question-answer"
-                    size={14}
-                    color={Colors.orange500}
-                  />
-                  {"  "}
-                  Lời nhắn từ người cho: {transaction.requestNote}
-                </Text>
-              </View>
+              {transaction.requestNote !== "" && (
+                <View style={styles.dateInfo}>
+                  <Text style={styles.dateLabel}>
+                    <Icon
+                      name="question-answer"
+                      size={12}
+                      color={Colors.orange500}
+                    />
+                    {"  "}
+                    Lời nhắn từ người cho: {transaction.requestNote}
+                  </Text>
+                </View>
+              )}
 
               {/* <View style={styles.dateInfo}>
           <Text>
@@ -404,10 +410,12 @@ export default function ResultScanTransaction() {
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => navigation.goBack()}
+                      style={styles.backButton}
+                      onPress={() =>
+                        navigation.goBack()
+                      }
                     >
-                      <Text style={styles.cancelButtonText}>Quay lại</Text>
+                      <Text style={styles.backButtonText}>Quay lại</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -559,10 +567,12 @@ export default function ResultScanTransaction() {
             Giao dịch này không phải của bạn
           </Text>
           <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            onPress={() =>
+              navigation.goBack()
+            }
           >
-            <Text style={styles.cancelButtonText}>Quay lại</Text>
+            <Text style={styles.backButtonText}>Quay lại</Text>
           </TouchableOpacity>
         </View>
       </>
@@ -574,7 +584,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    paddingVertical: 50,
   },
   card: {
     margin: 16,
@@ -823,7 +832,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
   },
-  cancelButtonText: {
+  backButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    borderColor: Colors.orange500,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  backButtonText: {
     color: Colors.orange500,
     fontSize: 16,
     fontWeight: "600",
@@ -960,7 +978,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff3e0",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginVertical: 16,
   },
   warningText: {
     marginLeft: 8,

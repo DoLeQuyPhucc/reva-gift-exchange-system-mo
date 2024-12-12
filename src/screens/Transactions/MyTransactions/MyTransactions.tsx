@@ -27,8 +27,18 @@ import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 import ReportModal from "@/src/components/ReportModal";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { TextInput } from "react-native";
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
+
+type MyTransactionsScreenRouteProp = RouteProp<
+  RootStackParamList,
+  "MyTransactions"
+>;
 
 const MyTransactions = () => {
+  const route = useRoute<MyTransactionsScreenRouteProp>();
+  const requestId = route.params.requestId;
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
@@ -47,14 +57,14 @@ const MyTransactions = () => {
   const [isConfirm, setIsConfirm] = useState(false);
 
   const [showInputRejectMessage, setShowInputRejectMessage] = useState(false);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [rejectMessage, setRejectMessage] = useState<string>("");
-  
+
   const navigation = useNavigation();
 
   useEffect(() => {
     fetchTransactions();
-  }, [isConfirm]);
+  }, [isConfirm, requestId]);
 
   useEffect(() => {
     if (selectedTransaction?.status === "In_Progress") {
@@ -64,7 +74,13 @@ const MyTransactions = () => {
 
   const fetchTransactions = async () => {
     try {
-      const response = await axiosInstance.get("transaction/own-transactions");
+      let response;
+      if (requestId === "") {
+        response = await axiosInstance.get("transaction/own-transactions");
+      } else {
+        response = await axiosInstance.get(`transaction/${requestId}`);
+        console.log(response.data.data);
+      }
 
       if (!response.data.data) {
         return;
@@ -135,7 +151,8 @@ const MyTransactions = () => {
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
           text: "OK",
-          onPress: () => navigation.navigate("MyTransactions"),
+          onPress: () =>
+            navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowConfirmModal(false);
@@ -146,11 +163,14 @@ const MyTransactions = () => {
 
   const handleReject = async (transactionId: string) => {
     try {
-      await axiosInstance.put(`transaction/reject/${transactionId}?message=${rejectMessage}`);
+      await axiosInstance.put(
+        `transaction/reject/${transactionId}?message=${rejectMessage}`
+      );
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
-          onPress: () => navigation.navigate("MyTransactions"),
+          onPress: () =>
+            navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowInputRejectMessage(false);
@@ -166,7 +186,7 @@ const MyTransactions = () => {
     } else if (action === "reject") {
       setShowInputRejectMessage(true);
     }
-  }
+  };
 
   const formatTimeRange = (dateString: string) => {
     const date = new Date(dateString);
@@ -303,9 +323,9 @@ const MyTransactions = () => {
       case "In_Progress":
         return "Đang diễn ra";
       case "Completed":
-        return "Hoàn thành";
+        return "Đã hoàn thành";
       case "Not_Completed":
-        return "Đã hủy";
+        return "Không thành công";
       default:
         return status;
     }
@@ -351,285 +371,444 @@ const MyTransactions = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.resultCount}>{transactions.length} giao dịch</Text>
-        {transactions.map((transaction) => (
-          <View key={transaction.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                {getTransactionTitle(transaction)}
-              </Text>
-              <View style={styles.statusContainer}>
-                <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: getStatusColor(transaction.status) },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.status,
-                    { color: getStatusColor(transaction.status) },
-                  ]}
-                >
-                  {getStatusText(transaction.status)}
-                </Text>
-              </View>
-            </View>
-
-            {transaction.requesterItem ? (
-              <View style={styles.productsContainer}>
-                <View style={styles.productCard}>
-                  <Image
-                    source={{
-                      uri: transaction.requesterItem?.itemImages[0],
-                    }}
-                    style={styles.productImage}
-                  />
-                  <Text style={styles.productName} numberOfLines={2}>
-                    {transaction.requesterItem?.itemName}
+        {requestId === "" ? (
+          <>
+            <Text style={styles.resultCount}>
+              {transactions.length} giao dịch
+            </Text>
+            {transactions.map((transaction) => (
+              <TouchableOpacity
+                key={transaction.id}
+                style={styles.card}
+                onPress={() =>
+                  navigation.navigate("MyTransactions", {
+                    requestId: transaction.requestId,
+                  })
+                }
+              >
+                <View style={styles.cardHeaderList}>
+                  <Text style={styles.cardTitleList}>
+                    {getTransactionTitle(transaction)}
                   </Text>
-                  <Text style={styles.ownerName}>
-                    {transaction.requester.name}
-                  </Text>
-                </View>
-
-                <View style={styles.exchangeContainer}>
-                  <Icon name="swap-vert" size={24} color={Colors.orange500} />
-                </View>
-
-                {/* Recipient's Product */}
-                <View style={styles.productCard}>
-                  <Image
-                    source={{
-                      uri: transaction.charitarianItem.itemImages[0],
-                    }}
-                    style={styles.productImage}
-                  />
-                  <Text style={styles.productName} numberOfLines={2}>
-                    {transaction.charitarianItem.itemName}
-                  </Text>
-                  <Text style={styles.ownerName}>
-                    {transaction.charitarian.name}
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.productCard}>
-                <Image
-                  source={{
-                    uri: transaction.charitarianItem.itemImages[0],
-                  }}
-                  style={styles.productImage}
-                />
-                <Text style={styles.productName} numberOfLines={2}>
-                  {transaction.charitarianItem.itemName}
-                </Text>
-                <Text style={styles.ownerName}>
-                  {transaction.charitarian.name}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.dateInfo}>
-              <View style={styles.dateRow}>
-                <Text style={styles.dateLabel}>Ngày tạo:</Text>
-                <Text style={styles.dateValue}>
-                  {formatDate(transaction.createdAt)}
-                </Text>
-              </View>
-              <View style={styles.dateRow}>
-                <Text style={styles.dateLabel}>Thời gian hẹn:</Text>
-                <Text style={styles.dateValue}>
-                  {formatDate(transaction.appointmentDate)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.dateInfo}>
-              <Text>
-                <Icon
-                  name="question-answer"
-                  size={14}
-                  color={Colors.orange500}
-                />{"  "}
-                Lời nhắn từ người cho: {transaction.requestNote}
-              </Text>
-            </View>
-
-            <View style={styles.dateInfo}>
-              <Text>
-                <Icon name="info" size={14} color={Colors.orange500} /> Lưu ý:
-                Bạn nên tới vào lúc{" "}
-                {formatTimeRange(transaction.appointmentDate)} để có thể thấy
-                được mã xác nhận và hoàn thành giao dịch.
-              </Text>
-            </View>
-
-            {transaction.rejectMessage && (
-              <Text style={styles.rejectMessage}>
-                Từ chối: {transaction.rejectMessage}
-              </Text>
-            )}
-
-            {transaction.status === "In_Progress" &&
-              checkRole(transaction) === "requester" && (
-                <>
-                  <TouchableOpacity
-                    style={styles.verifyButton}
-                    onPress={() => {
-                      setSelectedTransaction(transaction);
-                      setShowModal(true);
-                      setVerificationInput("");
-                    }}
-                  >
-                    <Text style={styles.verifyButtonText}>
-                      Xem mã định danh
+                  <View style={styles.statusContainerList}>
+                    <View
+                      style={[
+                        styles.statusDotList,
+                        { backgroundColor: getStatusColor(transaction.status) },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.statusList,
+                        { color: getStatusColor(transaction.status) },
+                      ]}
+                    >
+                      {getStatusText(transaction.status)}
                     </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => {
-                      const data: LocationMap = {
-                        latitude: parseFloat(
-                          transaction.charitarianAddress.addressCoordinates
-                            .latitude
-                        ),
-                        longitude: parseFloat(
-                          transaction.charitarianAddress.addressCoordinates
-                            .longitude
-                        ),
-                      };
-                      setLocation(data);
-                      setShowMapModal(true);
-                    }}
-                  >
-                    <View style={styles.detailsButtonContent}>
-                      <Icon name="map" size={20} color={Colors.orange500} />
-                      <Text style={styles.detailsButtonText}>Xem địa chỉ</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => {
-                      console.log("Gọi điện");
-                    }}
-                  >
-                    <View style={styles.detailsButtonContent}>
-                      <Icon name="phone" size={20} color={Colors.orange500} />
-                      <Text style={styles.detailsButtonText}>Gọi điện</Text>
-                    </View>
-                  </TouchableOpacity>
-                </>
-              )}
-
-            {transaction.status === "In_Progress" &&
-              checkRole(transaction) === "charitarian" && (
-                <>
-                  <TouchableOpacity
-                    style={styles.verifyButton}
-                    onPress={() => {
-                      navigation.navigate("QRScanner")
-                    }}
-                  >
-                    <Text style={styles.verifyButtonText}>
-                      Xác thực giao dịch
-                    </Text>
-                  </TouchableOpacity>
-                  <View style={styles.topButtonRow}>
-
-                                      
-                                      <TouchableOpacity
-                                        style={[styles.modalButton, styles.rejectButton]}
-                                        onPress={() => handleOpenActionModal(transaction, "reject")}
-                                      >
-                                        <Text style={styles.verifyButtonText}>
-                                          Từ chối giao dịch
-                                        </Text>
-                                      </TouchableOpacity>
-                                      <TouchableOpacity
-                                        style={[styles.modalButton, { backgroundColor: Colors.lightGreen, alignItems: 'center' }]}
-                                        onPress={() => handleOpenActionModal(transaction, "confirm")}
-                                      >
-                                        <Text style={styles.verifyButtonText}>
-                                          Xác nhận giao dịch
-                                        </Text>
-                                      </TouchableOpacity>
                   </View>
+                </View>
 
-                  <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => {
-                      console.log("Gọi điện");
-                    }}
-                  >
-                    <View style={styles.detailsButtonContent}>
-                      <Icon name="phone" size={20} color={Colors.orange500} />
-                      <Text style={styles.detailsButtonText}>Gọi điện</Text>
+                {transaction.requesterItem ? (
+                  <View style={styles.productsContainerList}>
+                    <View style={styles.productCardList}>
+                      <Image
+                        source={{
+                          uri: transaction.requesterItem?.itemImages[0],
+                        }}
+                        style={styles.productImageList}
+                      />
+                      <Text style={styles.productNameList} numberOfLines={2}>
+                        {transaction.requesterItem?.itemName}
+                      </Text>
+                      <Text style={styles.ownerNameList}>
+                        {transaction.requester.name}
+                      </Text>
                     </View>
-                  </TouchableOpacity>
-                </>
-              )}
 
-            {(transaction.status === "Completed" ||
-              transaction.status === "Not_Completed") && (
-              <>
-                <TouchableOpacity
-                  style={[styles.verifyButton, { opacity: 0.5 }]}
-                  disabled={true}
-                >
-                  <Text style={styles.verifyButtonText}>Đã xác thực</Text>
-                </TouchableOpacity>
-                {transaction.rating === null || transaction.rating === 0 ? (
-                  <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => handleOpenRatingModal(transaction)}
-                  >
-                    <View style={styles.detailsButtonContent}>
+                    <View style={styles.exchangeContainerList}>
                       <Icon
-                        name="drive-file-rename-outline"
-                        size={20}
+                        name="swap-vert"
+                        size={24}
                         color={Colors.orange500}
                       />
-                      <Text style={styles.detailsButtonText}>Đánh giá</Text>
                     </View>
-                  </TouchableOpacity>
+
+                    {/* Recipient's Product */}
+                    <View style={styles.productCardList}>
+                      <Image
+                        source={{
+                          uri: transaction.charitarianItem.itemImages[0],
+                        }}
+                        style={styles.productImageList}
+                      />
+                      <Text style={styles.productNameList} numberOfLines={2}>
+                        {transaction.charitarianItem.itemName}
+                      </Text>
+                      <Text style={styles.ownerNameList}>
+                        {transaction.charitarian.name}
+                      </Text>
+                    </View>
+                  </View>
                 ) : (
-                  <>
-                    <View style={styles.starContainer}>
-                      <Text style={styles.titleText}>Đánh giá giao dịch</Text>
-                      <View style={styles.ratingContainer}>
-                        <Text style={styles.labelText}>Chất lượng: </Text>
-                        <Text style={styles.starText}>
-                          {renderStars(transaction.rating || 0)}
-                        </Text>
-                      </View>
-                      {transaction.ratingComment && (
-                        <View style={styles.commentContainer}>
-                          <Text style={styles.labelText}>Nhận xét: </Text>
-                          <Text style={styles.commentText}>
-                            {transaction.ratingComment}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </>
+                  <View style={styles.productCardList}>
+                    <Image
+                      source={{
+                        uri: transaction.charitarianItem.itemImages[0],
+                      }}
+                      style={styles.productImageList}
+                    />
+                    <Text style={styles.productName} numberOfLines={2}>
+                      {transaction.charitarianItem.itemName}
+                    </Text>
+                    <Text style={styles.ownerNameList}>
+                      {transaction.charitarian.name}
+                    </Text>
+                  </View>
                 )}
 
-                <TouchableOpacity
-                  style={styles.detailsButton}
-                  onPress={() => handleOpenReportModal(transaction)}
-                >
-                  <View style={styles.detailsButtonContent}>
-                    <Icon name="report" size={20} color={Colors.orange500} />
-                    <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                <View style={styles.dateInfoList}>
+                  <View style={styles.dateRowList}>
+                    <Text style={styles.dateLabelList}>Ngày tạo:</Text>
+                    <Text style={styles.dateValueList}>
+                      {formatDate(transaction.createdAt)}
+                    </Text>
                   </View>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        ))}
+                  <View style={styles.dateRowList}>
+                    <Text style={styles.dateLabelList}>Thời gian hẹn:</Text>
+                    <Text style={styles.dateValueList}>
+                      {formatDate(transaction.appointmentDate)}
+                    </Text>
+                  </View>
+                </View>
+                {transaction.requestNote !== "" && (
+                  <View style={styles.dateInfoList}>
+                    <Text style={styles.dateLabelList}>
+                      <Icon
+                        name="question-answer"
+                        size={12}
+                        color={Colors.orange500}
+                      />
+                      {"  "}
+                      Lời nhắn từ người cho: {transaction.requestNote}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : (
+          <>
+            {transactions.map((transaction) => (
+              <View key={transaction.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>
+                    {getTransactionTitle(transaction)}
+                  </Text>
+                  <View style={styles.statusContainer}>
+                    <View
+                      style={[
+                        styles.statusDot,
+                        { backgroundColor: getStatusColor(transaction.status) },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.status,
+                        { color: getStatusColor(transaction.status) },
+                      ]}
+                    >
+                      {getStatusText(transaction.status)}
+                    </Text>
+                  </View>
+                </View>
+
+                {transaction.requesterItem ? (
+                  <View style={styles.productsContainer}>
+                    <View style={styles.productCard}>
+                      <Image
+                        source={{
+                          uri: transaction.requesterItem?.itemImages[0],
+                        }}
+                        style={styles.productImage}
+                      />
+                      <Text style={styles.productName} numberOfLines={2}>
+                        {transaction.requesterItem?.itemName}
+                      </Text>
+                      <Text style={styles.ownerName}>
+                        {transaction.requester.name}
+                      </Text>
+                    </View>
+
+                    <View style={styles.exchangeContainer}>
+                      <Icon
+                        name="swap-vert"
+                        size={24}
+                        color={Colors.orange500}
+                      />
+                    </View>
+
+                    {/* Recipient's Product */}
+                    <View style={styles.productCard}>
+                      <Image
+                        source={{
+                          uri: transaction.charitarianItem.itemImages[0],
+                        }}
+                        style={styles.productImage}
+                      />
+                      <Text style={styles.productName} numberOfLines={2}>
+                        {transaction.charitarianItem.itemName}
+                      </Text>
+                      <Text style={styles.ownerName}>
+                        {transaction.charitarian.name}
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.productCard}>
+                    <Image
+                      source={{
+                        uri: transaction.charitarianItem.itemImages[0],
+                      }}
+                      style={styles.productImage}
+                    />
+                    <Text style={styles.productName} numberOfLines={2}>
+                      {transaction.charitarianItem.itemName}
+                    </Text>
+                    <Text style={styles.ownerName}>
+                      {transaction.charitarian.name}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.dateInfo}>
+                  <View style={styles.dateRow}>
+                    <Text style={styles.dateLabel}>Ngày tạo:</Text>
+                    <Text style={styles.dateValue}>
+                      {formatDate(transaction.createdAt)}
+                    </Text>
+                  </View>
+                  <View style={styles.dateRow}>
+                    <Text style={styles.dateLabel}>Thời gian hẹn:</Text>
+                    <Text style={styles.dateValue}>
+                      {formatDate(transaction.appointmentDate)}
+                    </Text>
+                  </View>
+                </View>
+
+                {transaction.requestNote !== "" && (
+                  <View style={styles.dateInfo}>
+                    <Text style={styles.dateLabel}>
+                      <Icon
+                        name="question-answer"
+                        size={12}
+                        color={Colors.orange500}
+                      />
+                      {"  "}
+                      Lời nhắn từ người cho: {transaction.requestNote}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.dateInfo}>
+                  <Text style={styles.dateLabel}>
+                    <Icon name="info" size={14} color={Colors.orange500} /> Lưu
+                    ý: Bạn nên tới vào lúc{" "}
+                    {formatTimeRange(transaction.appointmentDate)} để có thể
+                    thấy được mã xác nhận và hoàn thành giao dịch.
+                  </Text>
+                </View>
+
+                {transaction.rejectMessage && (
+                  <Text style={styles.rejectMessage}>
+                    Từ chối: {transaction.rejectMessage}
+                  </Text>
+                )}
+
+                {transaction.status === "In_Progress" &&
+                  checkRole(transaction) === "requester" && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.verifyButton}
+                        onPress={() => {
+                          setSelectedTransaction(transaction);
+                          setShowModal(true);
+                          setVerificationInput("");
+                        }}
+                      >
+                        <Text style={styles.verifyButtonText}>
+                          Xem mã định danh
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.detailsButton}
+                        onPress={() => {
+                          const data: LocationMap = {
+                            latitude: parseFloat(
+                              transaction.charitarianAddress.addressCoordinates
+                                .latitude
+                            ),
+                            longitude: parseFloat(
+                              transaction.charitarianAddress.addressCoordinates
+                                .longitude
+                            ),
+                          };
+                          setLocation(data);
+                          setShowMapModal(true);
+                        }}
+                      >
+                        <View style={styles.detailsButtonContent}>
+                          <Icon name="map" size={20} color={Colors.orange500} />
+                          <Text style={styles.detailsButtonText}>
+                            Xem địa chỉ
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.detailsButton}
+                        onPress={() => {
+                          console.log("Gọi điện");
+                        }}
+                      >
+                        <View style={styles.detailsButtonContent}>
+                          <Icon
+                            name="phone"
+                            size={20}
+                            color={Colors.orange500}
+                          />
+                          <Text style={styles.detailsButtonText}>Gọi điện</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                {transaction.status === "In_Progress" &&
+                  checkRole(transaction) === "charitarian" && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.verifyButton}
+                        onPress={() => {
+                          navigation.navigate("QRScanner");
+                        }}
+                      >
+                        <Text style={styles.verifyButtonText}>
+                          Xác thực giao dịch
+                        </Text>
+                      </TouchableOpacity>
+                      <View style={styles.topButtonRow}>
+                        <TouchableOpacity
+                          style={[styles.modalButton, styles.rejectButton]}
+                          onPress={() =>
+                            handleOpenActionModal(transaction, "reject")
+                          }
+                        >
+                          <Text style={styles.verifyButtonText}>
+                            Từ chối giao dịch
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.modalButton,
+                            {
+                              backgroundColor: Colors.lightGreen,
+                              alignItems: "center",
+                            },
+                          ]}
+                          onPress={() =>
+                            handleOpenActionModal(transaction, "confirm")
+                          }
+                        >
+                          <Text style={styles.verifyButtonText}>
+                            Xác nhận giao dịch
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.detailsButton}
+                        onPress={() => {
+                          console.log("Gọi điện");
+                        }}
+                      >
+                        <View style={styles.detailsButtonContent}>
+                          <Icon
+                            name="phone"
+                            size={20}
+                            color={Colors.orange500}
+                          />
+                          <Text style={styles.detailsButtonText}>Gọi điện</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                {(transaction.status === "Completed" ||
+                  transaction.status === "Not_Completed") && (
+                  <>
+                    <TouchableOpacity
+                      style={[styles.verifyButton, { opacity: 0.5 }]}
+                      disabled={true}
+                    >
+                      <Text style={styles.verifyButtonText}>Đã xác thực</Text>
+                    </TouchableOpacity>
+                    {transaction.rating === null || transaction.rating === 0 ? (
+                      <TouchableOpacity
+                        style={styles.detailsButton}
+                        onPress={() => handleOpenRatingModal(transaction)}
+                      >
+                        <View style={styles.detailsButtonContent}>
+                          <Icon
+                            name="drive-file-rename-outline"
+                            size={20}
+                            color={Colors.orange500}
+                          />
+                          <Text style={styles.detailsButtonText}>Đánh giá</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ) : (
+                      <>
+                        <View style={styles.starContainer}>
+                          <Text style={styles.titleText}>
+                            Đánh giá giao dịch
+                          </Text>
+                          <View style={styles.ratingContainer}>
+                            <Text style={styles.labelText}>Chất lượng: </Text>
+                            <Text style={styles.starText}>
+                              {renderStars(transaction.rating || 0)}
+                            </Text>
+                          </View>
+                          {transaction.ratingComment && (
+                            <View style={styles.commentContainer}>
+                              <Text style={styles.labelText}>Nhận xét: </Text>
+                              <Text style={styles.commentText}>
+                                {transaction.ratingComment}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.detailsButton}
+                      onPress={() => handleOpenReportModal(transaction)}
+                    >
+                      <View style={styles.detailsButtonContent}>
+                        <Icon
+                          name="report"
+                          size={20}
+                          color={Colors.orange500}
+                        />
+                        <Text style={styles.detailsButtonText}>Báo cáo</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            ))}
+          </>
+        )}
       </ScrollView>
       <MapModal
         open={showMapModal}
@@ -656,7 +835,13 @@ const MyTransactions = () => {
                 </View>
               )}
 
-              <Text style={{color: "#ababab", fontStyle: 'italic',textAlign: 'center'}}>
+              <Text
+                style={{
+                  color: "#ababab",
+                  fontStyle: "italic",
+                  textAlign: "center",
+                }}
+              >
                 *Sử dụng mã định danh này để xác nhận giao dịch khi bạn đến
               </Text>
             </View>
@@ -665,115 +850,114 @@ const MyTransactions = () => {
       </Modal>
 
       <Modal
-                    visible={showConfirmModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowConfirmModal(false)}
+        visible={showConfirmModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Xác nhận giao dịch</Text>
+
+            <View style={styles.modalButtonContainer}>
+              <View style={styles.topButtonRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setShowConfirmModal(false);
+                    setShowInputRejectMessage(false);
+                    setRejectMessage("");
+                  }}
+                >
+                  <Text style={styles.cancleButtonText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.verifyButton]}
+                  onPress={() => {
+                    if (selectedTransaction) {
+                      handleVerification(selectedTransaction.id);
+                    }
+                  }}
+                >
+                  <Text style={styles.buttonText}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={showInputRejectMessage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowInputRejectMessage(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Từ chối giao dịch</Text>
+
+            <Text style={styles.modalDescription}>
+              Vui lòng nhập lý do từ chối:
+            </Text>
+            <TextInput
+              placeholderTextColor="#c4c4c4"
+              style={styles.requestInput}
+              placeholder="Nhập tin nhắn..."
+              value={rejectMessage}
+              onChangeText={setRejectMessage}
+              multiline
+            />
+            {rejectMessage.length > 99 && (
+              <Text style={styles.textErrorMessage}>
+                Lời nhắn của bạn không được vượt quá 100 ký tự.
+              </Text>
+            )}
+            {rejectMessage.length === 0 && (
+              <Text style={styles.textErrorMessage}>
+                Bạn phải nhập lí do từ chối
+              </Text>
+            )}
+
+            <View style={styles.modalButtonContainer}>
+              <View style={styles.topButtonRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setShowConfirmModal(false);
+                    setShowInputRejectMessage(false);
+                    setRejectMessage("");
+                  }}
+                >
+                  <Text style={styles.cancleButtonText}>Hủy</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton,
+                    styles.rejectButton,
+                    rejectMessage.length === 0 && styles.disabledButton,
+                  ]}
+                  disabled={rejectMessage.length === 0}
+                  onPress={() => {
+                    if (selectedTransaction) {
+                      handleReject(selectedTransaction.id);
+                    }
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      rejectMessage.length === 0 && styles.disabledButtonText,
+                    ]}
                   >
-                    <View style={styles.modalContainer}>
-                      <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Xác nhận giao dịch</Text>
-      
-                        <View style={styles.modalButtonContainer}>
-                          <View style={styles.topButtonRow}>
-                            <TouchableOpacity
-                              style={[styles.modalButton, styles.cancelButton]}
-                              onPress={() => {
-                                setShowConfirmModal(false);
-                                setShowInputRejectMessage(false);
-                                setRejectMessage("");
-                              }}
-                            >
-                              <Text style={styles.cancleButtonText}>Hủy</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[styles.modalButton, styles.verifyButton]}
-                              onPress={() => {
-                                if (selectedTransaction) {
-                                  handleVerification(selectedTransaction.id);
-                                }
-                              }}
-                            >
-                              <Text style={styles.buttonText}>Xác nhận</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-                  <Modal
-                    visible={showInputRejectMessage}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowInputRejectMessage(false)}
-                  >
-                    <View style={styles.modalContainer}>
-                      <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Từ chối giao dịch</Text>
-      
-                        <Text style={styles.modalDescription}>
-                          Vui lòng nhập lý do từ chối:
-                        </Text>
-                        <TextInput
-                          placeholderTextColor="#c4c4c4"
-                          style={styles.requestInput}
-                          placeholder="Nhập tin nhắn..."
-                          value={rejectMessage}
-                          onChangeText={setRejectMessage}
-                          multiline
-                        />
-                        {rejectMessage.length > 99 && (
-                          <Text style={styles.textErrorMessage}>
-                            Lời nhắn của bạn không được vượt quá 100 ký tự.
-                          </Text>
-                        )}
-                        {rejectMessage.length === 0 && (
-                          <Text style={styles.textErrorMessage}>
-                            Bạn phải nhập lí do từ chối
-                          </Text>
-                        )}
-      
-                        <View style={styles.modalButtonContainer}>
-                          <View style={styles.topButtonRow}>
-                            <TouchableOpacity
-                              style={[styles.modalButton, styles.cancelButton]}
-                              onPress={() => {
-                                setShowConfirmModal(false);
-                                setShowInputRejectMessage(false);
-                                setRejectMessage("");
-                              }}
-                            >
-                              <Text style={styles.cancleButtonText}>Hủy</Text>
-                            </TouchableOpacity>
-      
-                            <TouchableOpacity
-                              style={[
-                                styles.modalButton,
-                                styles.rejectButton,
-                                rejectMessage.length === 0 && styles.disabledButton,
-                              ]}
-                              disabled={rejectMessage.length === 0}
-                              onPress={() => {
-                                if (selectedTransaction) {
-                                  handleReject(selectedTransaction.id);
-                                }
-                              }}
-                            >
-                              <Text
-                                style={[
-                                  styles.buttonText,
-                                  rejectMessage.length === 0 &&
-                                    styles.disabledButtonText,
-                                ]}
-                              >
-                                Từ chối
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
+                    Từ chối
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <UserRatingModal
         isVisible={isRatingModalVisible}
@@ -869,20 +1053,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
   },
-  emptyProductCard: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f8f8f8",
-    padding: 12,
-    borderRadius: 8,
-    height: 160,
-  },
-  emptyProductText: {
-    color: "#666",
-    fontSize: 14,
-    textAlign: "center",
-  },
   productImage: {
     width: 90,
     height: 90,
@@ -904,8 +1074,59 @@ const styles = StyleSheet.create({
     width: 40,
     alignItems: "center",
   },
-  exchangeIcon: {
-    fontSize: 24,
+  cardHeaderList: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  cardTitleList: {
+    fontSize: 16,
+    fontWeight: "bold",
+    flex: 1,
+  },
+  statusContainerList: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statusDotList: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusList: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  productsContainerList: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  productCardList: {
+    flex: 1,
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  productImageList: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  productNameList: {
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  ownerNameList: {
+    fontSize: 10,
+    color: "#666",
+    textAlign: "center",
+  },
+  exchangeContainerList: {
+    paddingHorizontal: 8,
   },
   dateInfo: {
     backgroundColor: "#f8f8f8",
@@ -925,6 +1146,43 @@ const styles = StyleSheet.create({
   dateValue: {
     color: "#333",
     fontSize: 14,
+    fontWeight: "500",
+  },
+  exchangeIcon: {
+    fontSize: 24,
+  },
+  emptyProductCard: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8f8f8",
+    padding: 12,
+    borderRadius: 8,
+    height: 160,
+  },
+  emptyProductText: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  dateInfoList: {
+    backgroundColor: "#f8f8f8",
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  dateRowList: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  dateLabelList: {
+    color: "#666",
+    fontSize: 12,
+  },
+  dateValueList: {
+    color: "#333",
+    fontSize: 12,
     fontWeight: "500",
   },
   modalContainer: {
@@ -1114,7 +1372,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffe3e3",
     padding: 12,
     borderRadius: 8,
-    marginVertical: 16,
+    marginBottom: 16,
   },
   scrollView: {
     flex: 1,

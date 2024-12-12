@@ -95,7 +95,7 @@ const ProfileScreen = () => {
       } else if (screenName === "MyRequests") {
         navigation.navigate("RequestSubAction");
       } else if (screenName === "MyTransactions") {
-        navigation.navigate("MyTransactions");
+        navigation.navigate("MyTransactions", { requestId: "" });
       }
     } catch (error) {
       console.error("Navigation error:", error);

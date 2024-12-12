@@ -40,7 +40,7 @@ const STATUS_LABELS = {
   Approved: "Đã duyệt",
   Rejected: "Từ chối",
   Hold_On: "Tạm hoãn",
-  Completed: "Hoàn thành",
+  Completed: "Đã hoàn thành",
   Not_Completed: "Không thành công",
 };
 
@@ -443,6 +443,48 @@ export default function MyRequestsScreen() {
                   </Text>
                 </View>
               )}
+
+              {/* Status Message Box */}
+<View style={styles.statusMessageBox}>
+  <View style={styles.statusMessageContent}>
+    <Icon 
+      name={
+        request.status === 'Pending' ? 'timer' :
+        request.status === 'Approved' ? 'check-circle' :
+        request.status === 'Rejected' ? 'cancel' :
+        request.status === 'Hold_On' ? 'pause-circle-filled' :
+        request.status === 'Completed' ? 'verified' :
+        'error'
+      } 
+      size={20} 
+      color={STATUS_COLORS[request.status]} 
+    />
+    <Text style={[styles.statusMessage, { color: STATUS_COLORS[request.status] }]}>
+      {request.status === 'Pending' && "Yêu cầu này đang trong quá trình đợi phản hồi."}
+      {request.status === 'Approved' && "Yêu cầu đã được chấp nhận. Vui lòng chờ liên hệ để trao đổi thêm."}
+      {request.status === 'Rejected' && "Yêu cầu đã bị từ chối. Xem lý do từ chối bên dưới."}
+      {request.status === 'Hold_On' && "Yêu cầu tạm hoãn do sản phẩm đang trong giao dịch khác."}
+      {request.status === 'Completed' && "Giao dịch đã hoàn thành thành công."}
+      {request.status === 'Not_Completed' && "Giao dịch không thành công."}
+    </Text>
+  </View>
+  
+  {(request.status === 'Approved' || 
+    request.status === 'Completed' || 
+    request.status === 'Not_Completed') && (
+    <TouchableOpacity 
+      style={styles.viewDetailButton}
+      onPress={() => navigation.navigate("MyTransactions", { requestId: request.id })}
+    >
+      <Icon 
+        name="arrow-forward" 
+        size={20} 
+        color={STATUS_COLORS[request.status]} 
+      />
+    </TouchableOpacity>
+  )}
+</View>
+
 
               {/* Items Section */}
               <View style={styles.itemsSection}>
@@ -1398,5 +1440,31 @@ const styles = StyleSheet.create({
   },
   holdOnMessageText: {
     color: "#666",
+  },
+  statusMessageBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    marginBottom: 15,
+    justifyContent: 'space-between',
+  },
+  statusMessageContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  statusMessage: {
+    marginLeft: 8,
+    fontSize: 14,
+    flex: 1,
+  },
+  viewDetailButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    marginLeft: 8,
   },
 });

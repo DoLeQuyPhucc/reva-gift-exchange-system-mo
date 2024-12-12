@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, Platform, TextInput } from 'react-native';
-import axiosInstance from '@/src/api/axiosInstance';
-import Colors from '@/src/constants/Colors';
-import { Product } from '@/src/shared/type';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  TextInput,
+} from "react-native";
+import axiosInstance from "@/src/api/axiosInstance";
+import Colors from "@/src/constants/Colors";
+import { Product } from "@/src/shared/type";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useNavigation } from '@/src/hooks/useNavigation';
+import { useNavigation } from "@/src/hooks/useNavigation";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -30,7 +39,7 @@ const STATUS_LABELS = {
 };
 
 const MyProducts = () => {
-  const [activeTab, setActiveTab] = useState('approved');
+  const [activeTab, setActiveTab] = useState("approved");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [products, setProducts] = useState({
     approved: [],
@@ -44,28 +53,29 @@ const MyProducts = () => {
 
   useEffect(() => {
     // Fetch data from the API
-    axiosInstance.get('/items/current-user')
-      .then(response => {
+    axiosInstance
+      .get("/items/current-user")
+      .then((response) => {
         const data = response.data.data;
         setProducts({
-          approved: data['ApprovedItems'],
-          rejected: data['RejectedItems'],
-          pending: data['PendingItems'],
-          outOfDate: data['OutOfDateItems'],
-          exchanged: data['ExchangedItems'],
-          inTransaction: data['InTransactionItems'],
+          approved: data["ApprovedItems"],
+          rejected: data["RejectedItems"],
+          pending: data["PendingItems"],
+          outOfDate: data["OutOfDateItems"],
+          exchanged: data["ExchangedItems"],
+          inTransaction: data["InTransactionItems"],
         });
       })
-      .catch(error => {
-        console.error('Error fetching data:', error);
+      .catch((error) => {
+        console.error("Error fetching data:", error);
       });
   }, []);
 
   const getFilteredProducts = (products: Product[], searchQuery: string) => {
     if (!searchQuery.trim()) return products;
-    
+
     const searchLower = searchQuery.toLowerCase().trim();
-    return products.filter(product => {
+    return products.filter((product) => {
       return (
         product.name.toLowerCase().includes(searchLower) ||
         product.description.toLowerCase().includes(searchLower) ||
@@ -77,11 +87,15 @@ const MyProducts = () => {
 
   const getActiveProducts = () => {
     switch (activeTab) {
-      case 'approved':
-        return [...products.approved, ...products.inTransaction, ...products.exchanged];
-      case 'pending':
+      case "approved":
+        return [
+          ...products.approved,
+          ...products.inTransaction,
+          ...products.exchanged,
+        ];
+      case "pending":
         return products.pending;
-      case 'outOfDate':
+      case "outOfDate":
         return [...products.outOfDate, ...products.rejected];
       default:
         return [];
@@ -92,31 +106,37 @@ const MyProducts = () => {
   const filteredProducts = getFilteredProducts(currentProducts, searchQuery);
 
   const renderProducts = (items: Product[]) => {
-    return items.map(item => (
-      <TouchableOpacity key={item.id} style={styles.card} onPress={() => navigation.navigate("ProductDetail", { productId: item.id })}>
+    return items.map((item) => (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.card}
+        onPress={() =>
+          navigation.navigate("ProductDetail", { productId: item.id })
+        }
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.name}</Text>
           <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: `${STATUS_COLORS[item?.status]}15` },
-          ]}
-        >
-          <View
             style={[
-              styles.statusDot,
-              { backgroundColor: STATUS_COLORS[item?.status] },
-            ]}
-          />
-          <Text
-            style={[
-              styles.statusText,
-              { color: STATUS_COLORS[item?.status] },
+              styles.statusBadge,
+              { backgroundColor: `${STATUS_COLORS[item?.status]}15` },
             ]}
           >
-            {STATUS_LABELS[item?.status as keyof typeof STATUS_LABELS]}
-          </Text>
-        </View>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: STATUS_COLORS[item?.status] },
+              ]}
+            />
+            <Text
+              style={[
+                styles.statusText,
+                { color: STATUS_COLORS[item?.status] },
+              ]}
+            >
+              {STATUS_LABELS[item?.status as keyof typeof STATUS_LABELS]}
+            </Text>
+          </View>
         </View>
         <View style={styles.productInfo}>
           <Image source={{ uri: item.images[0] }} style={styles.image} />
@@ -133,57 +153,60 @@ const MyProducts = () => {
               <Text style={styles.detailText}>Số lượng: {item.quantity}</Text>
             </View> */}
             <View style={styles.detailItem}>
-              <Icon name="loop" size={20} color={Colors.orange500}/>
-              <Text style={styles.detailText}>Tình trạng: {item.condition}</Text>
+              <Icon name="loop" size={20} color={Colors.orange500} />
+              <Text style={styles.detailText}>
+                Tình trạng: {item.condition}
+              </Text>
             </View>
             {item.isGift ? (
-                <View style={styles.detailItem}>
-                  <Icon name="card-giftcard" size={20} color={Colors.orange500} />
-                  <Text style={[styles.detailText, styles.giftText]}>
-                    Sản phẩm này là quà tặng
-                  </Text>
-                </View>
-
+              <View style={styles.detailItem}>
+                <Icon name="card-giftcard" size={20} color={Colors.orange500} />
+                <Text style={[styles.detailText, styles.giftText]}>
+                  Sản phẩm này là quà tặng
+                </Text>
+              </View>
             ) : (
               <></>
             )}
           </View>
         </View>
-        {activeTab === 'approved' && (
+        {activeTab === "approved" && (
           <View style={styles.cardFooter}>
-            
-          <TouchableOpacity
-            style={[
-              styles.statusBadge,
-              { backgroundColor: `${Colors.orange500}15` },
-            ]}
-            onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'itemRequestTo' })}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                { color: Colors.orange500 },
-              ]}
-            >
-              {item.itemRequestTo} yêu cầu đã gửi đi
-            </Text>
-          </TouchableOpacity>
             <TouchableOpacity
-            style={[
-              styles.statusBadge,
-              { backgroundColor: `${Colors.lightRed}15` },
-            ]}
-            onPress={() => navigation.navigate("MyRequests", { productId: item.id, type: 'requestsForMe' })}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                { color: Colors.lightRed },
-              ]}
+              style={styles.requestButton}
+              onPress={() =>
+                navigation.navigate("MyRequests", {
+                  productId: item.id,
+                  type: "itemRequestTo",
+                })
+              }
             >
-              {item.requestForItem} yêu cầu được gửi tới
-            </Text>
-          </TouchableOpacity>
+              <View style={styles.requestInfo}>
+                <Icon name="call-made" size={20} color={Colors.orange500} />
+                <Text style={styles.requestCount}>{item.itemRequestTo}</Text>
+              </View>
+              <Text style={styles.requestLabel}>Yêu cầu đã gửi</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.requestButton}
+              onPress={() =>
+                navigation.navigate("MyRequests", {
+                  productId: item.id,
+                  type: "requestsForMe",
+                })
+              }
+            >
+              <View style={styles.requestInfo}>
+                <Icon name="call-received" size={20} color={Colors.lightRed} />
+                <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
+                  {item.requestForItem}
+                </Text>
+              </View>
+              <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
+            </TouchableOpacity>
           </View>
         )}
       </TouchableOpacity>
@@ -194,22 +217,22 @@ const MyProducts = () => {
     <View style={styles.container}>
       <View style={styles.tabs}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'approved' && styles.activeTab]}
-          onPress={() => setActiveTab('approved')}
+          style={[styles.tab, activeTab === "approved" && styles.activeTab]}
+          onPress={() => setActiveTab("approved")}
         >
-          <Text style={{fontSize: 16}}>Đã duyệt</Text>
+          <Text style={{ fontSize: 16 }}>Đã duyệt</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
-          onPress={() => setActiveTab('pending')}
+          style={[styles.tab, activeTab === "pending" && styles.activeTab]}
+          onPress={() => setActiveTab("pending")}
         >
-          <Text style={{fontSize: 16}}>Chờ phê duyệt</Text>
+          <Text style={{ fontSize: 16 }}>Chờ phê duyệt</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'outOfDate' && styles.activeTab]}
-          onPress={() => setActiveTab('outOfDate')}
+          style={[styles.tab, activeTab === "outOfDate" && styles.activeTab]}
+          onPress={() => setActiveTab("outOfDate")}
         >
-          <Text style={{fontSize: 16}}>Đã huỷ</Text>
+          <Text style={{ fontSize: 16 }}>Đã huỷ</Text>
         </TouchableOpacity>
       </View>
 
@@ -260,17 +283,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabs: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     paddingTop: 10,
-
   },
   tabButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#f1f1f1',
+    backgroundColor: "#f1f1f1",
     borderRadius: 5,
   },
   activeTabButton: {
@@ -278,42 +300,34 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   activeTabText: {
-    color: '#fff',
+    color: "#fff",
   },
   tabContent: {
     flex: 1,
     paddingHorizontal: 16,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: "#e1e1e1",
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 16,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f1f1f1',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f1f1f1',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#f1f1f1",
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   badge: {
     paddingVertical: 4,
@@ -321,18 +335,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   approvedBadge: {
-    backgroundColor: '#28a745',
+    backgroundColor: "#28a745",
   },
   pendingBadge: {
-    backgroundColor: '#ffc107',
+    backgroundColor: "#ffc107",
   },
   badgeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
   },
   productInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
@@ -340,7 +354,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     marginRight: 16,
-    borderRadius: 8, 
+    borderRadius: 8,
   },
   productDetails: {
     flex: 1,
@@ -348,7 +362,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     padding: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   activeTab: {
     borderBottomWidth: 2,
@@ -385,53 +399,89 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontWeight: "bold",
   },
-    searchContainer: {
-      margin: 16,
-      marginTop: 0
-    },
-    searchWrapper: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#fff",
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      ...Platform.select({
-        ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        },
-        android: {
-          elevation: 2,
-        },
-      }),
-    },
-    searchIcon: {
-      marginRight: 8,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 16,
-      color: Colors.gray800,
-      // paddingVertical: 4,
-    },
-    clearButton: {
-      padding: 4,
-    },
-    emptyState: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 32,
-    },
-    emptyStateText: {
-      fontSize: 16,
-      color: Colors.gray500,
-      marginTop: 12,
-      textAlign: 'center',
-    },
+  searchContainer: {
+    margin: 16,
+    marginTop: 0,
+  },
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: Colors.gray800,
+    // paddingVertical: 4,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: Colors.gray500,
+    marginTop: 12,
+    textAlign: "center",
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    backgroundColor: "#fff",
+  },
+  requestButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  requestInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  requestCount: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.orange500,
+    marginLeft: 6,
+  },
+  requestLabel: {
+    fontSize: 13,
+    color: Colors.gray600,
+  },
+  divider: {
+    width: 1,
+    height: "100%",
+    backgroundColor: "#eee",
+    marginHorizontal: 8,
+  },
 });
 
 export default MyProducts;

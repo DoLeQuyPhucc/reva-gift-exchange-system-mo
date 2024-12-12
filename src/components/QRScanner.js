@@ -50,6 +50,7 @@ export default function QRScanner() {
         navigation.navigate("ResultScanTransaction", {
           transactionResult: transactionData,
         });
+        setScanned(false);
       }
     } catch (error) {
       Alert.alert("Error", "Invalid QR code format", [
