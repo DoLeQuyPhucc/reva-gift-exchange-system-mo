@@ -158,7 +158,7 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.productName} numberOfLines={1}>
             {product.name}
           </Text>
-          <Text style={styles.description} numberOfLines={2}>
+          <Text style={styles.description} numberOfLines={1}>
             {product.description}
           </Text>
         </View>
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   },
 
   imageContainer: {
-    height: 180,
+    height: 140,
     position: 'relative',
   },
 
@@ -474,29 +474,24 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
   },
-
   productInfo: {
     gap: 4,
   },
-
   productName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#000',
   },
-
   description: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
-    lineHeight: 18,
+    lineHeight: 16,
   },
-
   badgeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
   },
-
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -505,51 +500,42 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 4,
   },
-
   conditionBadge: {
     backgroundColor: Colors.orange50,
   },
-
   categoryBadge: {
     backgroundColor: '#f5f5f5',
   },
-
   conditionText: {
     fontSize: 12,
     color: Colors.orange500,
     fontWeight: '500',
   },
-
   categoryText: {
     fontSize: 12,
     color: '#666',
   },
-
   footerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
   },
-
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-
   timeText: {
     fontSize: 11,
     color: '#666',
   },
-
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     flex: 1,
   },
-
   locationText: {
     fontSize: 11,
     color: '#666',
@@ -606,7 +592,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 16,
-    paddingBottom: 32, // Thêm padding bottom để tránh safe area
+    paddingBottom: 32,
   },
   modalTitle: {
     fontSize: 18,

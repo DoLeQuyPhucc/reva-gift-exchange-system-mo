@@ -569,13 +569,13 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
       console.log("Form Data: ", postData);
 
-      // const response = await submitPost(postData);
+      const response = await submitPost(postData);
 
-      // console.log("Submit response:", response);
+      console.log("Submit response:", response);
 
-      // if (response === true) {
-      //   setShowSuccessAlert(true);
-      // }
+      if (response === true) {
+        setShowSuccessAlert(true);
+      }
     } catch (error) {
       Alert.alert("Error", "Failed to create post");
       console.error("Submit error:", error);
