@@ -34,7 +34,10 @@ const SearchScreen: React.FC = () => {
   const fetchRecentProducts = async () => {
     try {
       const response = await axiosInstance.get("items");
-      setRecentProducts(response.data.data);
+      const filteredProducts = response.data.data.filter(
+        (product: Product) => product.status !== "Exchanged"
+      );
+      setRecentProducts(filteredProducts);
     } catch (error) {
       console.error("Error fetching recent products:", error);
     }

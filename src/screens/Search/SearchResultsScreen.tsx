@@ -72,7 +72,7 @@ const SearchResultsScreen: React.FC = () => {
   };
 
   const filterProducts = (products: Product[]) => {
-    let filtered = products;
+    let filtered = products.filter((product) => product.status !== "Exchanged");
 
     console.log("Filtered Products: ", filtered);
     setFilteredProducts(filtered);
