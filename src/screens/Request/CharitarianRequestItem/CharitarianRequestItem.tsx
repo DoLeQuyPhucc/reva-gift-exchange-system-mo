@@ -133,7 +133,7 @@ const CharitarianRequestItem = () => {
               ]}
             >
               <Text style={[styles.statusText, { color: Colors.lightRed }]}>
-                {item.requestForItem} yêu cầu được gửi tới
+                {item.requestForItem} yêu cầu nhận được
               </Text>
             </TouchableOpacity>
           </View>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   badge: {
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "500",
   },
   detailItem: {
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
   },
   giftText: {

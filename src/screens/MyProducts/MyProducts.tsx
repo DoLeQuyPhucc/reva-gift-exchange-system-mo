@@ -115,7 +115,9 @@ const MyProducts = () => {
         }
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{item.name}</Text>
+          <View style={{width: '60%'}}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+          </View>
           <View
             style={[
               styles.statusBadge,
@@ -155,7 +157,7 @@ const MyProducts = () => {
             <View style={styles.detailItem}>
               <Icon name="loop" size={20} color={Colors.orange500} />
               <Text style={styles.detailText}>
-                Tình trạng: {item.condition}
+                Tình trạng: {item.condition === "new" ? "Mới" : "Đã sử dụng"}
               </Text>
             </View>
             {item.isGift ? (
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   badge: {
@@ -392,7 +394,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
   },
   giftText: {
@@ -467,13 +469,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   requestCount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: Colors.orange500,
     marginLeft: 6,
   },
   requestLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.gray600,
   },
   divider: {

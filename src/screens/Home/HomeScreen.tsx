@@ -165,10 +165,18 @@ const HomeScreen: React.FC = () => {
   
         {/* Tags/Badges */}
         <View style={styles.badgeContainer}>
-          <View style={[styles.badge, styles.conditionBadge]}>
-            <Icon name="info" size={12} color={Colors.orange500} />
-            <Text style={styles.conditionText}>{product.condition === 'New' ? "Mới" : "Đã sử dụng"}</Text>
-          </View>
+          {product.condition === 'New' ? (
+            <View style={[styles.badge, styles.conditionBadgeNew]}>
+              <Icon name="info" size={12} color={Colors.lightGreen} />
+              <Text style={styles.conditionTextNew}>Mới</Text>
+            </View>
+          ) : (
+            <View style={[styles.badge, styles.conditionBadge]}>
+              <Icon name="info" size={12} color={Colors.orange500} />
+              <Text style={styles.conditionText}>Đã sử dụng</Text>
+            </View>
+            
+          )}
   
           <View style={[styles.badge, styles.categoryBadge]}>
             <Icon name="category" size={12} color="#666" />
@@ -503,12 +511,20 @@ const styles = StyleSheet.create({
   conditionBadge: {
     backgroundColor: Colors.orange50,
   },
+  conditionBadgeNew: {
+    backgroundColor: "#e6fbf7",
+  },
   categoryBadge: {
     backgroundColor: '#f5f5f5',
   },
   conditionText: {
     fontSize: 12,
     color: Colors.orange500,
+    fontWeight: '500',
+  },
+  conditionTextNew: {
+    fontSize: 12,
+    color: Colors.lightGreen,
     fontWeight: '500',
   },
   categoryText: {
