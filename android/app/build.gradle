@@ -148,7 +148,10 @@ android {
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
-    implementation("com.facebook.react:react-android")
+    implementation ("com.facebook.react:react-android")
+    implementation ("io.goong:goongmap-sdk:1.0.4")
+    implementation ("com.google.android.gms:play-services-base:18.0.1")
+    implementation ("com.google.android.gms:play-services-location:18.0.0")
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

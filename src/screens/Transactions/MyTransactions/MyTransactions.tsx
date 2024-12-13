@@ -643,18 +643,18 @@ const MyTransactions = () => {
                       <TouchableOpacity
                         style={styles.detailsButton}
                         onPress={() => {
-                          // const data: LocationMap = {
-                          //   latitude: parseFloat(
-                          //     transaction.charitarianAddress.addressCoordinates
-                          //       .latitude
-                          //   ),
-                          //   longitude: parseFloat(
-                          //     transaction.charitarianAddress.addressCoordinates
-                          //       .longitude
-                          //   ),
-                          // };
-                          // setLocation(data);
-                          // setShowMapModal(true);
+                          const data: LocationMap = {
+                            latitude: parseFloat(
+                              transaction.charitarianAddress.addressCoordinates
+                                .latitude
+                            ),
+                            longitude: parseFloat(
+                              transaction.charitarianAddress.addressCoordinates
+                                .longitude
+                            ),
+                          };
+                          setLocation(data);
+                          setShowMapModal(true);
                         }}
                       >
                         <View style={styles.detailsButtonContent}>

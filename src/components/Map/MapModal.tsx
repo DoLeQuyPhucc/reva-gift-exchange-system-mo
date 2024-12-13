@@ -1,10 +1,19 @@
-import Colors from "@/src/constants/Colors";
-import { LocationMap } from "@/src/shared/type";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { TouchableOpacity } from "react-native";
-import { Modal } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import Colors from '@/src/constants/Colors';
+import { LocationMap } from '@/src/shared/type';
+import React, { useState, useEffect } from 'react';
+import {
+  SafeAreaView,
+  StyleSheet,
+  View,
+  Text,
+  PermissionsAndroid,
+  Platform,
+  Modal,
+  TouchableOpacity,
+} from 'react-native';
+import Geolocation from 'react-native-geolocation-service';
+
+import MapView, {PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
 
 interface MapModalProps {
   open: boolean;
@@ -29,14 +38,78 @@ export default function MapModal({
   canMarkerMove = false,
   onSetAddressCoordinates = () => {},
 }: MapModalProps) {
-  const [markerPosition, setMarkerPosition] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>({ latitude: location.latitude, longitude: location.longitude });
+  const [currentPosition, setCurrentPosition] = useState<LocationMap | null>({
+    // latitude: location.latitude,
+    // longitude: location.longitude,
+    latitude: 10.841254037529868,
+    longitude: 106.80992591014189,
+  });
+
+  // 10.841254037529868, 106.80992591014189
+  const [markerPosition, setMarkerPosition] = useState<LocationMap>({
+    latitude: location.latitude,
+    longitude: location.longitude,
+  });
+
+  const [destination] = useState({
+    latitude: 10.835321,
+    longitude: 106.807673,
+  });
 
   useEffect(() => {
     setMarkerPosition({ latitude: location.latitude, longitude: location.longitude });
   }, [location, canMarkerMove]);
+
+  const requestLocationPermission = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'This app needs access to location.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          getCurrentLocation();
+        }
+      } else {
+        getCurrentLocation();
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  };
+
+  const getCurrentLocation = () => {
+    Geolocation.watchPosition(
+      (position) => {
+        setCurrentPosition({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.log(error.code, error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 10,
+        interval: 1000,
+        fastestInterval: 1000,
+      }
+    );
+  };
+
+  useEffect(() => {
+    requestLocationPermission();
+    return () => {
+      Geolocation.stopObserving();
+    };
+  }, []);
 
   const handleMapPress = (event: {
     nativeEvent: { coordinate: { latitude: number; longitude: number } };
@@ -56,23 +129,35 @@ export default function MapModal({
   return (
     <Modal visible={open} transparent animationType="slide">
       <View style={styles.modalMapContainer}>
+      {currentPosition && (
         <MapView
-          style={{ flex: 1, width: "100%" }}
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
           initialRegion={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-            ...zoomLevel,
+            latitude: currentPosition.latitude,
+            longitude: currentPosition.longitude,
+            latitudeDelta: zoomLevel.latitudeDelta,
+            longitudeDelta: zoomLevel.longitudeDelta,
           }}
-          onPress={handleMapPress}
+          zoomEnabled={true}
+          zoomControlEnabled={true}
         >
-          {markerPosition && (
-            <Marker
-              coordinate={markerPosition}
-              title={"Location"}
-              description={"location.description"}
-            />
-          )}
+          <Marker
+            coordinate={currentPosition}
+            title="Current Location"
+          />
+          <Marker
+            coordinate={destination}
+            title="Destination"
+            pinColor="blue"
+          />
+          <Polyline
+            coordinates={[currentPosition, destination]}
+            strokeColor="#000"
+            strokeWidth={2}
+          />
         </MapView>
+      )}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, styles.closeButton]}
@@ -98,6 +183,9 @@ const styles = StyleSheet.create({
   modalMapContainer: {
     flex: 1,
     position: "relative",
+  },
+  map: {
+    flex: 0.7,
   },
   buttonContainer: {
     position: "absolute",
