@@ -42,7 +42,7 @@ type TimeSlot = {
   value: string;
 };
 
-type DayTimeFrame = {
+export type DayTimeFrame = {
   day: string;
   startTime: string;
   endTime: string;
@@ -162,6 +162,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
+  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
+
   useEffect(() => {
     if (addressData.length > 0) {
       const defaultAddress = addressData.find((addr) => addr.isDefault);
@@ -182,6 +184,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       getSubCategories(selectedCategory.id);
     }
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (route.params?.shouldPublish) {
+      handleSubmit();
+      // Reset param để tránh trigger lại
+      navigation.setParams({ shouldPublish: undefined });
+    }
+  }, [route.params?.shouldPublish]);
 
   const conditions: ConditionOption[] = [
     { id: ItemCondition.NEW, name: "Mới" },
@@ -356,7 +366,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
       const formData = new FormData();
 
-      // Append file with proper structure
       const fileData = {
         uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
         name: filename,
@@ -385,7 +394,6 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
       console.log("Response status:", response.status);
 
-      // Get detailed error message if available
       const responseData = await response.json();
       console.log("Response data:", responseData);
 
@@ -545,12 +553,44 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     });
   };
 
-  const handleSubmit = async () => {
+  const handlePreview = () => {
     if (!validateForm()) return;
 
-    console.log("Submitting post:");
+    const selectedAddress = addressData.find(
+      (addr) => addr.addressId === selectedAddressId
+    );
 
+    navigation.navigate("PreviewPost", {
+      title,
+      description,
+      category: selectedCategory,
+      subCategory: selectedSubCategory,
+      condition,
+      images,
+      video,
+      isExchange,
+      isGift,
+      timePreference,
+      dayTimeFrames,
+      address: selectedAddress?.address || "No address provided",
+      desiredCategory: categories.find((cat) => cat.id === desiredCategoryId),
+      desiredSubCategory: subCategories.find(
+        (subCat) => subCat.id === desiredSubCategoryId
+      ),
+      addressId: selectedAddressId,
+      onSubmitPost: submitPost,
+    });
+  };
+
+  const handleSubmitConfirm = () => {
+    setShowConfirmAlert(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
     try {
+      setShowConfirmAlert(false);
       setIsLoading(true);
 
       const postData = {
@@ -1067,9 +1107,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.footerButton, styles.previewButton]}
-          onPress={() => {
-            /* Handle preview */
-          }}
+          onPress={handlePreview}
+          disabled={!isTermsAccepted}
         >
           <Text style={{ color: "black" }}>Xem trước</Text>
         </TouchableOpacity>
@@ -1080,14 +1119,28 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             styles.publishButton,
             !isTermsAccepted && styles.disabledButton,
           ]}
-          onPress={handleSubmit}
-          disabled={!isTermsAccepted}
+          onPress={handleSubmitConfirm}
+          disabled={!isTermsAccepted || isLoading}
         >
-          <Text style={styles.buttonText}>Đăng bài</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Đăng bài</Text>
+          )}
         </TouchableOpacity>
       </View>
 
-      {/* Alert */}
+      {/* Confirm Alert */}
+      <CustomAlert
+        visible={showConfirmAlert}
+        title="Xác nhận"
+        message="Bạn có chắc chắn muốn đăng bài này?"
+        onConfirm={handleSubmit}
+        onCancel={() => setShowConfirmAlert(false)}
+        showCancelButton={true}
+      />
+
+      {/* Success Alert */}
       <CustomAlert
         visible={showSuccessAlert}
         title="Thành công"

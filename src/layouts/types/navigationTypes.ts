@@ -1,3 +1,4 @@
+import { DayTimeFrame } from "@/src/screens/CreatePost/CreatePostScreen";
 import { Category, Product, SubCategory } from "@/src/shared/type";
 import { SearchMode } from "@/src/utils/search";
 
@@ -30,6 +31,7 @@ export type RootStackParamList = {
     categoryId?: string;
     subCategory?: SubCategory;
     subCategoryId?: string;
+    shouldPublish?: boolean;
   };
   ProductDetail: { productId: string };
   ProfileDetail: undefined;
@@ -52,6 +54,24 @@ export type RootStackParamList = {
   QRScanner: undefined;
   ResultScanTransaction: { transactionResult: any };
   CharitarianRequestItem: undefined;
+  PreviewPost: {
+    title: string;
+    description: string;
+    category: Category | null;
+    subCategory: SubCategory | null;
+    condition: string;
+    images: string[];
+    video: string | null;
+    isExchange: boolean;
+    isGift: boolean;
+    timePreference: string;
+    dayTimeFrames: DayTimeFrame[];
+    address: string;
+    desiredCategory?: Category;
+    desiredSubCategory?: SubCategory;
+    addressId: string;
+    onSubmitPost: (postData: any) => Promise<boolean>;
+  };
 };
 
 export type BottomTabParamList = {
