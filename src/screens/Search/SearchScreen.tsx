@@ -18,6 +18,7 @@ import { useNavigation } from "@/src/hooks/useNavigation";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Product } from "@/src/shared/type";
 import { SearchMode, searchModes, getSearchValue } from "@/src/utils/search";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -26,6 +27,7 @@ const SearchScreen: React.FC = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [showModeModal, setShowModeModal] = useState(false);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const { userData } = useAuthCheck();
 
   useEffect(() => {
     fetchRecentProducts();
@@ -34,9 +36,17 @@ const SearchScreen: React.FC = () => {
   const fetchRecentProducts = async () => {
     try {
       const response = await axiosInstance.get("items");
-      const filteredProducts = response.data.data.filter(
-        (product: Product) => product.status !== "Exchanged"
-      );
+      const filteredProducts = response.data.data.filter((product: Product) => {
+        // Điều kiện 1: Sản phẩm không phải của mình và trạng thái là "Approved"
+        const isApprovedAndNotMine =
+          product.status === "Approved" && product.owner_id !== userData.userId;
+      
+        // Điều kiện 2: Sản phẩm là của mình (bất kể trạng thái)
+        const isMine = product.owner_id === userData.userId;
+      
+        // Kết hợp hai điều kiện
+        return isApprovedAndNotMine || isMine;
+      });
       setRecentProducts(filteredProducts);
     } catch (error) {
       console.error("Error fetching recent products:", error);

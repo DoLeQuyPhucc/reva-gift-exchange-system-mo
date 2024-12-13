@@ -89,9 +89,10 @@ export default function ProductDetailScreen() {
   const [timeRanges, setTimeRanges] = useState<DayTimeRange[]>([]);
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
-  const [alertData, setAlertData] = useState({
+  const [alertData, setAlertData] = useState<{title: string, message: string, submessage: string | null}>({
     title: "",
     message: "",
+    submessage: null,
   });
 
   useEffect(() => {
@@ -204,6 +205,7 @@ export default function ProductDetailScreen() {
         setAlertData({
           title: "Thành công",
           message: "Tải hình ảnh lên thành công!",
+          submessage: null
         });
         setShowAlertDialog(true);
       }
@@ -211,6 +213,7 @@ export default function ProductDetailScreen() {
       setAlertData({
         title: "Thất bại",
         message: "Tải hình ảnh lên thất bại! Vui lòng thử lại.",
+        submessage: null
       });
       setShowAlertDialog(true);
     } finally {
@@ -623,6 +626,8 @@ export default function ProductDetailScreen() {
 
     setSelectedTimeSlots((prev) => [...prev, newSlot]);
 
+    console.log("Selected time slots:", newSlot);
+
     // Reset selections
     setSelectedHour(null);
     setSelectedMinute(null);
@@ -678,6 +683,41 @@ export default function ProductDetailScreen() {
     await fetchUserItems();
   };
 
+  function formatTimeRange(dateTimeString: string): string {
+    // Parse chuỗi ngày giờ
+    const dateTime = new Date(dateTimeString);
+  
+    // Lấy thời gian ban đầu
+    const initialHours = dateTime.getHours();
+    const initialMinutes = dateTime.getMinutes();
+  
+    // Tạo thời gian mới bằng cách trừ 15 phút
+    const startTime = new Date(dateTime);
+    startTime.setMinutes(initialMinutes - 15);
+  
+    // Tạo thời gian mới bằng cách cộng 45 phút
+    const endTime = new Date(dateTime);
+    endTime.setMinutes(initialMinutes + 45);
+  
+    // Định dạng giờ phút
+    const formatTime = (time: Date) =>
+      `${time.getHours().toString().padStart(2, '0')}:${time
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
+  
+    // Định dạng ngày tháng năm
+    const formattedDate = `${dateTime
+      .getDate()
+      .toString()
+      .padStart(2, '0')}/${(dateTime.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}/${dateTime.getFullYear()}`;
+  
+    // Kết hợp thành chuỗi hoàn chỉnh
+    return `Từ ${formatTime(startTime)} đến ${formatTime(endTime)} ngày ${formattedDate}`;
+  }
+
   const handleConfirmRequest = async () => {
     try {
       setShowRequestDialog(false);
@@ -692,6 +732,8 @@ export default function ProductDetailScreen() {
         requestImages: requestImages,
       };
 
+      const timeRange = formatTimeRange(selectedTimeSlots[0].dateTime);
+
       const response = await axiosInstance.post("/request/create", data);
 
       if (response.data.isSuccess) {
@@ -700,7 +742,8 @@ export default function ProductDetailScreen() {
         setRequestMessage("");
         setAlertData({
           title: "Thành công",
-          message: "Yêu cầu đã được tạo thành công",
+          message: `Yêu cầu đã được tạo thành công.`,
+          submessage: `Bạn nên tới lúc ${timeRange} để trao đổi sản phẩm.`
         });
         setShowAlertDialog(true);
       }
@@ -709,6 +752,7 @@ export default function ProductDetailScreen() {
         title: "Thất bại",
         message:
           error instanceof Error ? error.message : "Bạn không thể tạo yêu cầu",
+        submessage: null
       });
       setShowAlertDialog(true);
     }
@@ -942,7 +986,11 @@ export default function ProductDetailScreen() {
                       { backgroundColor: Colors.lightGreen },
                     ]}
                   >
-                    <Text style={styles.badgeText}>Còn hàng</Text>
+                    {product.owner_id === userData.userId ? (
+                      <Text style={styles.badgeText}>Đã duyệt</Text>
+                    ) : (
+                      <Text style={styles.badgeText}>Còn hàng</Text>
+                    )}
                   </View>
                 );
               case "Pending":
@@ -1449,6 +1497,7 @@ export default function ProductDetailScreen() {
         visible={showAlertDialog}
         title={alertData.title}
         message={alertData.message}
+        submessage={alertData.submessage}
         onConfirm={() => setShowAlertDialog(false)}
         onCancel={() => setShowAlertDialog(false)}
       />

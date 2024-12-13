@@ -25,6 +25,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import ImagesModalViewer from "@/src/components/modal/ImagesModalViewer";
 import { CustomAlert } from "@/src/components/CustomAlert";
 import { useNavigation } from "@/src/hooks/useNavigation";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -50,6 +51,8 @@ export default function MyRequestsScreen() {
   const route = useRoute<MyRequestsScreenRouteProp>();
   const itemId = route.params.productId;
   const typeRequest = route.params.type;
+
+  const {userData} = useAuthCheck();
 
   const [requests, setRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
@@ -433,16 +436,6 @@ export default function MyRequestsScreen() {
                   </Text>
                 </View>
               </View>
-              {request.status === "Hold_On" && (
-                <View style={styles.holdOnMessage}>
-                  <Text style={styles.holdOnMessageText}>
-                    Yêu cầu tạm hoãn - Sản phẩm đang trong giao dịch khác.
-                  </Text>
-                  <Text style={styles.holdOnMessageText}>
-                    Sẽ tiếp tục nếu giao dịch hiện tại thất bại.
-                  </Text>
-                </View>
-              )}
 
               {/* Status Message Box */}
 <View style={styles.statusMessageBox}>
@@ -570,7 +563,11 @@ export default function MyRequestsScreen() {
               {request.rejectMessage && (
                 <View style={styles.rejectSection}>
                   <Text style={styles.sectionTitle}>Lý do từ chối</Text>
-                  <Text>{request.rejectMessage}</Text>
+                  {request.charitarian.id.match(userData.userId as string) ? (
+                    <Text>{request.rejectMessage}</Text>
+                  ) : (
+                    <Text>Rất tiếc, sản phẩm này đã được trao đổi rồi, vui lòng chọn sản phẩm khác.</Text>
+                  )}
                 </View>
               )}
 
