@@ -74,13 +74,6 @@ const SearchResultsScreen: React.FC = () => {
   const filterProducts = (products: Product[]) => {
     let filtered = products;
 
-    if (searchMode === "default") {
-      filtered = filtered.filter(
-        (product) =>
-          product.status === "Approved" || product.status === "In_Transaction"
-      );
-    }
-
     console.log("Filtered Products: ", filtered);
     setFilteredProducts(filtered);
   };
