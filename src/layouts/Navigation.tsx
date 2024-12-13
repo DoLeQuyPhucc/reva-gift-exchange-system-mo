@@ -37,6 +37,7 @@ import SearchResultsScreen from "../screens/Search/SearchResultsScreen";
 import QRScanner from "../components/QRScanner";
 import ResultScanTransaction from "../screens/Transactions/ResultScanTransaction/ResultScanTransaction";
 import CharitarianRequestItem from "../screens/Request/CharitarianRequestItem/CharitarianRequestItem";
+import PreviewPostScreen from "../screens/PreviewPost/PreviewPostScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -152,6 +153,11 @@ export default function Navigation() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="PreviewPost"
+          component={PreviewPostScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="ProductDetail"
           component={ProductDetailScreen}
           options={{ headerShown: true, title: "Chi tiết sản phẩm" }}
@@ -181,20 +187,23 @@ export default function Navigation() {
           component={MyTransactions}
           options={{ headerShown: true, title: "Quản lí giao dịch của tôi" }}
         />
-        <Stack.Screen 
-          name="ResultScanTransaction" 
+        <Stack.Screen
+          name="ResultScanTransaction"
           component={ResultScanTransaction}
-          options={{ title: 'Transaction Details', headerShown: true }}
+          options={{ title: "Transaction Details", headerShown: true }}
         />
-        <Stack.Screen 
-          name="QRScanner" 
+        <Stack.Screen
+          name="QRScanner"
           component={QRScanner}
           options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="CharitarianRequestItem" 
+        <Stack.Screen
+          name="CharitarianRequestItem"
           component={CharitarianRequestItem}
-          options={{ headerShown: true, title: "Quản lí sản phẩm được gửi yêu cầu" }}
+          options={{
+            headerShown: true,
+            title: "Quản lí sản phẩm được gửi yêu cầu",
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
