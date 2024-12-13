@@ -6,8 +6,8 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Platform,
   TextInput,
+  Platform,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -38,72 +38,29 @@ const STATUS_LABELS = {
   Exchanged: "Đã trao đổi",
 };
 
-const MyProducts = () => {
+const CharitarianRequestItem = () => {
   const [activeTab, setActiveTab] = useState("approved");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [products, setProducts] = useState({
-    approved: [],
-    rejected: [],
-    pending: [],
-    outOfDate: [],
-    exchanged: [],
-    inTransaction: [],
-  });
+  const [products, setProducts] = useState<Product[]>([]);
   const navigation = useNavigation();
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     // Fetch data from the API
     axiosInstance
-      .get("/items/current-user")
+      .get("/charitarian-item/current-user")
       .then((response) => {
         const data = response.data.data;
-        setProducts({
-          approved: data["ApprovedItems"],
-          rejected: data["RejectedItems"],
-          pending: data["PendingItems"],
-          outOfDate: data["OutOfDateItems"],
-          exchanged: data["ExchangedItems"],
-          inTransaction: data["InTransactionItems"],
-        });
+        setProducts(data);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
   }, []);
 
-  const getFilteredProducts = (products: Product[], searchQuery: string) => {
-    if (!searchQuery.trim()) return products;
-
-    const searchLower = searchQuery.toLowerCase().trim();
-    return products.filter((product) => {
-      return (
-        product.name.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        product.category?.name?.toLowerCase().includes(searchLower) ||
-        product.condition.toLowerCase().includes(searchLower)
-      );
-    });
-  };
-
-  const getActiveProducts = () => {
-    switch (activeTab) {
-      case "approved":
-        return [
-          ...products.approved,
-          ...products.inTransaction,
-          ...products.exchanged,
-        ];
-      case "pending":
-        return products.pending;
-      case "outOfDate":
-        return [...products.outOfDate, ...products.rejected];
-      default:
-        return [];
-    }
-  };
-
-  const currentProducts = getActiveProducts();
-  const filteredProducts = getFilteredProducts(currentProducts, searchQuery);
+  const filteredProducts = products.filter((product: Product) => {
+    const searchLower = searchQuery.toLowerCase();
+    return product.name.toLowerCase().includes(searchLower);
+  });
 
   const renderProducts = (items: Product[]) => {
     return items.map((item) => (
@@ -111,14 +68,16 @@ const MyProducts = () => {
         key={item.id}
         style={styles.card}
         onPress={() =>
-          navigation.navigate("ProductDetail", { productId: item.id })
+          navigation.navigate("MyRequests", {
+            productId: item.id,
+            type: "requestsForMe",
+          })
         }
       >
         <View style={styles.cardHeader}>
-          <View style={{width: '60%'}}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-          </View>
-          <View
+          <Text style={styles.cardTitle}>{item.name}</Text>
+          <View></View>
+          {/* <View
             style={[
               styles.statusBadge,
               { backgroundColor: `${STATUS_COLORS[item?.status]}15` },
@@ -138,7 +97,7 @@ const MyProducts = () => {
             >
               {STATUS_LABELS[item?.status as keyof typeof STATUS_LABELS]}
             </Text>
-          </View>
+          </View> */}
         </View>
         <View style={styles.productInfo}>
           <Image source={{ uri: item.images[0] }} style={styles.image} />
@@ -146,18 +105,10 @@ const MyProducts = () => {
             <View style={styles.detailItem}>
               <Text style={styles.detailText}>{item.description}</Text>
             </View>
-            {/* <View style={styles.detailItem}>
-              <Icon name="category" size={20} color={Colors.orange500} />
-              <Text style={styles.detailText}>Danh mục: {item.category.name}</Text>
-            </View>
-            <View style={styles.detailItem}>
-              <Icon name="now-widgets" size={20} color={Colors.orange500}/>
-              <Text style={styles.detailText}>Số lượng: {item.quantity}</Text>
-            </View> */}
             <View style={styles.detailItem}>
               <Icon name="loop" size={20} color={Colors.orange500} />
               <Text style={styles.detailText}>
-                Tình trạng: {item.condition === "new" ? "Mới" : "Đã sử dụng"}
+                Tình trạng: {item.condition}
               </Text>
             </View>
             {item.isGift ? (
@@ -174,40 +125,16 @@ const MyProducts = () => {
         </View>
         {activeTab === "approved" && (
           <View style={styles.cardFooter}>
+            <View></View>
             <TouchableOpacity
-              style={styles.requestButton}
-              onPress={() =>
-                navigation.navigate("MyRequests", {
-                  productId: item.id,
-                  type: "itemRequestTo",
-                })
-              }
+              style={[
+                styles.statusBadge,
+                { backgroundColor: `${Colors.lightRed}15` },
+              ]}
             >
-              <View style={styles.requestInfo}>
-                <Icon name="call-made" size={20} color={Colors.orange500} />
-                <Text style={styles.requestCount}>{item.itemRequestTo}</Text>
-              </View>
-              <Text style={styles.requestLabel}>Yêu cầu đã gửi</Text>
-            </TouchableOpacity>
-
-            <View style={styles.divider} />
-
-            <TouchableOpacity
-              style={styles.requestButton}
-              onPress={() =>
-                navigation.navigate("MyRequests", {
-                  productId: item.id,
-                  type: "requestsForMe",
-                })
-              }
-            >
-              <View style={styles.requestInfo}>
-                <Icon name="call-received" size={20} color={Colors.lightRed} />
-                <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
-                  {item.requestForItem}
-                </Text>
-              </View>
-              <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
+              <Text style={[styles.statusText, { color: Colors.lightRed }]}>
+                {item.requestForItem} yêu cầu nhận được
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -217,27 +144,6 @@ const MyProducts = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "approved" && styles.activeTab]}
-          onPress={() => setActiveTab("approved")}
-        >
-          <Text style={{ fontSize: 16 }}>Đã duyệt</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "pending" && styles.activeTab]}
-          onPress={() => setActiveTab("pending")}
-        >
-          <Text style={{ fontSize: 16 }}>Chờ phê duyệt</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "outOfDate" && styles.activeTab]}
-          onPress={() => setActiveTab("outOfDate")}
-        >
-          <Text style={{ fontSize: 16 }}>Đã huỷ</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.searchContainer}>
         <View style={styles.searchWrapper}>
           <Icon
@@ -249,7 +155,7 @@ const MyProducts = () => {
           <TextInput
             placeholderTextColor="#c4c4c4"
             style={styles.searchInput}
-            placeholder="Tìm kiếm theo tên, mô tả, danh mục..."
+            placeholder="Tìm kiếm theo tên sản phẩm..."
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -263,18 +169,8 @@ const MyProducts = () => {
           )}
         </View>
       </View>
-
       <ScrollView style={styles.tabContent}>
-        {filteredProducts.length > 0 ? (
-          renderProducts(filteredProducts)
-        ) : (
-          <View style={styles.emptyState}>
-            <Icon name="search-off" size={48} color={Colors.gray500} />
-            <Text style={styles.emptyStateText}>
-              Không tìm thấy sản phẩm nào phù hợp
-            </Text>
-          </View>
-        )}
+        {activeTab === "approved" && renderProducts(filteredProducts)}
       </ScrollView>
     </View>
   );
@@ -283,29 +179,6 @@ const MyProducts = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  tabs: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-    backgroundColor: "#fff",
-    paddingTop: 10,
-  },
-  tabButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 5,
-  },
-  activeTabButton: {
-    backgroundColor: Colors.orange500,
-  },
-  tabText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  activeTabText: {
-    color: "#fff",
   },
   tabContent: {
     flex: 1,
@@ -320,6 +193,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#f1f1f1",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -384,7 +265,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "500",
   },
   detailItem: {
@@ -403,7 +284,6 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     margin: 16,
-    marginTop: 0,
   },
   searchWrapper: {
     flexDirection: "row",
@@ -436,54 +316,6 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 4,
   },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 32,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: Colors.gray500,
-    marginTop: 12,
-    textAlign: "center",
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#fff",
-  },
-  requestButton: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  requestInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  requestCount: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.orange500,
-    marginLeft: 6,
-  },
-  requestLabel: {
-    fontSize: 12,
-    color: Colors.gray600,
-  },
-  divider: {
-    width: 1,
-    height: "100%",
-    backgroundColor: "#eee",
-    marginHorizontal: 8,
-  },
 });
 
-export default MyProducts;
+export default CharitarianRequestItem;

@@ -18,6 +18,7 @@ import { useNavigation } from "@/src/hooks/useNavigation";
 import { Product } from "@/src/shared/type";
 import { useRefreshControl } from "@/src/hooks/useRefreshControl";
 import { useAuthCheck } from "@/src/hooks/useAuth";
+import { formatDateOnlyDate } from "@/src/shared/formatDate";
 
 type SearchMode = "default" | "need" | "have";
 interface SortOption {
@@ -117,42 +118,69 @@ const HomeScreen: React.FC = () => {
   const renderProductCard = ({ item: product }: { item: Product }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() =>
-        navigation.navigate("ProductDetail", { productId: product.id })
-      }
+      onPress={() => navigation.navigate("ProductDetail", { productId: product.id })}
+      activeOpacity={0.7}
     >
       <View style={styles.imageContainer}>
+        {/* Image with loading placeholder */}
         <Image
           source={{ uri: product.images?.[0] }}
           style={styles.image}
           resizeMode="cover"
         />
-        {/* {!product.available && (
-          <View style={styles.unavailableOverlay}>
-            <View style={styles.badgeDestructive}>
-              <Text style={styles.badgeText}>Hết hàng</Text>
-            </View>
-          </View>
-        )} */}
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.productName} numberOfLines={1}>
-          {product.name}
-        </Text>
-        <Text style={styles.description} numberOfLines={1}>
-          {product.description}
-        </Text>
-        <View style={styles.badgeContainer}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{product.condition}</Text>
-          </View>
+        
+        {/* Status badges */}
+        <View style={styles.statusBadgeContainer}>
           {product.isGift && (
-            <View>
-              <Icon name="card-giftcard" size={24} color={Colors.orange500} />
+            <View style={styles.giftBadge}>
+              <Icon name="card-giftcard" size={16} color="#fff" />
+              <Text style={styles.giftText}>Tặng</Text>
             </View>
           )}
-          <View style={[styles.badge, styles.outlineBadge]}>
-            <Text style={styles.outlineBadgeText}>{product.category.name}</Text>
+        </View>
+  
+        {/* Save/Wishlist button */}
+        {/* <TouchableOpacity 
+          style={styles.wishlistButton}
+          onPress={() => handleWishlist(product.id)}
+        >
+          <Icon 
+            name={isWishlisted ? "favorite" : "favorite-border"} 
+            size={24} 
+            color={Colors.orange500}
+          />
+        </TouchableOpacity> */}
+      </View>
+  
+      <View style={styles.cardContent}>
+        {/* Product info */}
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={1}>
+            {product.name}
+          </Text>
+          <Text style={styles.description} numberOfLines={1}>
+            {product.description}
+          </Text>
+        </View>
+  
+        {/* Tags/Badges */}
+        <View style={styles.badgeContainer}>
+          {product.condition === 'New' ? (
+            <View style={[styles.badge, styles.conditionBadgeNew]}>
+              <Icon name="info" size={12} color={Colors.lightGreen} />
+              <Text style={styles.conditionTextNew}>Mới</Text>
+            </View>
+          ) : (
+            <View style={[styles.badge, styles.conditionBadge]}>
+              <Icon name="info" size={12} color={Colors.orange500} />
+              <Text style={styles.conditionText}>Đã sử dụng</Text>
+            </View>
+            
+          )}
+  
+          <View style={[styles.badge, styles.categoryBadge]}>
+            <Icon name="category" size={12} color="#666" />
+            <Text style={styles.categoryText}>{product.category.name}</Text>
           </View>
         </View>
       </View>
@@ -369,11 +397,10 @@ const styles = StyleSheet.create({
   },
   columnWrapper: {
     justifyContent: "space-between",
-  },
-  card: {
+  },card: {
     width: (width - 48) / 2,
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: {
@@ -383,47 +410,158 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: 'hidden',
   },
+
   imageContainer: {
-    height: 150,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    overflow: "hidden",
-    padding: 8,
+    height: 140,
+    position: 'relative',
   },
+
   image: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f5f5f5',
+  },
+
+  statusBadgeContainer: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    gap: 4,
+  },
+
+  giftBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.orange500,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+
+  giftText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  unavailableBadge: {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+
+  unavailableText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  wishlistButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  cardContent: {
+    padding: 12,
+    gap: 8,
+  },
+  productInfo: {
+    gap: 4,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+  },
+  description: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 16,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  conditionBadge: {
+    backgroundColor: Colors.orange50,
+  },
+  conditionBadgeNew: {
+    backgroundColor: "#e6fbf7",
+  },
+  categoryBadge: {
+    backgroundColor: '#f5f5f5',
+  },
+  conditionText: {
+    fontSize: 12,
+    color: Colors.orange500,
+    fontWeight: '500',
+  },
+  conditionTextNew: {
+    fontSize: 12,
+    color: Colors.lightGreen,
+    fontWeight: '500',
+  },
+  categoryText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  footerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  timeText: {
+    fontSize: 11,
+    color: '#666',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  locationText: {
+    fontSize: 11,
+    color: '#666',
+    flex: 1,
   },
   unavailableOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-  },
-  cardContent: {
-    padding: 12,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: Colors.orange600,
-  },
-  description: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  badgeContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: Colors.orange50,
   },
   badgeDestructive: {
     paddingHorizontal: 12,
@@ -470,7 +608,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 16,
-    paddingBottom: 32, // Thêm padding bottom để tránh safe area
+    paddingBottom: 32,
   },
   modalTitle: {
     fontSize: 18,

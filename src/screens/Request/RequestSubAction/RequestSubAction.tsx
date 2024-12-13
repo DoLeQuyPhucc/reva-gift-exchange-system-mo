@@ -33,7 +33,8 @@ const RequestSubActionScreen = () => {
   const handleAuthenticatedNavigation = (screenName: string) => {
     try {
       if (screenName === 'RequestsForMe') {
-        navigation.navigate('MyRequests', { productId: '', type: 'requestsForMe' });
+        // navigation.navigate('MyRequests', { productId: '', type: 'requestsForMe' });
+        navigation.navigate('CharitarianRequestItem');
       } else if (screenName === 'MyRequests') {
         navigation.navigate('MyRequests', { productId: '', type: 'itemRequestTo' });
       }

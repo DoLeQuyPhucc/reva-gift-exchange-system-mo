@@ -36,6 +36,7 @@ import SearchScreen from "../screens/Search/SearchScreen";
 import SearchResultsScreen from "../screens/Search/SearchResultsScreen";
 import QRScanner from "../components/QRScanner";
 import ResultScanTransaction from "../screens/Transactions/ResultScanTransaction/ResultScanTransaction";
+import CharitarianRequestItem from "../screens/Request/CharitarianRequestItem/CharitarianRequestItem";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -189,6 +190,11 @@ export default function Navigation() {
           name="QRScanner" 
           component={QRScanner}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="CharitarianRequestItem" 
+          component={CharitarianRequestItem}
+          options={{ headerShown: true, title: "Quản lí sản phẩm được gửi yêu cầu" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -56,7 +56,13 @@ export interface User {
 
 export interface Request {
   id: string;
-  status: "Pending" | "Approved" | "Rejected" | "Hold_On";
+  status:
+    | "Pending"
+    | "Approved"
+    | "Rejected"
+    | "Hold_On"
+    | "Completed"
+    | "Not_Completed";
   requestMessage: string | null;
   rejectMessage: string | null;
   note: string | null;

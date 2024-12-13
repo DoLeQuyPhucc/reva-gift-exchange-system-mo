@@ -42,7 +42,7 @@ export type RootStackParamList = {
   MyRequests: { productId: string; type: string };
   RequestsForMe: { productId: string };
   RequestSubAction: undefined;
-  MyTransactions: undefined;
+  MyTransactions: { requestId: string };
   ChatScreen: undefined;
   PackageScreen: undefined;
   MyPackageScreen: undefined;
@@ -51,6 +51,7 @@ export type RootStackParamList = {
   };
   QRScanner: undefined;
   ResultScanTransaction: { transactionResult: any };
+  CharitarianRequestItem: undefined;
 };
 
 export type BottomTabParamList = {
