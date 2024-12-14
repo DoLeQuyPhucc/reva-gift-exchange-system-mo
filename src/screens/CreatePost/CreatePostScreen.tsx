@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Button,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Checkbox, RadioButton } from "react-native-paper";
@@ -1541,9 +1542,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  disabledButton: {
-    backgroundColor: "#ccc",
-  },
   customPerDayContainer: {
     padding: 16,
     backgroundColor: "#fff",
@@ -1629,6 +1627,97 @@ const styles = StyleSheet.create({
   selectedTextStyle: {
     fontSize: 16,
     color: Colors.gray800,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: "white",
+    borderTopRightRadius: 24,
+    borderTopLeftRadius: 24,
+    height: "90%",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalScrollView: {
+    flex: 1,
+    padding: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  textCenter: {
+    textAlign: "center",
+  },
+  modalDescription: {
+    fontSize: 16,
+    marginBottom: 16,
+    fontWeight: "bold",
+    textAlign: "left",
+  },
+  requestInput: {
+    borderColor: "#c4c4c4",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    textAlignVertical: "top",
+    width: "100%",
+    marginBottom: 16,
+  },
+  textErrorMessage: {
+    color: "#e53e3e",
+    marginBottom: 16,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    padding: 10,
+    elevation: 2,
+    width: "48%",
+    alignItems: "center",
+  },
+
+  cancelButton: {
+    backgroundColor: "#FF3B30",
+  },
+  confirmButton: {
+    backgroundColor: "#34C759",
+  },
+  disabledButton: {
+    backgroundColor: "#cccccc",
+    opacity: 0.7,
+  },
+  modalButtonText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 

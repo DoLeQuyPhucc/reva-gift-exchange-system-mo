@@ -183,11 +183,13 @@ const MyProducts = () => {
                 })
               }
             >
-              <View style={styles.requestInfo}>
-                <Icon name="call-made" size={20} color={Colors.orange500} />
-                <Text style={styles.requestCount}>{item.itemRequestTo}</Text>
-              </View>
               <Text style={styles.requestLabel}>Yêu cầu đã gửi</Text>
+              <View style={styles.requestInfo}>
+                <Icon name="call-made" size={16} color={Colors.orange500} />
+                <Text style={styles.requestCount}>
+                  {item.itemPendingRequestTo} / {item.itemRequestTo} đang chờ duyệt
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -201,13 +203,13 @@ const MyProducts = () => {
                 })
               }
             >
+              <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
               <View style={styles.requestInfo}>
-                <Icon name="call-received" size={20} color={Colors.lightRed} />
+                <Icon name="call-received" size={16} color={Colors.lightRed} />
                 <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
-                  {item.requestForItem}
+                  {item.pendingRequestForItem} / {item.requestForItem} đang chờ duyệt
                 </Text>
               </View>
-              <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -469,7 +471,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   requestCount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     color: Colors.orange500,
     marginLeft: 6,

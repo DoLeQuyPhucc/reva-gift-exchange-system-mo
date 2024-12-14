@@ -96,6 +96,19 @@ const MyTransactions = () => {
         response.data.data.map(async (transaction: Transaction) => {
           let updatedTransaction = { ...transaction };
 
+          try {
+            const isValidTime = await axiosInstance.get(
+              `transaction/validate-time/${transaction.id}`
+            );
+            updatedTransaction.isValidTime = isValidTime.data.data;
+          } catch (error) {
+            console.error(
+              `Error validating time for transaction ${transaction.id}:`,
+              error
+            );
+            updatedTransaction.isValidTime = false;
+          }
+
           if (
             transaction.status === "Completed" ||
             transaction.status === "Not_Completed"
@@ -116,6 +129,8 @@ const MyTransactions = () => {
               updatedTransaction.ratingComment = null;
             }
           }
+
+          console.log(updatedTransaction);
           return updatedTransaction;
         })
       );
@@ -609,14 +624,25 @@ const MyTransactions = () => {
                   </View>
                 )}
 
-                <View style={styles.dateInfo}>
-                  <Text style={styles.dateLabel}>
-                    <Icon name="info" size={14} color={Colors.orange500} /> Lưu
-                    ý: Bạn nên tới vào lúc{" "}
-                    {formatTimeRange(transaction.appointmentDate)} để có thể
-                    thấy được mã xác nhận và hoàn thành giao dịch.
-                  </Text>
-                </View>
+                {!transaction.isValidTime && (
+                  <>
+                    <View style={styles.dateInfo}>
+                      <Text style={styles.dateLabel}>
+                        <Icon name="info" size={14} color={Colors.orange500} />{" "}
+                        Lưu ý: Bạn nên tới vào lúc{" "}
+                        {formatTimeRange(transaction.appointmentDate)} để có thể
+                        thấy được mã xác nhận và hoàn thành giao dịch.
+                      </Text>
+                    </View>
+                    <View style={styles.dateInfo}>
+                      <Text style={styles.dateLabel}>
+                        <Icon name="map" size={14} color={Colors.orange500} />{" "}
+                        Đường đi sẽ được gửi tới bạn vào lúc{" "}
+                        {formatTimeRange(transaction.appointmentDate)}
+                      </Text>
+                    </View>
+                  </>
+                )}
 
                 {transaction.rejectMessage && (
                   <Text style={styles.rejectMessage}>
@@ -624,124 +650,136 @@ const MyTransactions = () => {
                   </Text>
                 )}
 
-                {transaction.status === "In_Progress" &&
-                  checkRole(transaction) === "requester" && (
-                    <>
-                      <TouchableOpacity
-                        style={styles.verifyButton}
-                        onPress={() => {
-                          setSelectedTransaction(transaction);
-                          setShowModal(true);
-                          setVerificationInput("");
-                        }}
-                      >
-                        <Text style={styles.verifyButtonText}>
-                          Xem mã định danh
-                        </Text>
-                      </TouchableOpacity>
+                {transaction.isValidTime && (
+                  <>
+                    {transaction.status === "In_Progress" &&
+                      checkRole(transaction) === "requester" && (
+                        <>
+                          <TouchableOpacity
+                            style={styles.verifyButton}
+                            onPress={() => {
+                              setSelectedTransaction(transaction);
+                              setShowModal(true);
+                              setVerificationInput("");
+                            }}
+                          >
+                            <Text style={styles.verifyButtonText}>
+                              Xem mã định danh
+                            </Text>
+                          </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.detailsButton}
-                        onPress={() => {
-                          // const data: LocationMap = {
-                          //   latitude: parseFloat(
-                          //     transaction.charitarianAddress.addressCoordinates
-                          //       .latitude
-                          //   ),
-                          //   longitude: parseFloat(
-                          //     transaction.charitarianAddress.addressCoordinates
-                          //       .longitude
-                          //   ),
-                          // };
-                          // setLocation(data);
-                          // setShowMapModal(true);
-                        }}
-                      >
-                        <View style={styles.detailsButtonContent}>
-                          <Icon name="map" size={20} color={Colors.orange500} />
-                          <Text style={styles.detailsButtonText}>
-                            Xem địa chỉ
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.detailsButton}
+                            onPress={() => {
+                              // const data: LocationMap = {
+                              //   latitude: parseFloat(
+                              //     transaction.charitarianAddress.addressCoordinates
+                              //       .latitude
+                              //   ),
+                              //   longitude: parseFloat(
+                              //     transaction.charitarianAddress.addressCoordinates
+                              //       .longitude
+                              //   ),
+                              // };
+                              // setLocation(data);
+                              // setShowMapModal(true);
+                            }}
+                          >
+                            <View style={styles.detailsButtonContent}>
+                              <Icon
+                                name="map"
+                                size={20}
+                                color={Colors.orange500}
+                              />
+                              <Text style={styles.detailsButtonText}>
+                                Xem địa chỉ
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.detailsButton}
-                        onPress={() => {
-                          console.log("Gọi điện");
-                        }}
-                      >
-                        <View style={styles.detailsButtonContent}>
-                          <Icon
-                            name="phone"
-                            size={20}
-                            color={Colors.orange500}
-                          />
-                          <Text style={styles.detailsButtonText}>Gọi điện</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </>
-                  )}
+                          <TouchableOpacity
+                            style={styles.detailsButton}
+                            onPress={() => {
+                              console.log("Gọi điện");
+                            }}
+                          >
+                            <View style={styles.detailsButtonContent}>
+                              <Icon
+                                name="phone"
+                                size={20}
+                                color={Colors.orange500}
+                              />
+                              <Text style={styles.detailsButtonText}>
+                                Gọi điện
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        </>
+                      )}
 
-                {transaction.status === "In_Progress" &&
-                  checkRole(transaction) === "charitarian" && (
-                    <>
-                      <TouchableOpacity
-                        style={styles.verifyButton}
-                        onPress={() => {
-                          navigation.navigate("QRScanner");
-                        }}
-                      >
-                        <Text style={styles.verifyButtonText}>
-                          Xác thực giao dịch
-                        </Text>
-                      </TouchableOpacity>
-                      <View style={styles.topButtonRow}>
-                        <TouchableOpacity
-                          style={[styles.modalButton, styles.rejectButton]}
-                          onPress={() =>
-                            handleOpenActionModal(transaction, "reject")
-                          }
-                        >
-                          <Text style={styles.verifyButtonText}>
-                            Từ chối
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.modalButton,
-                            {
-                              backgroundColor: Colors.lightGreen,
-                              alignItems: "center",
-                            },
-                          ]}
-                          onPress={() =>
-                            handleOpenActionModal(transaction, "confirm")
-                          }
-                        >
-                          <Text style={styles.verifyButtonText}>
-                            Xác nhận
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
+                    {transaction.status === "In_Progress" &&
+                      checkRole(transaction) === "charitarian" && (
+                        <>
+                          <TouchableOpacity
+                            style={styles.verifyButton}
+                            onPress={() => {
+                              navigation.navigate("QRScanner");
+                            }}
+                          >
+                            <Text style={styles.verifyButtonText}>
+                              Xác thực giao dịch
+                            </Text>
+                          </TouchableOpacity>
+                          <View style={styles.topButtonRow}>
+                            <TouchableOpacity
+                              style={[styles.modalButton, styles.rejectButton]}
+                              onPress={() =>
+                                handleOpenActionModal(transaction, "reject")
+                              }
+                            >
+                              <Text style={styles.verifyButtonText}>
+                                Từ chối
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[
+                                styles.modalButton,
+                                {
+                                  backgroundColor: Colors.lightGreen,
+                                  alignItems: "center",
+                                },
+                              ]}
+                              onPress={() =>
+                                handleOpenActionModal(transaction, "confirm")
+                              }
+                            >
+                              <Text style={styles.verifyButtonText}>
+                                Xác nhận
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
 
-                      <TouchableOpacity
-                        style={styles.detailsButton}
-                        onPress={() => {
-                          console.log("Gọi điện");
-                        }}
-                      >
-                        <View style={styles.detailsButtonContent}>
-                          <Icon
-                            name="phone"
-                            size={20}
-                            color={Colors.orange500}
-                          />
-                          <Text style={styles.detailsButtonText}>Gọi điện</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </>
-                  )}
+                          <TouchableOpacity
+                            style={styles.detailsButton}
+                            onPress={() => {
+                              console.log("Gọi điện");
+                            }}
+                          >
+                            <View style={styles.detailsButtonContent}>
+                              <Icon
+                                name="phone"
+                                size={20}
+                                color={Colors.orange500}
+                              />
+                              <Text style={styles.detailsButtonText}>
+                                Gọi điện
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        </>
+                      )}
+                  </>
+                )}
 
                 {(transaction.status === "Completed" ||
                   transaction.status === "Not_Completed") && (

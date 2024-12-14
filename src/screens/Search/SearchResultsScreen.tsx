@@ -72,7 +72,17 @@ const SearchResultsScreen: React.FC = () => {
   };
 
   const filterProducts = (products: Product[]) => {
-    let filtered = products.filter((product) => product.status !== "Exchanged");
+    let filtered = products.filter((product) => {
+  // Điều kiện 1: Sản phẩm không phải của mình và trạng thái là "Approved"
+  const isApprovedAndNotMine =
+    product.status === "Approved" && product.owner_id !== userData.userId;
+
+  // Điều kiện 2: Sản phẩm là của mình (bất kể trạng thái)
+  const isMine = product.owner_id === userData.userId;
+
+  // Kết hợp hai điều kiện
+  return isApprovedAndNotMine || isMine;
+});
 
     console.log("Filtered Products: ", filtered);
     setFilteredProducts(filtered);
@@ -129,13 +139,13 @@ const SearchResultsScreen: React.FC = () => {
     >
       <Image source={{ uri: item.images?.[0] }} style={styles.productImage} />
       <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.productDescription} numberOfLines={2}>
           {item.description}
         </Text>
         {item.owner_id === userData?.userId && (
           <Text style={styles.ownProductWarning}>
-            Bạn không thể trao đổi hoặc đăng ký nhận với sản phẩm của mình
+            Bạn là chủ sở hữu món đồ này
           </Text>
         )}
         <View style={styles.badgeContainer}>

@@ -30,6 +30,8 @@ export interface Product {
   address?: SubInfoAddress;
   itemRequestTo: number;
   requestForItem: number;
+  itemPendingRequestTo: number;
+  pendingRequestForItem: number;
 }
 
 export interface SubInfoAddress {
@@ -116,6 +118,8 @@ export interface Transaction {
 
   rating?: number | null;
   ratingComment?: string | null;
+
+  isValidTime?: boolean;
 }
 
 export interface TransactionRatingType {

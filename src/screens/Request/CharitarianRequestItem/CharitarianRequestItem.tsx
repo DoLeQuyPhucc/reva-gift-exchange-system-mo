@@ -125,17 +125,18 @@ const CharitarianRequestItem = () => {
         </View>
         {activeTab === "approved" && (
           <View style={styles.cardFooter}>
-            <View></View>
-            <TouchableOpacity
-              style={[
-                styles.statusBadge,
-                { backgroundColor: `${Colors.lightRed}15` },
-              ]}
+            <View
+              style={
+                styles.requestButton}
             >
-              <Text style={[styles.statusText, { color: Colors.lightRed }]}>
-                {item.requestForItem} yêu cầu nhận được
-              </Text>
-            </TouchableOpacity>
+                          <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
+                          <View style={styles.requestInfo}>
+                            <Icon name="call-received" size={16} color={Colors.lightRed} />
+                            <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
+                              {item.pendingRequestForItem} / {item.requestForItem} đang chờ duyệt
+                            </Text>
+                          </View>
+            </View>
           </View>
         )}
       </TouchableOpacity>
@@ -204,9 +205,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f1f1f1",
-    paddingVertical: 12,
+    backgroundColor: "#fff",
     paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
   },
   cardTitle: {
     fontSize: 16,
@@ -316,6 +318,26 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 4,
   },
+  requestButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+    requestInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    requestCount: {
+      fontSize: 14,
+      fontWeight: "bold",
+      color: Colors.orange500,
+      marginLeft: 6,
+    },
+    requestLabel: {
+      fontSize: 12,
+      color: Colors.gray600,
+    },
 });
 
 export default CharitarianRequestItem;

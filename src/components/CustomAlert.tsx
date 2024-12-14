@@ -6,6 +6,7 @@ interface CustomAlertProps {
   visible: boolean;
   title: string;
   message: string;
+  submessage?: string | null;
   onConfirm: () => void;
   onCancel?: () => void;
   showCancelButton?: boolean;
@@ -15,6 +16,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
   visible,
   title,
   message,
+  submessage,
   onConfirm,
   onCancel,
   showCancelButton = false,
@@ -25,6 +27,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
         <View style={styles.alertContainer}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
+          {submessage && <Text style={styles.submessage}>{submessage}</Text>}
           <View style={styles.buttonContainer}>
             {showCancelButton && (
               <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
@@ -63,9 +66,15 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+    color: '#666',
+  },
+  submessage: {
+    fontSize: 14,
     marginBottom: 20,
-    textAlign: "center",
-    color: "#666",
+    textAlign: 'left',
+    color: '#666',
   },
   buttonContainer: {
     flexDirection: "row",
