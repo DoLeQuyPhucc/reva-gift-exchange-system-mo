@@ -53,7 +53,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchInitialNotifications();
+      fetchInitialNotifications(1, 10);
     }
   }, [isAuthenticated]);
 

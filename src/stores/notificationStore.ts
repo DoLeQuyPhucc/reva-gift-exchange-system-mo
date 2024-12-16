@@ -3,13 +3,27 @@ import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { useAuthStore } from "./authStore";
 import Toast from "react-native-toast-message";
 import axiosInstance from "../api/axiosInstance";
+
 export interface Notification {
-  id?: string;
-  type?: string;
+  id: string;
+  type: string;
   data: string;
-  read?: boolean;
-  createdAt?: string | Date;
-  status?: string;
+  read: boolean;
+  createdAt: string | Date;
+  status: string;
+}
+
+export interface NotificationResponse {
+  isSuccess: boolean;
+  code: number;
+  message: string;
+  data: {
+    totalItems: number;
+    pageSize: number;
+    currentPage: number;
+    totalPage: number;
+    data: Notification[];
+  };
 }
 
 const SIGNALR_URL = "http://103.142.139.142:6900/notificationsHub";
@@ -22,7 +36,10 @@ interface NotificationState {
   disconnectSignalR: () => Promise<void>;
   setNotifications: (notifications: Notification[]) => void;
   addNotification: (notification: Notification) => void;
-  fetchInitialNotifications: () => Promise<void>;
+  fetchInitialNotifications: (
+    pageIndex: number,
+    sizeIndex: number
+  ) => Promise<void>;
 }
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   connection: null,
@@ -41,10 +58,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       await newConnection.invoke("JoinNotificationGroup", userId);
 
-      await get().fetchInitialNotifications();
+      await get().fetchInitialNotifications(1, 10);
 
       newConnection.on("ReceiveNotification", (notification: string) => {
-        const notificationObj: Notification = { data: notification };
+        const parsedNotification = JSON.parse(notification);
+        const notificationObj: Notification = {
+          id: parsedNotification.id,
+          type: parsedNotification.type,
+          data: parsedNotification.data,
+          read: false,
+          createdAt: new Date(parsedNotification.createdAt),
+          status: parsedNotification.status,
+        };
         get().addNotification(notificationObj);
         Toast.show({
           type: "info",
@@ -84,11 +109,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         ...state.notifications,
       ].slice(0, MAX_NOTIFICATIONS),
     })),
-  fetchInitialNotifications: async () => {
+  fetchInitialNotifications: async (
+    pageIndex: number = 1,
+    sizeIndex: number = 10
+  ) => {
     try {
-      const response = await axiosInstance.get("notification/all");
-      if (response.data.isSuccess) {
-        const processedNotifications = response.data.data.map(
+      const response = await axiosInstance.get(
+        `notification/all?pageIndex=${pageIndex}&sizeIndex=${sizeIndex}`
+      );
+      const notificationResponse: NotificationResponse = response.data;
+
+      if (notificationResponse.isSuccess) {
+        const processedNotifications = notificationResponse.data.data.map(
           (notification: Notification) => ({
             ...notification,
             createdAt: notification.createdAt
