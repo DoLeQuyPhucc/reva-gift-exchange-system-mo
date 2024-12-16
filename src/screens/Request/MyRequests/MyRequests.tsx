@@ -9,6 +9,8 @@ import {
   Modal,
   TextInput,
   FlatList,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
@@ -52,7 +54,7 @@ export default function MyRequestsScreen() {
   const itemId = route.params.productId;
   const typeRequest = route.params.type;
 
-  const {userData} = useAuthCheck();
+  const { userData } = useAuthCheck();
 
   const [requests, setRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
@@ -79,10 +81,14 @@ export default function MyRequestsScreen() {
   // Thêm state searchQuery
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-  const fetchRequests = async () => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const PAGE_SIZE = 10;
+
+  const fetchRequests = async (page: number) => {
+    setIsLoading(true);
     try {
       let requestsResponse;
 
@@ -90,21 +96,23 @@ export default function MyRequestsScreen() {
         case "itemRequestTo":
           if (itemId !== "") {
             requestsResponse = await axiosInstance.get(
-              `request/my-requests/${itemId}`
+              `request/my-requests/${itemId}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           } else {
-            requestsResponse = await axiosInstance.get(`request/my-requests`);
+            requestsResponse = await axiosInstance.get(
+              `request/my-requests?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+            );
           }
           setIsShowActions(false);
           break;
         case "requestsForMe":
           if (itemId !== "") {
             requestsResponse = await axiosInstance.get(
-              `request/requests-for-me/${itemId}`
+              `request/requests-for-me/${itemId}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           } else {
             requestsResponse = await axiosInstance.get(
-              `request/requests-for-me`
+              `request/requests-for-me?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           }
           setIsShowActions(true);
@@ -115,27 +123,59 @@ export default function MyRequestsScreen() {
       }
 
       if (requestsResponse?.data?.data) {
-        console.log("Requests data:", requestsResponse.data.data);
-        const sortedRequests = requestsResponse.data.data.sort(
-          (a: Request, b: Request) => {
-            const statusOrder: { [key: string]: number } = {
-              Pending: 1,
-              Hold_On: 2,
-              Approved: 3,
-              Rejected: 4,
-              Completed: 5,
-              Not_Completed: 6,
-            };
-            return statusOrder[a.status] - statusOrder[b.status];
-          }
-        );
-        setRequests(sortedRequests);
+        const { data, totalItems } = requestsResponse.data.data;
+
+        const sortedRequests = data.sort((a: Request, b: Request) => {
+          const statusOrder: { [key: string]: number } = {
+            Pending: 1,
+            Hold_On: 2,
+            Approved: 3,
+            Rejected: 4,
+            Completed: 5,
+            Not_Completed: 6,
+          };
+          return statusOrder[a.status] - statusOrder[b.status];
+        });
+
+        if (page === 1) {
+          setRequests(sortedRequests);
+        } else {
+          setRequests((prev) => [...prev, ...sortedRequests]);
+        }
+
+        setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
       } else {
         console.warn("No data found in response:", requestsResponse);
       }
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching requests:", error);
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchRequests(1);
+  }, []);
+
+  const loadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchRequests(currentPage + 1);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchRequests(1);
+    setRefreshing(false);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    // Reset products and fetch first page with search query
+    fetchRequests(1);
   };
 
   // Thêm hàm lọc requests
@@ -205,7 +245,7 @@ export default function MyRequestsScreen() {
         console.log(transactionData);
         await axiosInstance.post(`transaction/create`, transactionData);
       }
-      fetchRequests();
+      fetchRequests(1);
       setShowTimeModal(false);
       setSelectedRequest(null);
       setSelectedTime(null);
@@ -241,7 +281,7 @@ export default function MyRequestsScreen() {
       );
 
       if (response.data.isSuccess === true) {
-        fetchRequests();
+        fetchRequests(1);
         setShowRejectModal(false);
         setRejectMessage("");
       }
@@ -438,46 +478,65 @@ export default function MyRequestsScreen() {
               </View>
 
               {/* Status Message Box */}
-<View style={styles.statusMessageBox}>
-  <View style={styles.statusMessageContent}>
-    <Icon 
-      name={
-        request.status === 'Pending' ? 'timer' :
-        request.status === 'Approved' ? 'check-circle' :
-        request.status === 'Rejected' ? 'cancel' :
-        request.status === 'Hold_On' ? 'pause-circle-filled' :
-        request.status === 'Completed' ? 'verified' :
-        'error'
-      } 
-      size={20} 
-      color={STATUS_COLORS[request.status]} 
-    />
-    <Text style={[styles.statusMessage, { color: STATUS_COLORS[request.status] }]}>
-      {request.status === 'Pending' && "Yêu cầu này đang trong quá trình đợi phản hồi."}
-      {request.status === 'Approved' && "Yêu cầu đã được chấp nhận. Vui lòng chờ liên hệ để trao đổi thêm."}
-      {request.status === 'Rejected' && "Yêu cầu đã bị từ chối. Xem lý do từ chối bên dưới."}
-      {request.status === 'Hold_On' && "Yêu cầu tạm hoãn do sản phẩm đang trong giao dịch khác."}
-      {request.status === 'Completed' && "Giao dịch đã hoàn thành thành công."}
-      {request.status === 'Not_Completed' && "Giao dịch không thành công."}
-    </Text>
-  </View>
-  
-  {(request.status === 'Approved' || 
-    request.status === 'Completed' || 
-    request.status === 'Not_Completed') && (
-    <TouchableOpacity 
-      style={styles.viewDetailButton}
-      onPress={() => navigation.navigate("MyTransactions", { requestId: request.id })}
-    >
-      <Icon 
-        name="arrow-forward" 
-        size={20} 
-        color={STATUS_COLORS[request.status]} 
-      />
-    </TouchableOpacity>
-  )}
-</View>
+              <View style={styles.statusMessageBox}>
+                <View style={styles.statusMessageContent}>
+                  <Icon
+                    name={
+                      request.status === "Pending"
+                        ? "timer"
+                        : request.status === "Approved"
+                        ? "check-circle"
+                        : request.status === "Rejected"
+                        ? "cancel"
+                        : request.status === "Hold_On"
+                        ? "pause-circle-filled"
+                        : request.status === "Completed"
+                        ? "verified"
+                        : "error"
+                    }
+                    size={20}
+                    color={STATUS_COLORS[request.status]}
+                  />
+                  <Text
+                    style={[
+                      styles.statusMessage,
+                      { color: STATUS_COLORS[request.status] },
+                    ]}
+                  >
+                    {request.status === "Pending" &&
+                      "Yêu cầu này đang trong quá trình đợi phản hồi."}
+                    {request.status === "Approved" &&
+                      "Yêu cầu đã được chấp nhận. Vui lòng chờ liên hệ để trao đổi thêm."}
+                    {request.status === "Rejected" &&
+                      "Yêu cầu đã bị từ chối. Xem lý do từ chối bên dưới."}
+                    {request.status === "Hold_On" &&
+                      "Yêu cầu tạm hoãn do sản phẩm đang trong giao dịch khác."}
+                    {request.status === "Completed" &&
+                      "Giao dịch đã hoàn thành thành công."}
+                    {request.status === "Not_Completed" &&
+                      "Giao dịch không thành công."}
+                  </Text>
+                </View>
 
+                {(request.status === "Approved" ||
+                  request.status === "Completed" ||
+                  request.status === "Not_Completed") && (
+                  <TouchableOpacity
+                    style={styles.viewDetailButton}
+                    onPress={() =>
+                      navigation.navigate("MyTransactions", {
+                        requestId: request.id,
+                      })
+                    }
+                  >
+                    <Icon
+                      name="arrow-forward"
+                      size={20}
+                      color={STATUS_COLORS[request.status]}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
 
               {/* Items Section */}
               <View style={styles.itemsSection}>
@@ -566,7 +625,10 @@ export default function MyRequestsScreen() {
                   {request.charitarian.id.match(userData.userId as string) ? (
                     <Text>{request.rejectMessage}</Text>
                   ) : (
-                    <Text>Rất tiếc, sản phẩm này đã được trao đổi rồi, vui lòng chọn sản phẩm khác.</Text>
+                    <Text>
+                      Rất tiếc, sản phẩm này đã được trao đổi rồi, vui lòng chọn
+                      sản phẩm khác.
+                    </Text>
                   )}
                 </View>
               )}
@@ -626,7 +688,7 @@ export default function MyRequestsScreen() {
             style={styles.searchInput}
             placeholder="Tìm kiếm theo tên sản phẩm..."
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={() => handleSearch(searchQuery)}
           />
           {searchQuery !== "" && (
             <TouchableOpacity
@@ -648,6 +710,18 @@ export default function MyRequestsScreen() {
             onPress={() => handleSelectRequest(item)}
           />
         )}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          isLoading ? (
+            <View style={styles.loadingMore}>
+              <ActivityIndicator size="small" color="#f97316" />
+            </View>
+          ) : null
+        }
         style={styles.scrollView}
       />
 
@@ -1439,18 +1513,18 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   statusMessageBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     padding: 12,
     borderRadius: 8,
     marginTop: 10,
     marginBottom: 15,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   statusMessageContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   statusMessage: {
@@ -1461,7 +1535,11 @@ const styles = StyleSheet.create({
   viewDetailButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginLeft: 8,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
