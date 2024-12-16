@@ -31,7 +31,7 @@ import { useAuthCheck } from "@/src/hooks/useAuth";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
-  Approved: Colors.lightGreen,
+  Approved: Colors.blue500,
   Rejected: Colors.lightRed,
   Hold_On: Colors.gray600,
   Completed: Colors.lightGreen,
@@ -40,7 +40,7 @@ const STATUS_COLORS: { [key: string]: string } = {
 
 const STATUS_LABELS = {
   Pending: "Đang chờ",
-  Approved: "Đã duyệt",
+  Approved: "Đang trong giao dịch",
   Rejected: "Từ chối",
   Hold_On: "Tạm hoãn",
   Completed: "Đã hoàn thành",
