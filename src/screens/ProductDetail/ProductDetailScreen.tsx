@@ -89,7 +89,11 @@ export default function ProductDetailScreen() {
   const [timeRanges, setTimeRanges] = useState<DayTimeRange[]>([]);
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
-  const [alertData, setAlertData] = useState<{title: string, message: string, submessage: string | null}>({
+  const [alertData, setAlertData] = useState<{
+    title: string;
+    message: string;
+    submessage: string | null;
+  }>({
     title: "",
     message: "",
     submessage: null,
@@ -205,7 +209,7 @@ export default function ProductDetailScreen() {
         setAlertData({
           title: "Thành công",
           message: "Tải hình ảnh lên thành công!",
-          submessage: null
+          submessage: null,
         });
         setShowAlertDialog(true);
       }
@@ -213,7 +217,7 @@ export default function ProductDetailScreen() {
       setAlertData({
         title: "Thất bại",
         message: "Tải hình ảnh lên thất bại! Vui lòng thử lại.",
-        submessage: null
+        submessage: null,
       });
       setShowAlertDialog(true);
     } finally {
@@ -643,10 +647,13 @@ export default function ProductDetailScreen() {
     try {
       const response = await axiosInstance.get(`/items/current-user`);
       if (response.data.isSuccess) {
-        setUserItems(response.data.data["ApprovedItems"]);
+        setUserItems(response.data.data["ApprovedItems"] || []);
+      } else {
+        setUserItems([]);
       }
     } catch (error) {
       console.error("Error fetching user items:", error);
+      setUserItems([]);
     } finally {
       setLoadingUserItems(false);
     }
@@ -686,36 +693,37 @@ export default function ProductDetailScreen() {
   function formatTimeRange(dateTimeString: string): string {
     // Parse chuỗi ngày giờ
     const dateTime = new Date(dateTimeString);
-  
+
     // Lấy thời gian ban đầu
     const initialHours = dateTime.getHours();
     const initialMinutes = dateTime.getMinutes();
-  
+
     // Tạo thời gian mới bằng cách trừ 15 phút
     const startTime = new Date(dateTime);
     startTime.setMinutes(initialMinutes - 15);
-  
+
     // Tạo thời gian mới bằng cách cộng 45 phút
     const endTime = new Date(dateTime);
     endTime.setMinutes(initialMinutes + 45);
-  
+
     // Định dạng giờ phút
     const formatTime = (time: Date) =>
-      `${time.getHours().toString().padStart(2, '0')}:${time
+      `${time.getHours().toString().padStart(2, "0")}:${time
         .getMinutes()
         .toString()
-        .padStart(2, '0')}`;
-  
+        .padStart(2, "0")}`;
+
     // Định dạng ngày tháng năm
-    const formattedDate = `${dateTime
-      .getDate()
+    const formattedDate = `${dateTime.getDate().toString().padStart(2, "0")}/${(
+      dateTime.getMonth() + 1
+    )
       .toString()
-      .padStart(2, '0')}/${(dateTime.getMonth() + 1)
-      .toString()
-      .padStart(2, '0')}/${dateTime.getFullYear()}`;
-  
+      .padStart(2, "0")}/${dateTime.getFullYear()}`;
+
     // Kết hợp thành chuỗi hoàn chỉnh
-    return `Từ ${formatTime(startTime)} đến ${formatTime(endTime)} ngày ${formattedDate}`;
+    return `Từ ${formatTime(startTime)} đến ${formatTime(
+      endTime
+    )} ngày ${formattedDate}`;
   }
 
   const handleConfirmRequest = async () => {
@@ -743,7 +751,7 @@ export default function ProductDetailScreen() {
         setAlertData({
           title: "Thành công",
           message: `Yêu cầu đã được tạo thành công.`,
-          submessage: `Bạn nên tới lúc ${timeRange} để trao đổi sản phẩm.`
+          submessage: `Bạn nên tới lúc ${timeRange} để trao đổi sản phẩm.`,
         });
         setShowAlertDialog(true);
       }
@@ -752,7 +760,7 @@ export default function ProductDetailScreen() {
         title: "Thất bại",
         message:
           error instanceof Error ? error.message : "Bạn không thể tạo yêu cầu",
-        submessage: null
+        submessage: null,
       });
       setShowAlertDialog(true);
     }
@@ -866,7 +874,7 @@ export default function ProductDetailScreen() {
       );
     }
 
-    if (userItems.length === 0) {
+    if (!userItems || userItems.length === 0) {
       return (
         <Text style={styles.noItemsText}>
           Bạn chưa có sản phẩm nào để trao đổi
@@ -1093,7 +1101,7 @@ export default function ProductDetailScreen() {
             </View>
           )}
         </View>
-        
+
         {userData.userId === product.owner_id && (
           <Text style={styles.isOwner}>Bạn là chủ sở hữu của món đồ này</Text>
         )}
@@ -1177,20 +1185,22 @@ export default function ProductDetailScreen() {
                 <>
                   <View style={styles.exchangeArrowContainer}>
                     <Icon name="swap-vert" size={24} color={Colors.orange500} />
-                    {moreImages.length === 0 && (
-                      <>
-                        <Text style={styles.exchangeText}>
-                          Chọn sản phẩm để trao đổi
-                        </Text>
-                      </>
+                    {(!moreImages || moreImages.length === 0) && (
+                      <Text style={styles.exchangeText}>
+                        Chọn sản phẩm để trao đổi
+                      </Text>
                     )}
                   </View>
-                  {moreImages.length === 0 && (
-                    <>
-                      <View style={styles.userItemsSection}>
-                        {renderUserItems()}
-                      </View>
-                    </>
+                  {(!moreImages || moreImages.length === 0) && (
+                    <View style={styles.userItemsSection}>
+                      {userItems.length > 0 ? (
+                        renderUserItems()
+                      ) : (
+                        <Text style={styles.noItemsText}>
+                          Bạn chưa có sản phẩm nào để trao đổi
+                        </Text>
+                      )}
+                    </View>
                   )}
 
                   <Text style={styles.moreItemText}>
@@ -1357,7 +1367,7 @@ export default function ProductDetailScreen() {
                               </View>
                             );
                           })()}
-                          
+
                           {/* Hiển thị busy time cho ngày đã chọn */}
                           {/* {busyTime && busyTime
       .filter(time => time.includes(formatDate_DD_MM_YYYY(selectedDate.toISOString())))
@@ -1427,11 +1437,17 @@ export default function ProductDetailScreen() {
                           <TouchableOpacity
                             style={[
                               styles.addButton,
-                              (!selectedHour || (selectedMinute === 0 ? false : !selectedMinute)) &&
+                              (!selectedHour ||
+                                (selectedMinute === 0
+                                  ? false
+                                  : !selectedMinute)) &&
                                 styles.disabledButton,
                             ]}
                             onPress={addTimeSlot}
-                            disabled={!selectedHour || (selectedMinute === 0 ? false : !selectedMinute)}
+                            disabled={
+                              !selectedHour ||
+                              (selectedMinute === 0 ? false : !selectedMinute)
+                            }
                           >
                             <Text style={styles.addButtonText}>Chọn</Text>
                           </TouchableOpacity>
