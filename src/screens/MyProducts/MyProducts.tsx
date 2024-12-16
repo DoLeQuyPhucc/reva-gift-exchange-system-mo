@@ -8,12 +8,14 @@ import {
   TouchableOpacity,
   Platform,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import { Product } from "@/src/shared/type";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@/src/hooks/useNavigation";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -41,7 +43,17 @@ const STATUS_LABELS = {
 const MyProducts = () => {
   const [activeTab, setActiveTab] = useState("approved");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [products, setProducts] = useState({
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState<{
+    approved: Product[];
+    rejected: Product[];
+    pending: Product[];
+    outOfDate: Product[];
+    exchanged: Product[];
+    inTransaction: Product[];
+  }>({
     approved: [],
     rejected: [],
     pending: [],
@@ -49,27 +61,153 @@ const MyProducts = () => {
     exchanged: [],
     inTransaction: [],
   });
+  const PAGE_SIZE = 10;
+
+  const { userData } = useAuthCheck();
+
   const navigation = useNavigation();
 
+  const loadApprovedProducts = async (page: number, isLoadMore = false) => {
+    try {
+      const response = await axiosInstance.get(
+        `items/user/${userData.userId}?status=Approved&status=In_Transaction&status=Exchanged&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+      );
+      const responseData = response.data.data;
+
+      setTotalPages(responseData.totalPage);
+
+      if (isLoadMore) {
+        setProducts((prev) => ({
+          ...prev,
+          approved: [...prev.approved, ...responseData.data],
+          inTransaction: [...prev.inTransaction],
+          exchanged: [...prev.exchanged],
+        }));
+      } else {
+        setProducts((prev) => ({
+          ...prev,
+          approved: responseData.data,
+          inTransaction: [],
+          exchanged: [],
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading approved products:", error);
+    }
+  };
+
+  const loadPendingProducts = async (page: number, isLoadMore = false) => {
+    try {
+      const response = await axiosInstance.get(
+        `items/user/${userData.userId}?status=Pending&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+      );
+      const responseData = response.data.data;
+
+      setTotalPages(responseData.totalPage);
+
+      if (isLoadMore) {
+        setProducts((prev) => ({
+          ...prev,
+          pending: [...prev.pending, ...responseData.data],
+        }));
+      } else {
+        setProducts((prev) => ({
+          ...prev,
+          pending: responseData.data,
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading pending products:", error);
+    }
+  };
+
+  const loadOutOfDateProducts = async (page: number, isLoadMore = false) => {
+    try {
+      const response = await axiosInstance.get(
+        `items/user/${userData.userId}?status=Out_of_date&status=Rejected&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+      );
+      const responseData = response.data.data;
+
+      setTotalPages(responseData.totalPage);
+
+      if (isLoadMore) {
+        setProducts((prev) => ({
+          ...prev,
+          outOfDate: [...prev.outOfDate, ...responseData.data],
+          rejected: [...prev.rejected],
+        }));
+      } else {
+        setProducts((prev) => ({
+          ...prev,
+          outOfDate: responseData.data,
+          rejected: [],
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading out of date products:", error);
+    }
+  };
+
+  const loadProducts = async (
+    page: number,
+    isLoadMore = false,
+    activeTab: string
+  ) => {
+    if (isLoading || (totalPages !== 0 && page > totalPages)) return;
+
+    setIsLoading(true);
+    try {
+      switch (activeTab) {
+        case "approved":
+          await loadApprovedProducts(page, isLoadMore);
+          break;
+        case "pending":
+          await loadPendingProducts(page, isLoadMore);
+          break;
+        case "outOfDate":
+          await loadOutOfDateProducts(page, isLoadMore);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Fetch data from the API
-    axiosInstance
-      .get("/items/current-user")
-      .then((response) => {
-        const data = response.data.data;
-        setProducts({
-          approved: data["ApprovedItems"],
-          rejected: data["RejectedItems"],
-          pending: data["PendingItems"],
-          outOfDate: data["OutOfDateItems"],
-          exchanged: data["ExchangedItems"],
-          inTransaction: data["InTransactionItems"],
-        });
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
-  }, []);
+    setCurrentPage(1);
+    loadProducts(1, false, activeTab);
+  }, [activeTab]); // Reset và load lại khi đổi tab
+
+  const handleLoadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      loadProducts(currentPage + 1, true, activeTab);
+    }
+  };
+
+  // useEffect(() => {
+  //   // Fetch data from the API
+  //   axiosInstance
+  //     .get("/items/current-user")
+  //     .then((response) => {
+  //       const data = response.data.data;
+  //       setProducts({
+  //         approved: data["ApprovedItems"],
+  //         rejected: data["RejectedItems"],
+  //         pending: data["PendingItems"],
+  //         outOfDate: data["OutOfDateItems"],
+  //         exchanged: data["ExchangedItems"],
+  //         inTransaction: data["InTransactionItems"],
+  //       });
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error fetching data:", error);
+  //     });
+  // }, []);
 
   const getFilteredProducts = (products: Product[], searchQuery: string) => {
     if (!searchQuery.trim()) return products;
@@ -102,6 +240,12 @@ const MyProducts = () => {
     }
   };
 
+  const setSearchQueryHandler = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    loadProducts(1, false, activeTab);
+  };
+
   const currentProducts = getActiveProducts();
   const filteredProducts = getFilteredProducts(currentProducts, searchQuery);
 
@@ -115,8 +259,10 @@ const MyProducts = () => {
         }
       >
         <View style={styles.cardHeader}>
-          <View style={{width: '60%'}}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+          <View style={{ width: "60%" }}>
+            <Text style={styles.cardTitle} numberOfLines={1}>
+              {item.name}
+            </Text>
           </View>
           <View
             style={[
@@ -187,7 +333,8 @@ const MyProducts = () => {
               <View style={styles.requestInfo}>
                 <Icon name="call-made" size={16} color={Colors.orange500} />
                 <Text style={styles.requestCount}>
-                  {item.itemPendingRequestTo} / {item.itemRequestTo} đang chờ duyệt
+                  {item.itemPendingRequestTo} / {item.itemRequestTo} đang chờ
+                  duyệt
                 </Text>
               </View>
             </TouchableOpacity>
@@ -207,7 +354,8 @@ const MyProducts = () => {
               <View style={styles.requestInfo}>
                 <Icon name="call-received" size={16} color={Colors.lightRed} />
                 <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
-                  {item.pendingRequestForItem} / {item.requestForItem} đang chờ duyệt
+                  {item.pendingRequestForItem} / {item.requestForItem} đang chờ
+                  duyệt
                 </Text>
               </View>
             </TouchableOpacity>
@@ -253,7 +401,7 @@ const MyProducts = () => {
             style={styles.searchInput}
             placeholder="Tìm kiếm theo tên, mô tả, danh mục..."
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={() => setSearchQueryHandler(searchQuery)}
           />
           {searchQuery !== "" && (
             <TouchableOpacity
@@ -266,9 +414,29 @@ const MyProducts = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.tabContent}>
+      <ScrollView
+        style={styles.tabContent}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isCloseToBottom =
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - 20;
+
+          if (isCloseToBottom) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={400}
+      >
         {filteredProducts.length > 0 ? (
-          renderProducts(filteredProducts)
+          <>
+            {renderProducts(filteredProducts)}
+            {isLoading && (
+              <View style={styles.loadingMore}>
+                <ActivityIndicator size="small" color={Colors.orange500} />
+              </View>
+            )}
+          </>
         ) : (
           <View style={styles.emptyState}>
             <Icon name="search-off" size={48} color={Colors.gray500} />
@@ -485,6 +653,11 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#eee",
     marginHorizontal: 8,
+  },
+  loadingMore: {
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

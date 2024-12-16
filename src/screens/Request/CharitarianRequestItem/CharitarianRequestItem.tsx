@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -43,19 +44,50 @@ const CharitarianRequestItem = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const PAGE_SIZE = 10;
+
+  const fetchProducts = async (page: number) => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get(
+        `/charitarian-item/current-user?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+      );
+      const { data, totalItems } = response.data.data;
+
+      if (page === 1) {
+        setProducts(data);
+      } else {
+        setProducts((prev) => [...prev, ...data]);
+      }
+
+      setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch data from the API
-    axiosInstance
-      .get("/charitarian-item/current-user")
-      .then((response) => {
-        const data = response.data.data;
-        setProducts(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
+    fetchProducts(1);
   }, []);
+
+  const loadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchProducts(currentPage + 1);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    // Reset products and fetch first page with search query
+    fetchProducts(1);
+  };
 
   const filteredProducts = products.filter((product: Product) => {
     const searchLower = searchQuery.toLowerCase();
@@ -125,17 +157,15 @@ const CharitarianRequestItem = () => {
         </View>
         {activeTab === "approved" && (
           <View style={styles.cardFooter}>
-            <View
-              style={
-                styles.requestButton}
-            >
-                          <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
-                          <View style={styles.requestInfo}>
-                            <Icon name="call-received" size={16} color={Colors.lightRed} />
-                            <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
-                              {item.pendingRequestForItem} / {item.requestForItem} đang chờ duyệt
-                            </Text>
-                          </View>
+            <View style={styles.requestButton}>
+              <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
+              <View style={styles.requestInfo}>
+                <Icon name="call-received" size={16} color={Colors.lightRed} />
+                <Text style={[styles.requestCount, { color: Colors.lightRed }]}>
+                  {item.pendingRequestForItem} / {item.requestForItem} đang chờ
+                  duyệt
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -158,7 +188,7 @@ const CharitarianRequestItem = () => {
             style={styles.searchInput}
             placeholder="Tìm kiếm theo tên sản phẩm..."
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={() => handleSearch(searchQuery)}
           />
           {searchQuery !== "" && (
             <TouchableOpacity
@@ -170,8 +200,26 @@ const CharitarianRequestItem = () => {
           )}
         </View>
       </View>
-      <ScrollView style={styles.tabContent}>
+      <ScrollView
+        style={styles.tabContent}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isCloseToBottom =
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - 20;
+
+          if (isCloseToBottom) {
+            loadMore();
+          }
+        }}
+        scrollEventThrottle={400}
+      >
         {activeTab === "approved" && renderProducts(filteredProducts)}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={Colors.orange500} />
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -323,21 +371,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
   },
-    requestInfo: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 4,
-    },
-    requestCount: {
-      fontSize: 14,
-      fontWeight: "bold",
-      color: Colors.orange500,
-      marginLeft: 6,
-    },
-    requestLabel: {
-      fontSize: 12,
-      color: Colors.gray600,
-    },
+  requestInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  requestCount: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.orange500,
+    marginLeft: 6,
+  },
+  requestLabel: {
+    fontSize: 12,
+    color: Colors.gray600,
+  },
+  loadingContainer: {
+    padding: 16,
+    alignItems: "center",
+  },
 });
 
 export default CharitarianRequestItem;
