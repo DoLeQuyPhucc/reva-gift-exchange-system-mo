@@ -645,9 +645,9 @@ export default function ProductDetailScreen() {
   const fetchUserItems = async () => {
     setLoadingUserItems(true);
     try {
-      const response = await axiosInstance.get(`/items/current-user`);
+      const response = await axiosInstance.get(`/items/user/${userData.userId}?status=Approved&pageIndex=1&sizeIndex=100`);
       if (response.data.isSuccess) {
-        setUserItems(response.data.data["ApprovedItems"] || []);
+        setUserItems(response.data.data.data);
       } else {
         setUserItems([]);
       }
