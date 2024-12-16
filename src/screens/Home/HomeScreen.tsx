@@ -10,15 +10,14 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { Product } from "@/src/shared/type";
-import { useRefreshControl } from "@/src/hooks/useRefreshControl";
 import { useAuthCheck } from "@/src/hooks/useAuth";
-import { formatDateOnlyDate } from "@/src/shared/formatDate";
 
 type SearchMode = "default" | "need" | "have";
 interface SortOption {
@@ -49,17 +48,44 @@ const HomeScreen: React.FC = () => {
     "createdAt"
   );
   const [showSortModal, setShowSortModal] = useState(false);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [sizeIndex] = useState(10);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (loadMore = false) => {
     try {
-      const response = await axiosInstance.get("items");
-      const productsData = response.data.data;
-      setProducts(productsData);
-      getFilterProducts(productsData);
+      setLoading(!loadMore);
+      if (loadMore) setIsLoadingMore(true);
+
+      const response = await axiosInstance.get(
+        `items?status=Approved&pageIndex=${
+          loadMore ? pageIndex + 1 : 1
+        }&sizeIndex=${sizeIndex}`
+      );
+
+      const productsData = response.data.data.data;
+      const totalPages = response.data.data.totalPage; // Assuming API returns total pages
+
+      if (loadMore) {
+        setProducts((prev) => [...prev, ...productsData]);
+        setPageIndex((prev) => prev + 1);
+        setHasMore(pageIndex < totalPages);
+      } else {
+        setProducts(productsData);
+        setPageIndex(1);
+        setHasMore(true);
+      }
+
+      getFilterProducts(
+        loadMore ? [...products, ...productsData] : productsData
+      );
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
+      setIsLoadingMore(false);
     }
   };
   // Initial fetch on mount
@@ -67,7 +93,17 @@ const HomeScreen: React.FC = () => {
     fetchProducts();
   }, [userId, sortBy, selectedCategory]);
 
-  const { refreshing, refreshControl } = useRefreshControl(fetchProducts);
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      fetchProducts(true);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchProducts(false);
+    setRefreshing(false);
+  };
 
   const categories = [
     ...new Set(products.map((product) => product.category.name)),
@@ -93,7 +129,7 @@ const HomeScreen: React.FC = () => {
     }
 
     filteredProducts = filteredProducts
-      .filter((product) => product.status === 'Approved')
+      .filter((product) => product.status === "Approved")
       .filter((product) =>
         selectedCategory ? product.category.name === selectedCategory : true
       )
@@ -118,7 +154,9 @@ const HomeScreen: React.FC = () => {
   const renderProductCard = ({ item: product }: { item: Product }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate("ProductDetail", { productId: product.id })}
+      onPress={() =>
+        navigation.navigate("ProductDetail", { productId: product.id })
+      }
       activeOpacity={0.7}
     >
       <View style={styles.imageContainer}>
@@ -128,7 +166,7 @@ const HomeScreen: React.FC = () => {
           style={styles.image}
           resizeMode="cover"
         />
-        
+
         {/* Status badges */}
         <View style={styles.statusBadgeContainer}>
           {product.isGift && (
@@ -138,7 +176,7 @@ const HomeScreen: React.FC = () => {
             </View>
           )}
         </View>
-  
+
         {/* Save/Wishlist button */}
         {/* <TouchableOpacity 
           style={styles.wishlistButton}
@@ -151,7 +189,7 @@ const HomeScreen: React.FC = () => {
           />
         </TouchableOpacity> */}
       </View>
-  
+
       <View style={styles.cardContent}>
         {/* Product info */}
         <View style={styles.productInfo}>
@@ -162,10 +200,10 @@ const HomeScreen: React.FC = () => {
             {product.description}
           </Text>
         </View>
-  
+
         {/* Tags/Badges */}
         <View style={styles.badgeContainer}>
-          {product.condition === 'New' ? (
+          {product.condition === "New" ? (
             <View style={[styles.badge, styles.conditionBadgeNew]}>
               <Icon name="info" size={12} color={Colors.lightGreen} />
               <Text style={styles.conditionTextNew}>Mới</Text>
@@ -175,9 +213,8 @@ const HomeScreen: React.FC = () => {
               <Icon name="info" size={12} color={Colors.orange500} />
               <Text style={styles.conditionText}>Đã sử dụng</Text>
             </View>
-            
           )}
-  
+
           <View style={[styles.badge, styles.categoryBadge]}>
             <Icon name="category" size={12} color="#666" />
             <Text style={styles.categoryText}>{product.category.name}</Text>
@@ -321,8 +358,18 @@ const HomeScreen: React.FC = () => {
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={fetchProducts}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          isLoadingMore ? (
+            <View style={styles.loadingMore}>
+              <ActivityIndicator size="small" color="#f97316" />
+            </View>
+          ) : null
+        }
       />
       {renderSortModal()}
     </TouchableOpacity>
@@ -397,9 +444,10 @@ const styles = StyleSheet.create({
   },
   columnWrapper: {
     justifyContent: "space-between",
-  },card: {
+  },
+  card: {
     width: (width - 48) / 2,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     marginBottom: 16,
     shadowColor: "#000",
@@ -410,62 +458,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
-
   imageContainer: {
     height: 140,
-    position: 'relative',
+    position: "relative",
   },
-
   image: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f5f5f5',
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#f5f5f5",
   },
-
   statusBadgeContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     left: 8,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 4,
   },
-
   giftBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.orange500,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
   },
-
   giftText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-
   unavailableBadge: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-
   unavailableText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
-
   wishlistButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     padding: 6,
     shadowColor: "#000",
@@ -477,7 +517,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-
   cardContent: {
     padding: 12,
     gap: 8,
@@ -487,22 +526,22 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: "600",
+    color: "#000",
   },
   description: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     lineHeight: 16,
   },
   badgeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 6,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -515,46 +554,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#e6fbf7",
   },
   categoryBadge: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   conditionText: {
     fontSize: 12,
     color: Colors.orange500,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   conditionTextNew: {
     fontSize: 12,
     color: Colors.lightGreen,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   categoryText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   footerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 4,
   },
   timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   timeText: {
     fontSize: 11,
-    color: '#666',
+    color: "#666",
   },
   locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     flex: 1,
   },
   locationText: {
     fontSize: 11,
-    color: '#666',
+    color: "#666",
     flex: 1,
   },
   unavailableOverlay: {
@@ -722,6 +761,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     marginLeft: 8,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
 

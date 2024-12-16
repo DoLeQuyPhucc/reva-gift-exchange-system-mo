@@ -29,6 +29,10 @@ export default function NotificationsScreen() {
   const [error, setError] = useState(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const PAGE_SIZE = 10;
 
   const { isAuthenticated } = useAuthCheck();
   const navigation = useNavigation();
@@ -131,17 +135,26 @@ export default function NotificationsScreen() {
     }).start();
   }, [fadeAnim]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (page: number) => {
     try {
       if (!isAuthenticated) {
         handleAuthenticatedNavigation();
         return;
       }
       setError(null);
-      const response = await axiosInstance.get("notification/all");
-
+      const response = await axiosInstance.get(
+        `notification/all?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+      );
       if (response.data.isSuccess) {
-        setNotifications(response.data.data);
+        const { data, totalItems } = response.data.data;
+
+        if (page === 1) {
+          setNotifications(data);
+        } else {
+          setNotifications([...notifications, ...(data as Notification[])]);
+        }
+
+        setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
         fadeIn();
       } else {
         console.log("Error fetching notifications:", response.data.message);
@@ -155,8 +168,15 @@ export default function NotificationsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchNotifications();
+    await fetchNotifications(1);
     setRefreshing(false);
+  };
+
+  const loadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchNotifications(currentPage + 1);
+    }
   };
 
   const markAsRead = async (notificationId: string) => {
@@ -175,7 +195,7 @@ export default function NotificationsScreen() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(1);
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -336,7 +356,7 @@ export default function NotificationsScreen() {
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={fetchNotifications}
+          onPress={() => fetchNotifications(1)}
         >
           <Text style={styles.retryText}>Thử lại</Text>
         </TouchableOpacity>
@@ -354,6 +374,16 @@ export default function NotificationsScreen() {
           tintColor="#007AFF"
         />
       }
+      onScroll={({ nativeEvent }) => {
+        const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+        const isCloseToBottom =
+          layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+
+        if (isCloseToBottom) {
+          loadMore();
+        }
+      }}
+      scrollEventThrottle={400}
     >
       <View style={styles.notificationContainer}>
         <View style={styles.header}>
