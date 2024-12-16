@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   Image,
+  RefreshControl,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -54,17 +55,23 @@ const MyTransactions = () => {
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const userId = useAuthCheck().userData.userId;
 
-  const [isConfirm, setIsConfirm] = useState(false);
-
   const [showInputRejectMessage, setShowInputRejectMessage] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [rejectMessage, setRejectMessage] = useState<string>("");
 
   const navigation = useNavigation();
 
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const PAGE_SIZE = 10;
+
   useEffect(() => {
-    fetchTransactions();
-  }, [isConfirm, requestId]);
+    fetchTransactions(1);
+  }, [requestId]);
 
   useEffect(() => {
     if (selectedTransaction?.status === "In_Progress") {
@@ -72,80 +79,112 @@ const MyTransactions = () => {
     }
   }, [selectedTransaction]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (page: number) => {
     try {
       let response;
       if (requestId === "") {
-        response = await axiosInstance.get("transaction/own-transactions");
-      } else {
-        response = await axiosInstance.get(`transaction/${requestId}`);
-        console.log(response.data.data);
-      }
+        const result = await axiosInstance.get(
+          `transaction/own-transactions?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+        );
+        response = result.data.data.data;
+        if (!response) {
+          return;
+        }
+        const { totalItems } = result.data.data;
+        const statusOrder = {
+          In_Progress: 0,
+          Completed: 1,
+          Not_Completed: 2,
+        };
 
-      if (!response.data.data) {
-        return;
-      }
+        const transactionsList = await Promise.all(
+          response.map(async (transaction: Transaction) => {
+            let updatedTransaction = { ...transaction };
 
-      const statusOrder = {
-        In_Progress: 0,
-        Completed: 1,
-        Not_Completed: 2,
-      };
-
-      const transactionsList = await Promise.all(
-        response.data.data.map(async (transaction: Transaction) => {
-          let updatedTransaction = { ...transaction };
-
-          try {
-            const isValidTime = await axiosInstance.get(
-              `transaction/validate-time/${transaction.id}`
-            );
-            updatedTransaction.isValidTime = isValidTime.data.data;
-          } catch (error) {
-            console.error(
-              `Error validating time for transaction ${transaction.id}:`,
-              error
-            );
-            updatedTransaction.isValidTime = false;
-          }
-
-          if (
-            transaction.status === "Completed" ||
-            transaction.status === "Not_Completed"
-          ) {
             try {
-              const rating = await axiosInstance.get<RatingResponse>(
-                `rating/transaction/${transaction.id}`
+              const isValidTime = await axiosInstance.get(
+                `transaction/validate-time/${transaction.id}`
               );
-              if (rating.data.data.length === 0) {
+              updatedTransaction.isValidTime = isValidTime.data.data;
+            } catch (error) {
+              console.error(
+                `Error validating time for transaction ${transaction.id}:`,
+                error
+              );
+              updatedTransaction.isValidTime = false;
+            }
+
+            if (
+              transaction.status === "Completed" ||
+              transaction.status === "Not_Completed"
+            ) {
+              try {
+                const rating = await axiosInstance.get<RatingResponse>(
+                  `rating/transaction/${transaction.id}`
+                );
+                if (rating.data.data.length === 0) {
+                  updatedTransaction.rating = null;
+                  updatedTransaction.ratingComment = null;
+                } else {
+                  updatedTransaction.rating = rating.data.data[0].rating;
+                  updatedTransaction.ratingComment =
+                    rating.data.data[0].comment;
+                }
+              } catch (error) {
                 updatedTransaction.rating = null;
                 updatedTransaction.ratingComment = null;
-              } else {
-                updatedTransaction.rating = rating.data.data[0].rating;
-                updatedTransaction.ratingComment = rating.data.data[0].comment;
               }
-            } catch (error) {
-              updatedTransaction.rating = null;
-              updatedTransaction.ratingComment = null;
             }
+
+            return updatedTransaction;
+          })
+        );
+
+        // Sort transactions by status priority
+        const sortedTransactions = transactionsList.sort(
+          (a: Transaction, b: Transaction) => {
+            return statusOrder[a.status] - statusOrder[b.status];
           }
+        );
 
-          console.log(updatedTransaction);
-          return updatedTransaction;
-        })
-      );
-
-      // Sort transactions by status priority
-      const sortedTransactions = transactionsList.sort(
-        (a: Transaction, b: Transaction) => {
-          return statusOrder[a.status] - statusOrder[b.status];
+        if (page === 1) {
+          setTransactions(sortedTransactions);
+        } else {
+          setTransactions((prev) => [...prev, ...sortedTransactions]);
         }
-      );
 
-      setTransactions(sortedTransactions);
+        setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
+      } else {
+        const result = await axiosInstance.get(`transaction/${requestId}`);
+        response = result.data.data;
+        if (!response) {
+          return;
+        }
+        setTransactions(response);
+      }
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
+  };
+
+  const loadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchTransactions(currentPage + 1);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchTransactions(1);
+    setRefreshing(false);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    // Reset products and fetch first page with search query
+    fetchTransactions(1);
   };
 
   const checkRole = (transaction: Transaction) => {
@@ -264,7 +303,7 @@ const MyTransactions = () => {
       );
 
       if (response.data.isSuccess) {
-        fetchTransactions();
+        fetchTransactions(1);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
       } else {
         Alert.alert(
@@ -303,7 +342,7 @@ const MyTransactions = () => {
       );
 
       if (response.data.isSuccess) {
-        fetchTransactions();
+        fetchTransactions(1);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi báo cáo.");
       } else {
         Alert.alert(
@@ -385,6 +424,24 @@ const MyTransactions = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isCloseToBottom =
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - 20;
+
+          if (isCloseToBottom) {
+            loadMore();
+          }
+        }}
+        scrollEventThrottle={400}
       >
         {requestId === "" ? (
           <>
@@ -790,7 +847,7 @@ const MyTransactions = () => {
                     >
                       <Text style={styles.verifyButtonText}>Đã xác thực</Text>
                     </TouchableOpacity>
-                    {transaction.rating === null || transaction.rating === 0 ? (
+                    {transaction.rating || transaction.rating === 0 ? (
                       <TouchableOpacity
                         style={styles.detailsButton}
                         onPress={() => handleOpenRatingModal(transaction)}
@@ -924,6 +981,7 @@ const MyTransactions = () => {
           </View>
         </View>
       </Modal>
+
       <Modal
         visible={showInputRejectMessage}
         transparent
