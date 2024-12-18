@@ -60,7 +60,11 @@
           "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRpangwczBjMGUycnNhazBnbzVybGIifQ.RzAQRIsJqBoPi_SA7wnGcA",
           "RNMapboxMapsVersion": "11.0.0"
         }
-      ]
+      ],
+      "@rnmapbox/maps",
+      {
+        "RNMapboxMapsDownloadToken": "pk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRoaTRuYzAzY2Yyd3BzeGNvbzlubG8ifQ.CYU4dvLd8j_PdydsiR2QEA"
+      }
     ],
     "extra": {
       "router": {
