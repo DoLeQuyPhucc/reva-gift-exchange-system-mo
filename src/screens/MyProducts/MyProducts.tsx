@@ -173,7 +173,6 @@ const MyProducts = () => {
   }, [activeTab]); // Reset và load lại khi đổi tab
 
   const handleLoadMore = () => {
-    console.log("Load more");
     if (!isLoading && currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
       loadProducts(currentPage + 1, true, activeTab);
@@ -424,9 +423,7 @@ const MyProducts = () => {
                   const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
                   const isCloseToBottom =
                     layoutMeasurement.height + contentOffset.y >=
-                    contentSize.height - 100;
-
-                    console.log("isCloseToBottom", isCloseToBottom);
+                    contentSize.height - 1000;
         
                   if (isCloseToBottom) {
                     handleLoadMore();

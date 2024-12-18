@@ -11,6 +11,7 @@ import {
   Platform,
   Modal,
   FlatList,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Colors from "@/src/constants/Colors";
@@ -19,6 +20,7 @@ import axiosInstance from "@/src/api/axiosInstance";
 import { Product } from "@/src/shared/type";
 import { SearchMode, searchModes, getSearchValue } from "@/src/utils/search";
 import { useAuthCheck } from "@/src/hooks/useAuth";
+import { ActivityIndicator } from "react-native";
 
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -29,28 +31,59 @@ const SearchScreen: React.FC = () => {
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const { userData } = useAuthCheck();
 
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const PAGE_SIZE = 10;
+
   useEffect(() => {
-    fetchRecentProducts();
+    fetchRecentProducts(1);
   }, []);
 
-  const fetchRecentProducts = async () => {
+  const fetchRecentProducts = async (page: number) => {
+    setIsLoading(true);
     try {
-      const response = await axiosInstance.get("items");
-      const filteredProducts = response.data.data.filter((product: Product) => {
-        // Điều kiện 1: Sản phẩm không phải của mình và trạng thái là "Approved"
+      const response = await axiosInstance.get(
+        `items?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+      );
+
+      const { data, totalItems } = response.data.data;
+
+      const filteredProducts = data.filter((product: Product) => {
         const isApprovedAndNotMine =
           product.status === "Approved" && product.owner_id !== userData.userId;
-      
-        // Điều kiện 2: Sản phẩm là của mình (bất kể trạng thái)
+
         const isMine = product.owner_id === userData.userId;
-      
-        // Kết hợp hai điều kiện
+
         return isApprovedAndNotMine || isMine;
       });
-      setRecentProducts(filteredProducts);
+
+      if (page === 1) {
+        setRecentProducts(filteredProducts);
+      } else {
+        setRecentProducts((prev) => [...prev, ...filteredProducts]);
+      }
+
+      setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.error("Error fetching recent products:", error);
     }
+  };
+
+  const loadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchRecentProducts(currentPage + 1);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchRecentProducts(1);
+    setRefreshing(false);
   };
 
   const handleSearch = () => {
@@ -182,6 +215,18 @@ const SearchScreen: React.FC = () => {
         maxToRenderPerBatch={10}
         windowSize={5}
         initialNumToRender={10}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          isLoading ? (
+            <View style={styles.loadingMore}>
+              <ActivityIndicator size="small" color="#f97316" />
+            </View>
+          ) : null
+        }
       />
 
       {renderSearchModeModal()}
@@ -193,6 +238,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: 16,
   },
   header: {
     flexDirection: "row",
@@ -300,6 +346,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginTop: 2,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
 
