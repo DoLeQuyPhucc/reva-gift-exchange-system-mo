@@ -1,165 +1,177 @@
-import React, { useState, useEffect } from "react";
+// components/GoongMapComponent.tsx
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
   Text,
-  Button,
-  ScrollView,
-  Platform,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import * as Location from "expo-location";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapboxGL from "@rnmapbox/maps";
+import { goongApi } from "@/src/services/goongApi";
+import { LineLayerStyle } from "@rnmapbox/maps";
 
-// Add interfaces for location data
-interface LocationData {
-  coords: {
-    latitude: number;
-    longitude: number;
-    altitude: number | null;
-    accuracy: number;
-    speed: number | null;
-  };
-  timestamp: number;
+interface Coordinate {
+  longitude: number;
+  latitude: number;
 }
 
-const FavoritesScreen: React.FC = () => {
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [locationHistory, setLocationHistory] = useState<
-    Location.LocationObject[]
-  >([]);
-  const [isTracking, setIsTracking] = useState<boolean>(false);
-  const [subscription, setSubscription] =
-    useState<Location.LocationSubscription | null>(null);
+interface RouteInfo {
+  distance: string;
+  duration: string;
+  coordinates: number[][];
+}
 
-  // Khởi tạo và xin quyền
+const GOONG_ACCESS_TOKEN = "EiVlij4sGBI3kqNoebCG5eTotTTdvJ1ZzIMsUlp0";
+const INITIAL_COORDS: [number, number] = [105.83991, 21.028]; // Hà Nội
+
+const GoongMapComponent: React.FC = () => {
+  const [markers, setMarkers] = useState<Coordinate[]>([]);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const cameraRef = useRef<MapboxGL.Camera>(null);
+
   useEffect(() => {
-    (async () => {
-      try {
-        // Xin quyền truy cập vị trí
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          setErrorMsg("Permission to access location was denied");
-          return;
-        }
-
-        // Lấy vị trí hiện tại
-        let currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-        setLocation(currentLocation);
-        setLocationHistory([currentLocation]);
-      } catch (error: any) {
-        setErrorMsg("Error: " + error.message);
-      }
-    })();
+    MapboxGL.setAccessToken(GOONG_ACCESS_TOKEN);
+    MapboxGL.setConnected(true);
   }, []);
 
-  // Bắt đầu theo dõi vị trí
-  const startTracking = async () => {
+  const handleMapPress = async (event: any) => {
+    const coordinate = event.geometry.coordinates;
+    const newMarker = { longitude: coordinate[0], latitude: coordinate[1] };
+
+    const updatedMarkers = [...markers, newMarker];
+    setMarkers(updatedMarkers);
+
+    if (updatedMarkers.length === 2) {
+      await calculateRoute(updatedMarkers[0], updatedMarkers[1]);
+    }
+  };
+
+  const calculateRoute = async (
+    origin: Coordinate,
+    destination: Coordinate
+  ) => {
+    setIsLoading(true);
     try {
-      const locationSubscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 1000,
-          distanceInterval: 1,
-        },
-        (newLocation) => {
-          setLocation(newLocation);
-          setLocationHistory((prev) => [...prev, newLocation]);
-        }
+      const response = await goongApi.getDirections(
+        [origin.longitude, origin.latitude],
+        [destination.longitude, destination.latitude]
       );
-      setSubscription(locationSubscription);
-      setIsTracking(true);
-    } catch (error: any) {
-      setErrorMsg("Tracking error: " + error.message);
+
+      if (response.status === "OK" && response.routes.length > 0) {
+        const route = response.routes[0];
+        const points = goongApi.decodePolyline(route.overview_polyline.points);
+
+        setRouteInfo({
+          distance: route.legs[0].distance.text,
+          duration: route.legs[0].duration.text,
+          coordinates: points,
+        });
+
+        // Điều chỉnh camera để hiển thị toàn bộ tuyến đường
+        const bounds = points.reduce(
+          (bounds, coord) => {
+            bounds.ne = [
+              Math.max(bounds.ne[0], coord[0]),
+              Math.max(bounds.ne[1], coord[1]),
+            ];
+            bounds.sw = [
+              Math.min(bounds.sw[0], coord[0]),
+              Math.min(bounds.sw[1], coord[1]),
+            ];
+            return bounds;
+          },
+          {
+            ne: [points[0][0], points[0][1]],
+            sw: [points[0][0], points[0][1]],
+          }
+        );
+
+        cameraRef.current?.fitBounds(
+          [bounds.ne[0], bounds.ne[1]],
+          [bounds.sw[0], bounds.sw[1]],
+          50,
+          1000
+        );
+      }
+    } catch (error) {
+      console.error("Error calculating route:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Dừng theo dõi vị trí
-  const stopTracking = () => {
-    if (subscription) {
-      subscription.remove();
-      setSubscription(null);
-    }
-    setIsTracking(false);
-  };
-
-  // Xóa lịch sử
-  const clearHistory = () => {
-    setLocationHistory([]);
+  const clearAll = () => {
+    setMarkers([]);
+    setRouteInfo(null);
+    cameraRef.current?.setCamera({
+      centerCoordinate: INITIAL_COORDS,
+      zoomLevel: 12,
+      animationDuration: 1000,
+    });
   };
 
   return (
     <View style={styles.container}>
-      {/* Phần bản đồ */}
-      {location && (
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          }}
-        >
-          {/* Marker hiện tại */}
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="Current Location"
-          />
+      <MapboxGL.MapView
+        style={styles.map}
+        styleURL="https://tiles.goong.io/assets/goong_map_web.json?api_key=x6ttXfdpoNErTLWmdGzUgTeRhtrTTXsj2v1MGnfE"
+        onPress={handleMapPress}
+      >
+        <MapboxGL.Camera
+          ref={cameraRef}
+          zoomLevel={12}
+          centerCoordinate={INITIAL_COORDS}
+        />
 
-          {/* Đường đi */}
-          <Polyline
-            coordinates={locationHistory.map((loc) => ({
-              latitude: loc.coords.latitude,
-              longitude: loc.coords.longitude,
-            }))}
-            strokeColor="#000"
-            strokeWidth={3}
-          />
-        </MapView>
+        {markers.map((marker, index) => (
+          <MapboxGL.PointAnnotation
+            key={`point-${index}`}
+            id={`point-${index}`}
+            coordinate={[marker.longitude, marker.latitude]}
+          >
+            <MapboxGL.Callout title={index === 0 ? "Điểm đi" : "Điểm đến"} />
+          </MapboxGL.PointAnnotation>
+        ))}
+
+        {routeInfo && (
+          <MapboxGL.ShapeSource
+            id="routeSource"
+            shape={{
+              type: "Feature",
+              properties: {},
+              geometry: {
+                type: "LineString",
+                coordinates: routeInfo.coordinates,
+              },
+            }}
+          >
+            <MapboxGL.LineLayer id="routeLine" style={styles.routeLine} />
+          </MapboxGL.ShapeSource>
+        )}
+      </MapboxGL.MapView>
+
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
       )}
 
-      {/* Phần điều khiển */}
-      <View style={styles.controls}>
-        <Button
-          title={isTracking ? "Stop Tracking" : "Start Tracking"}
-          onPress={isTracking ? stopTracking : startTracking}
-        />
-        <Button title="Clear History" onPress={clearHistory} />
-      </View>
+      {routeInfo && (
+        <View style={styles.routeInfoContainer}>
+          <Text style={styles.routeInfoText}>
+            Khoảng cách: {routeInfo.distance}
+          </Text>
+          <Text style={styles.routeInfoText}>
+            Thời gian: {routeInfo.duration}
+          </Text>
+        </View>
+      )}
 
-      {/* Hiển thị thông tin */}
-      <ScrollView style={styles.infoContainer}>
-        {errorMsg ? (
-          <Text style={styles.errorText}>{errorMsg}</Text>
-        ) : (
-          <>
-            <Text style={styles.headerText}>Current Location:</Text>
-            {location && (
-              <View style={styles.locationInfo}>
-                <Text>Latitude: {location.coords.latitude}</Text>
-                <Text>Longitude: {location.coords.longitude}</Text>
-                <Text>Altitude: {location.coords.altitude}</Text>
-                <Text>Accuracy: {location.coords.accuracy}m</Text>
-                <Text>Speed: {location.coords.speed}m/s</Text>
-                <Text>
-                  Timestamp: {new Date(location.timestamp).toLocaleString()}
-                </Text>
-              </View>
-            )}
-            <Text style={styles.headerText}>
-              History Points: {locationHistory.length}
-            </Text>
-          </>
-        )}
-      </ScrollView>
+      <TouchableOpacity style={styles.clearButton} onPress={clearAll}>
+        <Text style={styles.buttonText}>Xóa tất cả</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -167,38 +179,57 @@ const FavoritesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   map: {
-    height: "50%",
-    width: "100%",
-  },
-  controls: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 10,
-    backgroundColor: "#f5f5f5",
-  },
-  infoContainer: {
     flex: 1,
-    padding: 10,
   },
-  headerText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 5,
+  clearButton: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 8,
   },
-  locationInfo: {
-    backgroundColor: "#f0f0f0",
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
-  },
-  errorText: {
-    color: "red",
+  buttonText: {
+    color: "white",
     fontSize: 16,
-    textAlign: "center",
+  },
+  routeLine: {
+    lineColor: "#00b0ff",
+    lineWidth: 3,
+  } as LineLayerStyle,
+  loadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+  },
+  routeInfoContainer: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  routeInfoText: {
+    fontSize: 16,
+    marginBottom: 4,
   },
 });
 
-export default FavoritesScreen;
+export default GoongMapComponent;
