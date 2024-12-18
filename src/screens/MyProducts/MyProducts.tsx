@@ -9,6 +9,7 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -46,22 +47,17 @@ const MyProducts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<{
     approved: Product[];
-    rejected: Product[];
     pending: Product[];
     outOfDate: Product[];
-    exchanged: Product[];
-    inTransaction: Product[];
   }>({
     approved: [],
-    rejected: [],
     pending: [],
     outOfDate: [],
-    exchanged: [],
-    inTransaction: [],
   });
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5;
 
   const { userData } = useAuthCheck();
 
@@ -80,15 +76,11 @@ const MyProducts = () => {
         setProducts((prev) => ({
           ...prev,
           approved: [...prev.approved, ...responseData.data],
-          inTransaction: [...prev.inTransaction],
-          exchanged: [...prev.exchanged],
         }));
       } else {
         setProducts((prev) => ({
           ...prev,
           approved: responseData.data,
-          inTransaction: [],
-          exchanged: [],
         }));
       }
     } catch (error) {
@@ -134,13 +126,11 @@ const MyProducts = () => {
         setProducts((prev) => ({
           ...prev,
           outOfDate: [...prev.outOfDate, ...responseData.data],
-          rejected: [...prev.rejected],
         }));
       } else {
         setProducts((prev) => ({
           ...prev,
           outOfDate: responseData.data,
-          rejected: [],
         }));
       }
     } catch (error) {
@@ -183,10 +173,17 @@ const MyProducts = () => {
   }, [activeTab]); // Reset và load lại khi đổi tab
 
   const handleLoadMore = () => {
+    console.log("Load more");
     if (!isLoading && currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
       loadProducts(currentPage + 1, true, activeTab);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadProducts(1, false, activeTab);
+    setRefreshing(false);
   };
 
   // useEffect(() => {
@@ -228,13 +225,11 @@ const MyProducts = () => {
       case "approved":
         return [
           ...products.approved,
-          ...products.inTransaction,
-          ...products.exchanged,
         ];
       case "pending":
         return products.pending;
       case "outOfDate":
-        return [...products.outOfDate, ...products.rejected];
+        return [...products.outOfDate];
       default:
         return [];
     }
@@ -416,17 +411,28 @@ const MyProducts = () => {
 
       <ScrollView
         style={styles.tabContent}
-        onScroll={({ nativeEvent }) => {
-          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-          const isCloseToBottom =
-            layoutMeasurement.height + contentOffset.y >=
-            contentSize.height - 20;
+                showsVerticalScrollIndicator={false}
+                // contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor="#007AFF"
+                  />
+                }
+                onScroll={({ nativeEvent }) => {
+                  const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                  const isCloseToBottom =
+                    layoutMeasurement.height + contentOffset.y >=
+                    contentSize.height - 100;
 
-          if (isCloseToBottom) {
-            handleLoadMore();
-          }
-        }}
-        scrollEventThrottle={400}
+                    console.log("isCloseToBottom", isCloseToBottom);
+        
+                  if (isCloseToBottom) {
+                    handleLoadMore();
+                  }
+                }}
+                scrollEventThrottle={400}
       >
         {filteredProducts.length > 0 ? (
           <>

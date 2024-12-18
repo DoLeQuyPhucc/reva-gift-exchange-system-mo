@@ -61,6 +61,8 @@ const MyTransactions = () => {
 
   const navigation = useNavigation();
 
+  const [isConfirm, setIsConfirm] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [refreshing, setRefreshing] = useState(false);
@@ -71,7 +73,7 @@ const MyTransactions = () => {
 
   useEffect(() => {
     fetchTransactions(1);
-  }, [requestId]);
+  }, [isConfirm, requestId]);
 
   useEffect(() => {
     if (selectedTransaction?.status === "In_Progress") {
@@ -97,6 +99,26 @@ const MyTransactions = () => {
           Not_Completed: 2,
         };
 
+        // Sort transactions by status priority
+        const sortedTransactions = response.sort(
+          (a: Transaction, b: Transaction) => {
+            return statusOrder[a.status] - statusOrder[b.status];
+          }
+        );
+
+        if (page === 1) {
+          setTransactions(sortedTransactions);
+        } else {
+          setTransactions((prev) => [...prev, ...sortedTransactions]);
+        }
+
+        setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
+      } else {
+        const result = await axiosInstance.get(`transaction/${requestId}`);
+        response = result.data.data;
+        if (!response) {
+          return;
+        }
         const transactionsList = await Promise.all(
           response.map(async (transaction: Transaction) => {
             let updatedTransaction = { ...transaction };
@@ -139,28 +161,8 @@ const MyTransactions = () => {
             return updatedTransaction;
           })
         );
-
-        // Sort transactions by status priority
-        const sortedTransactions = transactionsList.sort(
-          (a: Transaction, b: Transaction) => {
-            return statusOrder[a.status] - statusOrder[b.status];
-          }
-        );
-
-        if (page === 1) {
-          setTransactions(sortedTransactions);
-        } else {
-          setTransactions((prev) => [...prev, ...sortedTransactions]);
-        }
-
-        setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
-      } else {
-        const result = await axiosInstance.get(`transaction/${requestId}`);
-        response = result.data.data;
-        if (!response) {
-          return;
-        }
-        setTransactions(response);
+        console.log(transactionsList);
+        setTransactions(transactionsList);
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -198,15 +200,21 @@ const MyTransactions = () => {
 
   const handleVerification = async (transactionId: string) => {
     try {
+      const data = {
+        transactionId: transactionId,
+        transactionImages: [],
+      }
       const res = await axiosInstance.put(
-        `transaction/approve/${transactionId}`
+        `transaction/approve`, data
       );
       console.log(res.data);
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
           text: "OK",
-          onPress: () =>
-            navigation.navigate("MyTransactions", { requestId: requestId }),
+          onPress: () =>{
+            setIsConfirm(prev => !prev);
+          }
+            // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowConfirmModal(false);
@@ -217,14 +225,21 @@ const MyTransactions = () => {
 
   const handleReject = async (transactionId: string) => {
     try {
+      const data = {
+        transactionId: transactionId,
+        message: rejectMessage,
+        transactionImages: [],
+      }
       await axiosInstance.put(
-        `transaction/reject/${transactionId}?message=${rejectMessage}`
+        `transaction/reject`, data
       );
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
-          onPress: () =>
-            navigation.navigate("MyTransactions", { requestId: requestId }),
+          onPress: () =>{
+            setIsConfirm(prev => !prev);
+          }
+            // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowInputRejectMessage(false);
@@ -303,7 +318,7 @@ const MyTransactions = () => {
       );
 
       if (response.data.isSuccess) {
-        fetchTransactions(1);
+        setIsConfirm(prev => !prev);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
       } else {
         Alert.alert(
@@ -707,7 +722,7 @@ const MyTransactions = () => {
                   </Text>
                 )}
 
-                {transaction.isValidTime && (
+                {!transaction.isValidTime && (
                   <>
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (
@@ -847,7 +862,7 @@ const MyTransactions = () => {
                     >
                       <Text style={styles.verifyButtonText}>Đã xác thực</Text>
                     </TouchableOpacity>
-                    {transaction.rating || transaction.rating === 0 ? (
+                    {transaction.rating === null || transaction.rating === 0 ? (
                       <TouchableOpacity
                         style={styles.detailsButton}
                         onPress={() => handleOpenRatingModal(transaction)}
