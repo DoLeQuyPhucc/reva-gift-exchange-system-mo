@@ -50,13 +50,17 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationWhenInUsePermission": "Show current location on map."
         }
       ],
-      "@rnmapbox/maps",
-      {
-        "RNMapboxMapsDownloadToken": "pk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRoaTRuYzAzY2Yyd3BzeGNvbzlubG8ifQ.CYU4dvLd8j_PdydsiR2QEA"
-      }
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "pk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRoaTRuYzAzY2Yyd3BzeGNvbzlubG8ifQ.CYU4dvLd8j_PdydsiR2QEA",
+          "RNMapboxMapsVersion": "11.0.0"
+        }
+      ]
     ],
     "extra": {
       "router": {
