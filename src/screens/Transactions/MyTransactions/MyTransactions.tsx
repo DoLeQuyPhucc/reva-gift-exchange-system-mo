@@ -52,6 +52,10 @@ const MyTransactions = () => {
     latitude: 0,
     longitude: 0,
   });
+  const [destinationLocation, setDestinationLocation] = useState<LocationMap>({
+    latitude: 0,
+    longitude: 0,
+  });
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const userId = useAuthCheck().userData.userId;
 
@@ -203,18 +207,16 @@ const MyTransactions = () => {
       const data = {
         transactionId: transactionId,
         transactionImages: [],
-      }
-      const res = await axiosInstance.put(
-        `transaction/approve`, data
-      );
+      };
+      const res = await axiosInstance.put(`transaction/approve`, data);
       console.log(res.data);
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
           text: "OK",
-          onPress: () =>{
-            setIsConfirm(prev => !prev);
-          }
-            // navigation.navigate("MyTransactions", { requestId: requestId }),
+          onPress: () => {
+            setIsConfirm((prev) => !prev);
+          },
+          // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowConfirmModal(false);
@@ -229,17 +231,15 @@ const MyTransactions = () => {
         transactionId: transactionId,
         message: rejectMessage,
         transactionImages: [],
-      }
-      await axiosInstance.put(
-        `transaction/reject`, data
-      );
+      };
+      await axiosInstance.put(`transaction/reject`, data);
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
-          onPress: () =>{
-            setIsConfirm(prev => !prev);
-          }
-            // navigation.navigate("MyTransactions", { requestId: requestId }),
+          onPress: () => {
+            setIsConfirm((prev) => !prev);
+          },
+          // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowInputRejectMessage(false);
@@ -318,7 +318,7 @@ const MyTransactions = () => {
       );
 
       if (response.data.isSuccess) {
-        setIsConfirm(prev => !prev);
+        setIsConfirm((prev) => !prev);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
       } else {
         Alert.alert(
@@ -743,18 +743,29 @@ const MyTransactions = () => {
                           <TouchableOpacity
                             style={styles.detailsButton}
                             onPress={() => {
-                              // const data: LocationMap = {
-                              //   latitude: parseFloat(
-                              //     transaction.charitarianAddress.addressCoordinates
-                              //       .latitude
-                              //   ),
-                              //   longitude: parseFloat(
-                              //     transaction.charitarianAddress.addressCoordinates
-                              //       .longitude
-                              //   ),
-                              // };
-                              // setLocation(data);
-                              // setShowMapModal(true);
+                              const sourceLocation: LocationMap = {
+                                latitude: parseFloat(
+                                  transaction.requesterAddress
+                                    .addressCoordinates.latitude
+                                ),
+                                longitude: parseFloat(
+                                  transaction.requesterAddress
+                                    .addressCoordinates.longitude
+                                ),
+                              };
+                              const destinationLocation: LocationMap = {
+                                latitude: parseFloat(
+                                  transaction.charitarianAddress
+                                    .addressCoordinates.latitude
+                                ),
+                                longitude: parseFloat(
+                                  transaction.charitarianAddress
+                                    .addressCoordinates.longitude
+                                ),
+                              };
+                              setShowMapModal(true);
+                              setLocation(sourceLocation);
+                              setDestinationLocation(destinationLocation);
                             }}
                           >
                             <View style={styles.detailsButtonContent}>
@@ -920,12 +931,6 @@ const MyTransactions = () => {
           </>
         )}
       </ScrollView>
-      <MapModal
-        open={showMapModal}
-        onClose={setShowMapModal}
-        location={location}
-        canMarkerMove={false}
-      />
 
       <Modal visible={showModal} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={() => setShowModal(false)}>
@@ -1102,6 +1107,13 @@ const MyTransactions = () => {
               : selectedTransaction?.charitarian.name || "",
           transactionId: selectedTransaction?.id || "",
         }}
+      />
+
+      <MapModal
+        open={showMapModal}
+        onClose={setShowMapModal}
+        sourceLocation={location}
+        destinationLocation={destinationLocation}
       />
     </View>
   );

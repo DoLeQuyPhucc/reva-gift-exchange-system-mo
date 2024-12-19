@@ -3,10 +3,12 @@ const GOONG_API_URL = "https://rsapi.goong.io";
 
 export interface DirectionsResponse {
   status: string;
+  geocoded_waypoints: Array<{
+    geocoder_status: string;
+    place_id: string;
+  }>;
   routes: Array<{
-    overview_polyline: {
-      points: string;
-    };
+    bounds: any;
     legs: Array<{
       distance: {
         text: string;
@@ -17,19 +19,30 @@ export interface DirectionsResponse {
         value: number;
       };
     }>;
+    overview_polyline: {
+      points: string;
+    };
+    summary: string;
+    warnings: string[];
+    waypoint_order: number[];
   }>;
 }
 
 export const goongApi = {
   getDirections: async (
-    origin: [number, number],
-    destination: [number, number]
+    origin: [number, number], // [latitude, longitude]
+    destination: [number, number] // [latitude, longitude]
   ): Promise<DirectionsResponse> => {
-    const url = `${GOONG_API_URL}/Direction?origin=${origin[1]},${origin[0]}&destination=${destination[1]},${destination[0]}&vehicle=car&api_key=${GOONG_API_KEY}`;
+    const url = `${GOONG_API_URL}/Direction?origin=${origin[0]},${origin[1]}&destination=${destination[0]},${destination[1]}&vehicle=car&api_key=${GOONG_API_KEY}`;
 
     try {
       const response = await fetch(url);
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
       return data;
     } catch (error) {
       console.error("Error fetching directions:", error);
@@ -37,42 +50,56 @@ export const goongApi = {
     }
   },
 
-  // Hàm decode polyline từ Google's encoded polyline algorithm
   decodePolyline: (encoded: string): number[][] => {
-    const points: number[][] = [];
     let index = 0;
+    let latitude = 0;
+    let longitude = 0;
+    const coordinates: number[][] = [];
     const len = encoded.length;
-    let lat = 0;
-    let lng = 0;
 
     while (index < len) {
+      let b;
       let shift = 0;
       let result = 0;
 
+      // Decode latitude
       do {
-        let b = encoded.charCodeAt(index++) - 63;
+        b = encoded.charCodeAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
-      } while (result & 0x20);
+      } while (b >= 0x20);
 
-      const dlat = result & 1 ? ~(result >> 1) : result >> 1;
-      lat += dlat;
+      const deltaLat = result & 1 ? ~(result >> 1) : result >> 1;
+      latitude += deltaLat;
 
+      // Decode longitude
       shift = 0;
       result = 0;
 
       do {
-        let b = encoded.charCodeAt(index++) - 63;
+        b = encoded.charCodeAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
-      } while (result & 0x20);
+      } while (b >= 0x20);
 
-      const dlng = result & 1 ? ~(result >> 1) : result >> 1;
-      lng += dlng;
+      const deltaLng = result & 1 ? ~(result >> 1) : result >> 1;
+      longitude += deltaLng;
 
-      points.push([lng * 1e-5, lat * 1e-5]);
+      // Convert to actual coordinates
+      const finalLat = latitude / 1e5;
+      const finalLng = longitude / 1e5;
+
+      // Only add points if they're within Vietnam's bounds
+      if (
+        finalLng >= 102 &&
+        finalLng <= 110 &&
+        finalLat >= 8 &&
+        finalLat <= 24
+      ) {
+        coordinates.push([finalLat, finalLng]);
+      }
     }
 
-    return points;
+    return coordinates;
   },
 };

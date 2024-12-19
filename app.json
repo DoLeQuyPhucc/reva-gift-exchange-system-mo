@@ -33,7 +33,8 @@
         "android.permission.RECORD_AUDIO",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "ACCESS_MOCK_LOCATION"
       ]
     },
     "web": {
@@ -53,10 +54,12 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ],
-      "@rnmapbox/maps",
-      {
-        "RNMapboxMapsDownloadToken": "pk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRoaTRuYzAzY2Yyd3BzeGNvbzlubG8ifQ.CYU4dvLd8j_PdydsiR2QEA"
-      }
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRwejh3bjBhNzkyanM2aXNxeWgwMnAifQ.L65UKtKadHfYiseyscbvUA"
+        }
+      ]
     ],
     "extra": {
       "router": {
