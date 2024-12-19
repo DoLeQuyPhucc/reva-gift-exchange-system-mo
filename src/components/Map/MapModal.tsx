@@ -1,16 +1,16 @@
 import Colors from "@/src/constants/Colors";
 import { LocationMap } from "@/src/shared/type";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ActivityIndicator,
-  Platform,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
-import { TouchableOpacity } from "react-native";
-import { Modal } from "react-native";
-import MapboxGL from "@rnmapbox/maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import * as Location from "expo-location";
 import { goongApi } from "@/src/services/goongApi";
 
 interface MapModalProps {
@@ -19,30 +19,6 @@ interface MapModalProps {
   sourceLocation: LocationMap; // Địa điểm đi
   destinationLocation: LocationMap; // Địa điểm đến
 }
-
-const GOONG_ACCESS_TOKEN = "EiVlij4sGBI3kqNoebCG5eTotTTdvJ1ZzIMsUlp0";
-
-const calculateProgressAlongRoute = (
-  currentPoint: number[],
-  routePoints: number[][]
-) => {
-  for (let i = 0; i < routePoints.length - 1; i++) {
-    const [x1, y1] = routePoints[i];
-    const [x2, y2] = routePoints[i + 1];
-    const [x, y] = currentPoint;
-
-    // Check if point is between current segment
-    if (
-      x >= Math.min(x1, x2) &&
-      x <= Math.max(x1, x2) &&
-      y >= Math.min(y1, y2) &&
-      y <= Math.max(y1, y2)
-    ) {
-      return i / (routePoints.length - 1);
-    }
-  }
-  return 0;
-};
 
 export default function MapModal({
   open,
@@ -53,82 +29,61 @@ export default function MapModal({
   const [routeInfo, setRouteInfo] = useState<{
     distance: string;
     duration: string;
-    coordinates: number[][];
+    coordinates: { latitude: number; longitude: number }[];
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const cameraRef = useRef<MapboxGL.Camera>(null);
-  const [routeProgress, setRouteProgress] = useState(0);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    null
-  );
+  const [currentLocation, setCurrentLocation] =
+    useState<Location.LocationObject | null>(null);
+  const [traveledDistance, setTraveledDistance] = useState<number>(0);
 
   useEffect(() => {
-    if (routeInfo) {
-      console.log("Route coordinates:", routeInfo.coordinates);
-    }
-  }, [routeInfo]);
-
-  useEffect(() => {
-    MapboxGL.setAccessToken(GOONG_ACCESS_TOKEN);
-    MapboxGL.setTelemetryEnabled(false);
-  }, []);
-
-  useEffect(() => {
-    if (open) {
+    if (!open) {
+      setRouteInfo(null);
+      setTraveledDistance(0);
+    } else {
       calculateRoute();
-    }
-  }, [open, sourceLocation, destinationLocation]);
-
-  useEffect(() => {
-    if (open) {
-      const watchId = MapboxGL.locationManager.start();
-
-      MapboxGL.locationManager.addListener(
-        (location: {
-          coords: {
-            latitude: number;
-            longitude: number;
-            isMock?: boolean;
-            speed?: number;
-            heading?: number;
-          };
-        }) => {
-          const { coords } = location;
-
-          // Accept both real and mock locations in development
-          if (__DEV__ || !coords.isMock) {
-            console.log("Location update:", {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              isMock: coords.isMock,
-              speed: coords.speed,
-              heading: coords.heading,
-            });
-
-            setUserLocation([coords.longitude, coords.latitude]);
-
-            if (coords.latitude && coords.longitude) {
-              calculateRoute({
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-              });
-            }
-          }
-        }
-      );
-
-      return () => {
-        MapboxGL.locationManager.stop();
-      };
     }
   }, [open]);
 
-  const calculateRoute = async (currentLocation?: LocationMap) => {
+  useEffect(() => {
+    let locationSubscription: Location.LocationSubscription | null = null;
+    if (open) {
+      (async () => {
+        locationSubscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 1000,
+            distanceInterval: 1,
+          },
+          (newLocation) => {
+            setCurrentLocation(newLocation);
+            if (routeInfo?.coordinates) {
+              const currentPoint = {
+                latitude: newLocation.coords.latitude,
+                longitude: newLocation.coords.longitude,
+              };
+              const closestIndex = findClosestPointIndex(
+                currentPoint,
+                routeInfo.coordinates
+              );
+              setTraveledDistance(closestIndex);
+            }
+          }
+        );
+      })();
+    }
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
+  }, [open, routeInfo]);
+
+  const calculateRoute = async () => {
     setIsLoading(true);
     try {
-      const startLocation = currentLocation || sourceLocation;
       const response = await goongApi.getDirections(
-        [startLocation.latitude, startLocation.longitude],
+        [sourceLocation.latitude, sourceLocation.longitude],
         [destinationLocation.latitude, destinationLocation.longitude]
       );
 
@@ -138,51 +93,16 @@ export default function MapModal({
 
         if (polylineString) {
           const points = goongApi.decodePolyline(polylineString);
-          const mapboxPoints = points.map((point) => [point[1], point[0]]);
+          const coordinates = points.map((point) => ({
+            latitude: point[0],
+            longitude: point[1],
+          }));
 
-          if (currentLocation) {
-            const currentPoint = [
-              currentLocation.longitude,
-              currentLocation.latitude,
-            ];
-            const progress = calculateProgressAlongRoute(
-              currentPoint,
-              mapboxPoints
-            );
-            setRouteProgress(progress);
-          }
-
-          if (points.length > 0) {
-            // Convert points về format [longitude, latitude] cho Mapbox
-            const mapboxPoints = points.map((point) => [point[1], point[0]]);
-
-            setRouteInfo({
-              distance: route.legs?.[0]?.distance?.text || "N/A",
-              duration: route.legs?.[0]?.duration?.text || "N/A",
-              coordinates: mapboxPoints,
-            });
-
-            // Tính bounds dựa trên mapboxPoints
-            const bounds = mapboxPoints.reduce(
-              (bounds, coord) => {
-                bounds.ne = [
-                  Math.max(bounds.ne[0], coord[0]),
-                  Math.max(bounds.ne[1], coord[1]),
-                ];
-                bounds.sw = [
-                  Math.min(bounds.sw[0], coord[0]),
-                  Math.min(bounds.sw[1], coord[1]),
-                ];
-                return bounds;
-              },
-              {
-                ne: [mapboxPoints[0][0], mapboxPoints[0][1]],
-                sw: [mapboxPoints[0][0], mapboxPoints[0][1]],
-              }
-            );
-
-            cameraRef.current?.fitBounds(bounds.ne, bounds.sw, 50, 1000);
-          }
+          setRouteInfo({
+            distance: route.legs?.[0]?.distance?.text || "N/A",
+            duration: route.legs?.[0]?.duration?.text || "N/A",
+            coordinates,
+          });
         }
       }
     } catch (error) {
@@ -192,75 +112,80 @@ export default function MapModal({
     }
   };
 
+  const findClosestPointIndex = (
+    currentPoint: { latitude: number; longitude: number },
+    routePoints: { latitude: number; longitude: number }[]
+  ) => {
+    let closestIndex = 0;
+    let minDistance = Number.MAX_VALUE;
+
+    routePoints.forEach((point, index) => {
+      const distance = Math.sqrt(
+        Math.pow(currentPoint.latitude - point.latitude, 2) +
+          Math.pow(currentPoint.longitude - point.longitude, 2)
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    return closestIndex;
+  };
+
   return (
     <Modal visible={open} transparent animationType="slide">
       <View style={styles.modalMapContainer}>
-        <MapboxGL.MapView
+        <MapView
+          provider={PROVIDER_GOOGLE}
           style={{ flex: 1, width: "100%" }}
-          styleURL="https://tiles.goong.io/assets/goong_map_web.json?api_key=x6ttXfdpoNErTLWmdGzUgTeRhtrTTXsj2v1MGnfE"
+          initialRegion={{
+            latitude: sourceLocation.latitude,
+            longitude: sourceLocation.longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
         >
-          <MapboxGL.Camera
-            ref={cameraRef}
-            zoomLevel={12}
-            centerCoordinate={[
-              sourceLocation.longitude,
-              sourceLocation.latitude,
-            ]}
-          />
-
-          <MapboxGL.UserLocation
-            visible={true}
-            showsUserHeadingIndicator={true}
-            androidRenderMode={
-              Platform.OS === "android" ? "compass" : undefined
-            }
-            minDisplacement={1}
-          />
-
-          {/* Source Marker */}
-          <MapboxGL.PointAnnotation
-            id="source"
-            coordinate={[sourceLocation.longitude, sourceLocation.latitude]}
-          >
-            <MapboxGL.Callout title="Điểm đi" />
-          </MapboxGL.PointAnnotation>
+          {/* Current Location Marker với icon xe */}
+          {currentLocation && (
+            <Marker
+              coordinate={{
+                latitude: currentLocation.coords.latitude,
+                longitude: currentLocation.coords.longitude,
+              }}
+              title="Vị trí hiện tại"
+            >
+              <View style={styles.carMarker}>
+                <Text style={styles.carEmoji}>🚗</Text>
+              </View>
+            </Marker>
+          )}
 
           {/* Destination Marker */}
-          <MapboxGL.PointAnnotation
-            id="destination"
-            coordinate={[
-              destinationLocation.longitude,
-              destinationLocation.latitude,
-            ]}
-          >
-            <MapboxGL.Callout title="Điểm đến" />
-          </MapboxGL.PointAnnotation>
+          <Marker
+            coordinate={{
+              latitude: destinationLocation.latitude,
+              longitude: destinationLocation.longitude,
+            }}
+            title="Điểm đến"
+          />
 
-          {/* Route Line */}
-          {routeInfo && (
-            <MapboxGL.ShapeSource
-              id="routeSource"
-              shape={{
-                type: "Feature",
-                properties: { "z-index": 1 },
-                geometry: {
-                  type: "LineString",
-                  coordinates: routeInfo.coordinates,
-                },
-              }}
-            >
-              <MapboxGL.LineLayer
-                id="lineLayer"
-                style={{
-                  lineColor: "#2E64FE",
-                  lineWidth: 10,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
+          {/* Chia polyline thành 2 phần: đã đi và chưa đi */}
+          {routeInfo && routeInfo.coordinates.length > 0 && (
+            <>
+              <Polyline
+                coordinates={routeInfo.coordinates.slice(0, traveledDistance)}
+                strokeColor={Colors.gray400} // Màu nhạt cho phần đã đi
+                strokeWidth={5}
               />
-            </MapboxGL.ShapeSource>
+              <Polyline
+                coordinates={routeInfo.coordinates.slice(traveledDistance)}
+                strokeColor={Colors.orange500} // Màu cam cho phần chưa đi
+                strokeWidth={5}
+              />
+            </>
           )}
-        </MapboxGL.MapView>
+        </MapView>
 
         {isLoading && (
           <View style={styles.loadingContainer}>
@@ -314,18 +239,11 @@ const styles = StyleSheet.create({
   closeButton: {
     backgroundColor: "#000000aa",
   },
-  confirmButton: {
-    backgroundColor: Colors.orange500,
-  },
   buttonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },
-  routeLine: {
-    lineColor: Colors.orange500,
-    lineWidth: 3,
-  } as MapboxGL.LineLayerStyle,
   loadingContainer: {
     position: "absolute",
     top: 0,
@@ -355,5 +273,15 @@ const styles = StyleSheet.create({
   routeInfoText: {
     fontSize: 14,
     marginBottom: 4,
+  },
+  carMarker: {
+    padding: 5,
+    backgroundColor: "white",
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: Colors.orange500,
+  },
+  carEmoji: {
+    fontSize: 20,
   },
 });

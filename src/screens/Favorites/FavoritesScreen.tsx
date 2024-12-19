@@ -10,6 +10,7 @@ import {
 import * as Location from "expo-location";
 import MapView, { Marker, Polyline } from "react-native-maps";
 
+// Add interfaces for location data
 interface LocationData {
   coords: {
     latitude: number;

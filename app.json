@@ -53,12 +53,6 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
-      ],
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNHRwejh3bjBhNzkyanM2aXNxeWgwMnAifQ.L65UKtKadHfYiseyscbvUA"
-        }
       ]
     ],
     "extra": {
