@@ -87,6 +87,7 @@ export default function ProductDetailScreen() {
   const [endHour, setEndHour] = useState(17);
   const [daysOnly, setDaysOnly] = useState("mon_tue_wed_thu_fri_sat_sun");
   const [timeRanges, setTimeRanges] = useState<DayTimeRange[]>([]);
+  const [typeTimeRange, setTypeTimeRange] = useState("officeHours");
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [alertData, setAlertData] = useState<{
@@ -315,6 +316,8 @@ export default function ProductDetailScreen() {
 
   const setCustomTimeRanges = (range: string) => {
     const [type] = range.split(" ");
+
+    setTypeTimeRange(type);
     let timeRanges: DayTimeRange[] = [];
 
     if (type === "customPerDay") {
@@ -386,22 +389,21 @@ export default function ProductDetailScreen() {
   const generateHourRange = () => {
     const timeRange = getTimeRangeForSelectedDate(selectedDate);
     if (!timeRange) return [];
-
+  
     const { start, end } = timeRange;
-
+  
+    let hourRanges;
+  
     // Nếu start <= end, tạo range bình thường
     if (start.hour <= end.hour) {
-      return Array.from({ length: end.hour - start.hour + 1 }, (_, i) => ({
+      hourRanges = Array.from({ length: end.hour - start.hour + 1 }, (_, i) => ({
         hour: start.hour + i,
-        // Với giờ đầu tiên, bắt đầu từ phút đã định
         minStart: i === 0 ? start.minute : 0,
-        // Với giờ cuối cùng, kết thúc tại phút đã định
         minEnd: i === end.hour - start.hour ? end.minute : 59,
       }));
-    }
-    // Nếu start > end (qua nửa đêm)
-    else {
-      return [
+    } else {
+      // Nếu start > end (qua nửa đêm)
+      hourRanges = [
         // Từ giờ bắt đầu đến 23:59
         ...Array.from({ length: 24 - start.hour }, (_, i) => ({
           hour: start.hour + i,
@@ -416,8 +418,15 @@ export default function ProductDetailScreen() {
         })),
       ];
     }
+  
+    // Loại bỏ giờ 12:00 - 12:59 nếu type === 'officeHour'
+    if (typeTimeRange === 'officeHours') {
+      hourRanges = hourRanges.filter(({ hour }) => hour !== 12);
+    }
+  
+    return hourRanges;
   };
-
+  
   const generateMinuteRange = (selectedHour: number | null) => {
     if (selectedHour === null) return [];
 

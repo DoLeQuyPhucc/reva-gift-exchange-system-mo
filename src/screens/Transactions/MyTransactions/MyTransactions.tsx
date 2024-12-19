@@ -317,8 +317,36 @@ const MyTransactions = () => {
         }
       );
 
-      if (response.data.isSuccess) {
-        setIsConfirm((prev) => !prev);
+      let pointValue;
+      switch (ratingData.rating) {
+        case 1:
+          pointValue = -3;
+          break;
+        case 2:
+          pointValue = -2;
+          break;
+        case 3:
+          pointValue = 0;
+          break;
+        case 4:
+          pointValue = 2;
+          break;
+        case 5:
+          pointValue = 5;
+          break;
+      }
+
+      const pointData = {
+        userId: ratingData.ratedUserId,
+        point: pointValue,
+      };
+
+      console.log("pointData", pointData);
+
+      const pointResponse = await axiosInstance.post("user/point", pointData);
+
+      if (response.data.isSuccess && pointResponse.data.isSuccess) {
+        setIsConfirm(prev => !prev);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
       } else {
         Alert.alert(

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Colors from "@/src/constants/Colors";
@@ -33,27 +34,32 @@ const SearchResultsScreen: React.FC = () => {
   const { userData } = useAuthCheck();
 
   const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 10;
+
   useEffect(() => {
-    fetchSearchResults();
+    fetchSearchResults(1);
   }, [searchTerm, searchMode]);
 
-  const fetchSearchResults = async () => {
+  const fetchSearchResults = async (page: number) => {
     setLoading(true);
     try {
       const searchValue = getSearchValue(searchTerm, searchMode);
 
       const response = await axiosInstance.get(
-        `items/search?searchData=${searchValue}`
+        `items/search?searchData=${searchValue}&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
       );
-      const productsData = response.data.data;
 
-      console.log("Products Data: ", productsData);
+      console.log(`items/search?searchData=${searchValue}&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`)
+      const { data, totalItems } = response.data.data;
 
-      setProducts(productsData);
-      filterProducts(productsData);
+      filterProducts(page, data);
+
+      setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
     } catch (error: any) {
       console.error("Error searching products:", error);
 
@@ -71,32 +77,37 @@ const SearchResultsScreen: React.FC = () => {
     );
   };
 
-  const filterProducts = (products: Product[]) => {
+  const filterProducts = (page: number, products: Product[]) => {
     let filtered = products.filter((product) => {
-  // Điều kiện 1: Sản phẩm không phải của mình và trạng thái là "Approved"
-  const isApprovedAndNotMine =
-    product.status === "Approved" && product.owner_id !== userData.userId;
+      // Điều kiện 1: Sản phẩm không phải của mình và trạng thái là "Approved"
+      const isApprovedAndNotMine =
+        product.status === "Approved" && product.owner_id !== userData.userId;
 
-  // Điều kiện 2: Sản phẩm là của mình (bất kể trạng thái)
-  const isMine = product.owner_id === userData.userId;
+      // Điều kiện 2: Sản phẩm là của mình (bất kể trạng thái)
+      const isMine = product.owner_id === userData.userId;
 
-  // Kết hợp hai điều kiện
-  return isApprovedAndNotMine || isMine;
-});
+      // Kết hợp hai điều kiện
+      return isApprovedAndNotMine || isMine;
+    });
 
-    console.log("Filtered Products: ", filtered);
-    setFilteredProducts(filtered);
+    if (page === 1) {
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts((prev) => [...prev, ...filtered]);
+    }
   };
 
-  const getSearchModeIcon = () => {
-    switch (searchMode) {
-      case "need":
-        return "category";
-      case "have":
-        return "people";
-      default:
-        return "search";
+  const loadMore = () => {
+    if (!loading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchSearchResults(currentPage + 1);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchSearchResults(1);
+    setRefreshing(false);
   };
 
   const renderHeader = () => {
@@ -110,24 +121,26 @@ const SearchResultsScreen: React.FC = () => {
             {searchTerm}
           </Text>
         </View>
-        <Text style={styles.resultCount}>
+        {/* <Text style={styles.resultCount}>
           {filteredProducts.length} kết quả
-        </Text>
+        </Text> */}
       </View>
     );
   };
 
   const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Icon name="search-off" size={64} color="#666" />
-      <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
-      <Text style={styles.emptyDescription}>
-        Không có sản phẩm nào liên quan đến "{searchTerm}"
-      </Text>
-      <Text style={styles.emptyDescription}>
-        Thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc
-      </Text>
-    </View>
+    !loading && (
+      <View style={styles.emptyContainer}>
+        <Icon name="search-off" size={64} color="#666" />
+        <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
+        <Text style={styles.emptyDescription}>
+          Không có sản phẩm nào liên quan đến "{searchTerm}"
+        </Text>
+        <Text style={styles.emptyDescription}>
+          Thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc
+        </Text>
+      </View>
+    )
   );
 
   const renderProductItem = ({ item }: { item: Product }) => (
@@ -139,7 +152,9 @@ const SearchResultsScreen: React.FC = () => {
     >
       <Image source={{ uri: item.images?.[0] }} style={styles.productImage} />
       <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.productName} numberOfLines={1}>
+          {item.name}
+        </Text>
         <Text style={styles.productDescription} numberOfLines={2}>
           {item.description}
         </Text>
@@ -177,11 +192,11 @@ const SearchResultsScreen: React.FC = () => {
         <Text style={styles.headerTitle}>Kết quả tìm kiếm</Text>
       </View>
 
-      {loading ? (
+      {/* {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.orange500} />
         </View>
-      ) : (
+      ) : ( */}
         <FlatList
           data={filteredProducts}
           renderItem={renderProductItem}
@@ -190,8 +205,17 @@ const SearchResultsScreen: React.FC = () => {
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={() =>
+            loading ? (
+              <View style={styles.loadingMore}>
+                <ActivityIndicator size="small" color="#f97316" />
+              </View>
+            ) : null
+          }
         />
-      )}
+      {/* )} */}
     </SafeAreaView>
   );
 };
@@ -200,6 +224,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: 16,
   },
   header: {
     flexDirection: "row",
@@ -324,6 +349,10 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontStyle: "italic",
     marginBottom: 8,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
 

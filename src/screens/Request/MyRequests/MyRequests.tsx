@@ -325,12 +325,20 @@ export default function MyRequestsScreen() {
             style={styles.listItemAvatar}
           />
           <View style={styles.userInfo}>
+            {userData.userId !== request.requester.id ? (
             <View>
               <Text style={styles.listItemName}>{request.requester.name}</Text>
               <Text style={styles.listItemTime}>
                 {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
               </Text>
             </View>
+            ) : (
+              <View>
+                <Text style={styles.listItemName}>Tôi</Text>
+                <Text style={styles.listItemTime}>
+                  {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
+                </Text>
+              </View>)}
           </View>
           <View
             style={[
@@ -448,12 +456,22 @@ export default function MyRequestsScreen() {
                     style={styles.avatar}
                   />
                 </TouchableOpacity>
+
+              {userData.userId !== request.requester.id ? (
                 <TouchableOpacity
                   onPress={() => handleShowInfoUser(request.requester.id)}
                   style={styles.userInfo}
                 >
                   <Text style={styles.userName}>{request.requester.name}</Text>
-                </TouchableOpacity>
+                </TouchableOpacity>) : (
+                <TouchableOpacity 
+                onPress={() => handleShowInfoUser(request.requester.id)}
+                style={styles.userInfo}
+              >
+                <Text style={styles.userName}>Tôi</Text>
+              </TouchableOpacity>
+              )}
+                
                 <View
                   style={[
                     styles.statusBadge,
@@ -523,10 +541,12 @@ export default function MyRequestsScreen() {
                   request.status === "Not_Completed") && (
                   <TouchableOpacity
                     style={styles.viewDetailButton}
-                    onPress={() =>
+                    onPress={() =>{
                       navigation.navigate("MyTransactions", {
                         requestId: request.id,
                       })
+                      setShowDetailModal(false)
+                    }
                     }
                   >
                     <Icon
