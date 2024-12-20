@@ -103,6 +103,13 @@ export default function MyRequestsScreen() {
               `request/my-requests?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           }
+          if (requestsResponse.data.data) {
+            requestsResponse.data.data.data.forEach((req: Request) => {
+              if (req.status === "Hold_On") {
+                req.status = "Pending";
+              }
+            });
+          }
           setIsShowActions(false);
           break;
         case "requestsForMe":

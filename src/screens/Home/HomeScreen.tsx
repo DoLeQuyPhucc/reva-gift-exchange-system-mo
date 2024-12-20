@@ -216,7 +216,7 @@ const HomeScreen: React.FC = () => {
           )}
 
           <View style={[styles.badge, styles.categoryBadge]}>
-            <Icon name="category" size={12} color="#666" />
+            {/* <Icon name="category" size={12} color="#666" /> */}
             <Text style={styles.categoryText}>{product.category.name}</Text>
           </View>
         </View>
@@ -328,10 +328,12 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      <Text style={styles.resultCount}>
-        Hiển thị {filteredProducts.length} sản phẩm
-      </Text>
+      
+      {/*
+        <Text style={styles.resultCount}>
+          Hiển thị {filteredProducts.length} sản phẩm
+        </Text>
+      */}
     </View>
   );
 
