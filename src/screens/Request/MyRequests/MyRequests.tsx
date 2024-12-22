@@ -41,7 +41,7 @@ const STATUS_COLORS: { [key: string]: string } = {
 const STATUS_LABELS = {
   Pending: "Đang chờ",
   Approved: "Đang trong giao dịch",
-  Rejected: "Từ chối",
+  Rejected: "Bị từ chối",
   Hold_On: "Tạm hoãn",
   Completed: "Đã hoàn thành",
   Not_Completed: "Không thành công",
@@ -537,7 +537,7 @@ export default function MyRequestsScreen() {
                     {request.status === "Hold_On" &&
                       "Yêu cầu tạm hoãn do sản phẩm đang trong giao dịch khác."}
                     {request.status === "Completed" &&
-                      "Giao dịch đã hoàn thành thành công."}
+                      "Giao dịch đã hoàn thành."}
                     {request.status === "Not_Completed" &&
                       "Giao dịch không thành công."}
                   </Text>

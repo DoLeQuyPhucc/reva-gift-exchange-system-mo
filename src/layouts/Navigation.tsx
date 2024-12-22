@@ -151,7 +151,7 @@ export default function Navigation() {
         <Stack.Screen
           name="SearchResultsScreen"
           component={SearchResultsScreen}
-          options={{ headerShown: false }}
+          options={{ headerShown: true, title: "Kết quả tìm kiếm", headerRight: () =>  <ButtonMoreActionHeader propNav="Home" /> }}
         />
         <Stack.Screen
           name="PreviewPost"

@@ -17,7 +17,7 @@ export const formatDate = (dateString: string): string => {
   }).format(date);
 
   // Combine time and date in desired format
-  return `${time} ${datePart}`;
+  return `${datePart} ${time}`;
 };
 
 export const formatDate_HHmm_DD_MM_YYYY = (dateString: string): string => {
@@ -38,7 +38,7 @@ export const formatDate_HHmm_DD_MM_YYYY = (dateString: string): string => {
   }).format(date);
 
   // Combine time and date in desired format
-  return `${time} ${datePart}`;
+  return `${datePart} ${time}`;
 };
 
 export const formatDateOnlyDate = (dateString: string) => {

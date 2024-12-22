@@ -9,6 +9,7 @@ import {
   TextInput,
   Platform,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -44,6 +45,7 @@ const CharitarianRequestItem = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [refreshing, setRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,6 +82,12 @@ const CharitarianRequestItem = () => {
       setCurrentPage((prev) => prev + 1);
       fetchProducts(currentPage + 1);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchProducts(1);
+    setRefreshing(false);
   };
 
   const handleSearch = (query: string) => {
@@ -202,6 +210,13 @@ const CharitarianRequestItem = () => {
       </View>
       <ScrollView
         style={styles.tabContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
         onScroll={({ nativeEvent }) => {
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const isCloseToBottom =

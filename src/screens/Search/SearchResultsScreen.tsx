@@ -182,7 +182,7 @@ const SearchResultsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -190,7 +190,7 @@ const SearchResultsScreen: React.FC = () => {
           <Icon name="arrow-back" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Kết quả tìm kiếm</Text>
-      </View>
+      </View> */}
 
       {/* {loading ? (
         <View style={styles.loadingContainer}>
@@ -224,7 +224,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 16,
   },
   header: {
     flexDirection: "row",
