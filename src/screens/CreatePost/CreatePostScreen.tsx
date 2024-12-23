@@ -8,8 +8,6 @@ import {
   TextInput,
   Platform,
   Alert,
-  Button,
-  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Checkbox, RadioButton } from "react-native-paper";
@@ -589,7 +587,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     try {
       setShowConfirmAlert(false);
       setIsLoading(true);

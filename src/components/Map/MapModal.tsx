@@ -12,6 +12,7 @@ import {
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { goongApi } from "@/src/services/goongApi";
+import React from "react";
 
 interface MapModalProps {
   open: boolean;
