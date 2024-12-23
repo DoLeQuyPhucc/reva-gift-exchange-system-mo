@@ -87,6 +87,7 @@ export default function ProductDetailScreen() {
   const [endHour, setEndHour] = useState(17);
   const [daysOnly, setDaysOnly] = useState("mon_tue_wed_thu_fri_sat_sun");
   const [timeRanges, setTimeRanges] = useState<DayTimeRange[]>([]);
+  const [typeTimeRange, setTypeTimeRange] = useState("officeHours");
 
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [alertData, setAlertData] = useState<{
@@ -114,8 +115,11 @@ export default function ProductDetailScreen() {
           console.log("Product data:", response.data.data.id);
           setProduct(response.data.data);
           setCustomTimeRanges(
-            response.data.data?.availableTime || "officeHours 9:00_17:00"
+            response.data.data?.availableTime || "officeHours 9:00_17:00 mon_tue_wed_thu_fri"
           );
+          const nextValidDate = getNextValidDate(response.data.data?.availableTime);
+          console.log("Next valid date:", nextValidDate);
+          setSelectedDate(nextValidDate);
         } else {
           throw new Error(response.data.message || "Failed to fetch product");
         }
@@ -131,6 +135,47 @@ export default function ProductDetailScreen() {
 
     fetchBusyTime();
   }, [itemId]);
+
+  const getNextValidDate = (availableTime: string): Date => {
+    // Giải mã availableTime
+    const daysOfWeekMap: { [key: string]: number } = {
+      mon: 1,
+      tue: 2,
+      wed: 3,
+      thu: 4,
+      fri: 5,
+      sat: 6,
+      sun: 0,
+    };
+  
+    // Lấy danh sách ngày hợp lệ từ availableTime
+    let validDays: number[] = [];
+    const timePattern = /mon_tue_wed_thu_fri_sat_sun|mon_tue_wed_thu_fri|mon_tue_wed_thu|sun|sat|fri|thu|wed|tue|mon/;
+    const match = availableTime.match(timePattern);
+  
+    if (match) {
+      const daysString = match[0];
+      const days = daysString.split('_');
+      validDays = days.map((day) => daysOfWeekMap[day]);
+    }
+  
+    // Lấy ngày hiện tại
+    const currentDate = new Date();
+    const currentDayOfWeek = currentDate.getDay();
+  
+    // Nếu ngày hiện tại là hợp lệ, trả về ngày hiện tại
+    if (validDays.includes(currentDayOfWeek)) {
+      return currentDate;
+    }
+  
+    // Tìm ngày hợp lệ gần nhất
+    let nextValidDate = new Date(currentDate);
+    while (!validDays.includes(nextValidDate.getDay())) {
+      nextValidDate.setDate(nextValidDate.getDate() + 1);
+    }
+  
+    return nextValidDate;
+  };
 
   const uploadImageToCloudinary = async (uri: string): Promise<string> => {
     try {
@@ -315,6 +360,8 @@ export default function ProductDetailScreen() {
 
   const setCustomTimeRanges = (range: string) => {
     const [type] = range.split(" ");
+
+    setTypeTimeRange(type);
     let timeRanges: DayTimeRange[] = [];
 
     if (type === "customPerDay") {
@@ -386,22 +433,21 @@ export default function ProductDetailScreen() {
   const generateHourRange = () => {
     const timeRange = getTimeRangeForSelectedDate(selectedDate);
     if (!timeRange) return [];
-
+  
     const { start, end } = timeRange;
-
+  
+    let hourRanges;
+  
     // Nếu start <= end, tạo range bình thường
     if (start.hour <= end.hour) {
-      return Array.from({ length: end.hour - start.hour + 1 }, (_, i) => ({
+      hourRanges = Array.from({ length: end.hour - start.hour + 1 }, (_, i) => ({
         hour: start.hour + i,
-        // Với giờ đầu tiên, bắt đầu từ phút đã định
         minStart: i === 0 ? start.minute : 0,
-        // Với giờ cuối cùng, kết thúc tại phút đã định
         minEnd: i === end.hour - start.hour ? end.minute : 59,
       }));
-    }
-    // Nếu start > end (qua nửa đêm)
-    else {
-      return [
+    } else {
+      // Nếu start > end (qua nửa đêm)
+      hourRanges = [
         // Từ giờ bắt đầu đến 23:59
         ...Array.from({ length: 24 - start.hour }, (_, i) => ({
           hour: start.hour + i,
@@ -416,8 +462,15 @@ export default function ProductDetailScreen() {
         })),
       ];
     }
+  
+    // Loại bỏ giờ 12:00 - 12:59 nếu type === 'officeHour'
+    if (typeTimeRange === 'officeHours') {
+      hourRanges = hourRanges.filter(({ hour }) => hour !== 12);
+    }
+  
+    return hourRanges;
   };
-
+  
   const generateMinuteRange = (selectedHour: number | null) => {
     if (selectedHour === null) return [];
 
@@ -806,6 +859,7 @@ export default function ProductDetailScreen() {
                   setSelectedHour(hour);
                   setSelectedMinute(null); // Reset phút khi chọn giờ mới
                   setShowHourModal(false);
+                  setShowMinuteModal(true);
                 }}
               >
                 <Text
@@ -1203,7 +1257,7 @@ export default function ProductDetailScreen() {
                     </View>
                   )}
 
-                  <Text style={styles.moreItemText}>
+                  {/* <Text style={styles.moreItemText}>
                     Sản phẩm khác, vui lòng chụp lại sản phẩm và ghi rõ thông
                     tin sản phẩm
                   </Text>
@@ -1225,7 +1279,7 @@ export default function ProductDetailScreen() {
                     onRemoveImage={removeImage}
                     onRemoveVideo={() => {}}
                     canUploadVideo={false}
-                  />
+                  /> */}
                   <TouchableOpacity onPress={() => handleWannaRequest()}>
                     <Text style={styles.requestText}>
                       Tôi muốn xin món đồ này.
@@ -1845,6 +1899,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   userItemsScroll: {
+    paddingBottom: 16,
     flexGrow: 0,
   },
   userItemCard: {
@@ -2068,6 +2123,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#e53e3e",
     fontStyle: "italic",
+    padding: 12,
+    paddingTop: 4
   },
   timeRangeRow: {
     paddingHorizontal: 16,

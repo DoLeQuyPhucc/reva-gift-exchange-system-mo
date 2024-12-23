@@ -114,7 +114,7 @@ const HomeScreen: React.FC = () => {
       style={styles.searchContainer}
       onPress={() => navigation.navigate("SearchScreen")}
     >
-      <Icon name="search" size={20} style={styles.searchIcon} />
+      <Icon name="search" size={20} style={styles.searchIcon} color="#666" />
       <Text style={styles.searchPlaceholder}>Tìm kiếm sản phẩm...</Text>
     </TouchableOpacity>
   );
@@ -216,7 +216,7 @@ const HomeScreen: React.FC = () => {
           )}
 
           <View style={[styles.badge, styles.categoryBadge]}>
-            <Icon name="category" size={12} color="#666" />
+            {/* <Icon name="category" size={12} color="#666" /> */}
             <Text style={styles.categoryText}>{product.category.name}</Text>
           </View>
         </View>
@@ -328,10 +328,12 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      <Text style={styles.resultCount}>
-        Hiển thị {filteredProducts.length} sản phẩm
-      </Text>
+      
+      {/*
+        <Text style={styles.resultCount}>
+          Hiển thị {filteredProducts.length} sản phẩm
+        </Text>
+      */}
     </View>
   );
 
@@ -393,6 +395,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     paddingVertical: 24,
+    backgroundColor: "#fff",
   },
   loadingContainer: {
     flex: 1,
@@ -749,7 +752,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,

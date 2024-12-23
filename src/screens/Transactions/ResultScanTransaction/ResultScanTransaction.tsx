@@ -139,32 +139,23 @@ export default function ResultScanTransaction() {
     )} ${formatDate_DD_MM_YYYY(date.toISOString())}`;
   };
 
-  const handleConfirmTransaction = async () => {
-    try {
-      // Add your confirmation API call here
-      await axiosInstance.post(`transaction/confirm/${transaction?.id}`);
-      Alert.alert("Thành công", "Xác nhận giao dịch thành công", [
-        {
-          text: "OK",
-          onPress: () => navigation.goBack(),
-        },
-      ]);
-    } catch (error) {
-      Alert.alert("Lỗi", "Không thể xác nhận giao dịch. Vui lòng thử lại sau.");
-    }
-  };
-
   const handleVerification = async (transactionId: string) => {
     try {
+      const data = {
+        transactionId: transactionId,
+        transactionImages: [],
+      }
       const res = await axiosInstance.put(
-        `transaction/approve/${transactionId}`
+        `transaction/approve`, data
       );
       console.log(res.data);
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
           text: "OK",
-          onPress: () =>
-            navigation.navigate("MyTransactions", { requestId: "" }),
+          onPress: () =>{
+            navigation.navigate("MyTransactions", { requestId: "" })
+          }
+            // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowConfirmModal(false);
@@ -175,14 +166,21 @@ export default function ResultScanTransaction() {
 
   const handleReject = async (transactionId: string) => {
     try {
+      const data = {
+        transactionId: transactionId,
+        message: rejectMessage,
+        transactionImages: [],
+      }
       await axiosInstance.put(
-        `transaction/reject/${transactionId}?message=${rejectMessage}`
+        `transaction/reject`, data
       );
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
-          onPress: () =>
-            navigation.navigate("MyTransactions", { requestId: "" }),
+          onPress: () =>{
+            navigation.navigate("MyTransactions", { requestId: "" })
+          }
+            // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
       setShowInputRejectMessage(false);
@@ -215,57 +213,6 @@ export default function ResultScanTransaction() {
   }
 
   return (
-    // <ScrollView style={styles.container}>
-    //   <View style={styles.card}>
-    //     <Text style={styles.title}>Transaction Details</Text>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Transaction ID:</Text>
-    //       <Text style={styles.value}>{transaction.TransactionId}</Text>
-    //     </View>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Requester:</Text>
-    //       <Text style={styles.value}>{transaction.Requester}</Text>
-    //     </View>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Charitarian:</Text>
-    //       <Text style={styles.value}>{transaction.Charitarian}</Text>
-    //     </View>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Item:</Text>
-    //       <Text style={styles.value}>{transaction.Item}</Text>
-    //     </View>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Valid From:</Text>
-    //       <Text style={styles.value}>{formatDate(transaction.ValidFrom)}</Text>
-    //     </View>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Valid To:</Text>
-    //       <Text style={styles.value}>{formatDate(transaction.ValidTo)}</Text>
-    //     </View>
-
-    //     <View style={styles.row}>
-    //       <Text style={styles.label}>Expire Time:</Text>
-    //       <Text style={styles.value}>{formatDate(transaction.ExpireTime)}</Text>
-    //     </View>
-
-    //     <TouchableOpacity
-    //       style={styles.confirmButton}
-    //       onPress={() => {
-    //         // Xử lý logic xác nhận ở đây
-    //         alert('Transaction confirmed!');
-    //         navigation.goBack();
-    //       }}
-    //     >
-    //       <Text style={styles.confirmButtonText}>Confirm Transaction</Text>
-    //     </TouchableOpacity>
-    //   </View>
-    // </ScrollView>
     transactionResult.isOwnTransaction ? (
       <ScrollView style={styles.container}>
         {transaction ? (
@@ -383,13 +330,6 @@ export default function ResultScanTransaction() {
                 </View>
               )}
 
-              {/* <View style={styles.dateInfo}>
-          <Text>
-            <Icon name="info" size={18} color={Colors.orange500} /> Lưu ý: Bạn nên
-            tới vào lúc {formatTimeRange(transaction.appointmentDate)} để có thể
-            thấy được mã xác nhận và hoàn thành giao dịch.
-          </Text>
-        </View> */}
               {transaction.status === "In_Progress" &&
                 checkRole(transaction) === "charitarian" && (
                   <View style={styles.actionContainer}>
@@ -421,36 +361,6 @@ export default function ResultScanTransaction() {
                 )}
             </View>
 
-            {/* Confirmation Modal */}
-            {/* <Modal
-              visible={showConfirmModal}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setShowConfirmModal(false)}
-            >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Xác nhận giao dịch</Text>
-                  <Text style={styles.modalText}>
-                    Bạn có chắc chắn muốn xác nhận giao dịch này?
-                  </Text>
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.confirmButton]}
-                      onPress={handleConfirmTransaction}
-                    >
-                      <Text style={styles.modalButtonText}>Xác nhận</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.cancelModalButton]}
-                      onPress={() => setShowConfirmModal(false)}
-                    >
-                      <Text style={styles.modalButtonText}>Hủy</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </Modal> */}
             <Modal
               visible={showConfirmModal}
               transparent
