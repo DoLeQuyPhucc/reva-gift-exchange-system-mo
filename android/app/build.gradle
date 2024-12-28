@@ -94,7 +94,7 @@ packagingOptions {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.giftexchangesystemmo"
+    namespace 'com.phucdeptrai0508.giftexchangesystemmo'
     defaultConfig {
         applicationId 'com.phucdeptrai0508.giftexchangesystemmo'
         minSdkVersion rootProject.ext.minSdkVersion

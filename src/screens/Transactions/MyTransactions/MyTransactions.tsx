@@ -346,7 +346,7 @@ const MyTransactions = () => {
       const pointResponse = await axiosInstance.post("user/point", pointData);
 
       if (response.data.isSuccess && pointResponse.data.isSuccess) {
-        setIsConfirm(prev => !prev);
+        setIsConfirm((prev) => !prev);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
       } else {
         Alert.alert(
@@ -1142,6 +1142,7 @@ const MyTransactions = () => {
         onClose={setShowMapModal}
         sourceLocation={location}
         destinationLocation={destinationLocation}
+        transactionId={selectedTransaction?.id}
       />
     </View>
   );
