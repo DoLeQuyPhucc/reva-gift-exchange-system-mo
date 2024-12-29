@@ -346,7 +346,7 @@ const MyTransactions = () => {
       const pointResponse = await axiosInstance.post("user/point", pointData);
 
       if (response.data.isSuccess && pointResponse.data.isSuccess) {
-        setIsConfirm(prev => !prev);
+        setIsConfirm((prev) => !prev);
         Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá");
       } else {
         Alert.alert(
@@ -961,35 +961,39 @@ const MyTransactions = () => {
       </ScrollView>
 
       <Modal visible={showModal} transparent animationType="slide">
-        <TouchableWithoutFeedback onPress={() => setShowModal(false)}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Mã định danh</Text>
-              {selectedTransaction && (
-                <View style={styles.idContainer}>
-                  {qrCodeBase64 && (
-                    <Image
-                      source={{
-                        uri: qrCodeBase64,
-                      }}
-                      style={{ width: 220, height: 220 }}
-                    />
-                  )}
-                </View>
-              )}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setShowModal(false)}
+        >
+          <Text style={{ color: "#888" }}>Đóng</Text>
+        </TouchableOpacity>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Mã định danh</Text>
+            {selectedTransaction && (
+              <View style={styles.idContainer}>
+                {qrCodeBase64 && (
+                  <Image
+                    source={{
+                      uri: qrCodeBase64,
+                    }}
+                    style={{ width: 220, height: 220 }}
+                  />
+                )}
+              </View>
+            )}
 
-              <Text
-                style={{
-                  color: "#ababab",
-                  fontStyle: "italic",
-                  textAlign: "center",
-                }}
-              >
-                *Sử dụng mã định danh này để xác nhận giao dịch khi bạn đến
-              </Text>
-            </View>
+            <Text
+              style={{
+                color: "#ababab",
+                fontStyle: "italic",
+                textAlign: "center",
+              }}
+            >
+              *Sử dụng mã định danh này để xác nhận giao dịch khi bạn đến
+            </Text>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
 
       <Modal
@@ -1531,6 +1535,16 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+  },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    zIndex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
 });
 
