@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
   Image,
+  Alert,
 } from "react-native";
 import { TouchableOpacity } from "react-native";
 import * as Location from "expo-location";
@@ -16,6 +17,7 @@ import MapboxGL from "@rnmapbox/maps";
 import { goongApi } from "@/src/services/goongApi";
 import { Buffer } from "buffer";
 import axiosInstance from "@/src/api/axiosInstance";
+import { useProximityStore } from "@/src/stores/proximityStore";
 
 interface MapModalProps {
   open: boolean;
@@ -108,11 +110,6 @@ export default function MapModal({
     useState<Location.LocationObject | null>(null);
   const [traveledDistance, setTraveledDistance] = useState(0);
 
-  const [qrModal, setQrModal] = useState<QRModalState>({
-    visible: false,
-    qrCode: null,
-  });
-
   const findClosestPointIndex = (
     currentPoint: any,
     routePoints: number[][]
@@ -134,24 +131,6 @@ export default function MapModal({
     return closestIndex;
   };
 
-  const fetchQRCode = async (transactionId: string) => {
-    try {
-      const response = await axiosInstance.get(
-        `qr/generate?transactionId=${transactionId}`,
-        {
-          responseType: "arraybuffer",
-        }
-      );
-      const base64Image = `data:image/png;base64,${Buffer.from(
-        response.data,
-        "binary"
-      ).toString("base64")}`;
-      setQrModal({ visible: true, qrCode: base64Image });
-    } catch (error) {
-      console.error("Error fetching QR code:", error);
-    }
-  };
-
   useEffect(() => {
     let locationSubscription: Location.LocationSubscription | null = null;
 
@@ -165,8 +144,8 @@ export default function MapModal({
       locationSubscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 500,
-          distanceInterval: 0.5,
+          timeInterval: 1000,
+          distanceInterval: 1,
         },
         (newLocation) => {
           setCurrentLocation(newLocation);
@@ -178,8 +157,11 @@ export default function MapModal({
             destinationLocation.longitude
           );
 
-          if (distance <= 10 && transactionId && !qrModal.qrCode) {
-            fetchQRCode(transactionId);
+          if (distance <= 50) {
+            useProximityStore.getState().setIsNearDestination(true);
+            Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
+          } else {
+            useProximityStore.getState().setIsNearDestination(false);
           }
 
           if (routeInfo?.coordinates && routeInfo.coordinates.length > 0) {
@@ -287,33 +269,6 @@ export default function MapModal({
     }
   };
 
-  const QRCodeModal = () => (
-    <Modal
-      visible={qrModal.visible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setQrModal({ ...qrModal, visible: false })}
-    >
-      <View style={styles.qrModalContainer}>
-        <View style={styles.qrModalContent}>
-          <Text style={styles.qrModalTitle}>Quét mã QR để xác nhận</Text>
-          {qrModal.qrCode && (
-            <Image
-              source={{ uri: qrModal.qrCode }}
-              style={{ width: 220, height: 220 }}
-            />
-          )}
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setQrModal({ ...qrModal, visible: false })}
-          >
-            <Text style={styles.buttonText}>Đóng</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-
   return (
     <Modal visible={open} transparent animationType="slide">
       <View style={styles.modalMapContainer}>
@@ -335,39 +290,7 @@ export default function MapModal({
             routeInfo.coordinates &&
             routeInfo.coordinates.length > 0 && (
               <>
-                {/* Traveled Route Line */}
-                {/* {traveledDistance > 0 && (
-                  <MapboxGL.ShapeSource
-                    key="traveledRoute"
-                    id="traveledRouteSource"
-                    shape={{
-                      type: "Feature",
-                      properties: { "z-index": 1 },
-                      geometry: {
-                        type: "LineString",
-                        coordinates: routeInfo.coordinates.slice(
-                          0,
-                          Math.min(
-                            traveledDistance,
-                            routeInfo.coordinates.length
-                          )
-                        ),
-                      },
-                    }}
-                  >
-                    <MapboxGL.LineLayer
-                      id="traveledLineLayer"
-                      style={{
-                        lineColor: "#808080",
-                        lineWidth: 7,
-                        lineCap: "round",
-                        lineJoin: "round",
-                      }}
-                    />
-                  </MapboxGL.ShapeSource>
-                )} */}
-
-                {/* Remaining Route Line */}
+                {/* Route Line */}
                 {traveledDistance < routeInfo.coordinates.length && (
                   <MapboxGL.ShapeSource
                     key="remainingRoute"
@@ -452,8 +375,6 @@ export default function MapModal({
             <Text style={styles.buttonText}>Đóng</Text>
           </TouchableOpacity>
         </View>
-
-        <QRCodeModal />
       </View>
     </Modal>
   );
