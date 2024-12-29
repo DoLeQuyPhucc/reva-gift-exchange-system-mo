@@ -30,6 +30,7 @@ import { useNavigation } from "@/src/hooks/useNavigation";
 import { TextInput } from "react-native";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
+import { useProximityStore } from "@/src/stores/proximityStore";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -73,6 +74,10 @@ const MyTransactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isNearDestination = useProximityStore(
+    (state) => state.isNearDestination
+  );
   const PAGE_SIZE = 10;
 
   useEffect(() => {
@@ -756,7 +761,11 @@ const MyTransactions = () => {
                       checkRole(transaction) === "requester" && (
                         <>
                           <TouchableOpacity
-                            style={styles.verifyButton}
+                            style={[
+                              styles.verifyButton,
+                              !isNearDestination && styles.disabledButton,
+                            ]}
+                            disabled={!isNearDestination}
                             onPress={() => {
                               setSelectedTransaction(transaction);
                               setShowModal(true);
@@ -764,7 +773,9 @@ const MyTransactions = () => {
                             }}
                           >
                             <Text style={styles.verifyButtonText}>
-                              Xem mã định danh
+                              {isNearDestination
+                                ? "Xem mã định danh"
+                                : "Bạn phải đến gần điểm hẹn hơn (<50m) để xem mã định danh"}
                             </Text>
                           </TouchableOpacity>
 
@@ -1146,6 +1157,7 @@ const MyTransactions = () => {
         onClose={setShowMapModal}
         sourceLocation={location}
         destinationLocation={destinationLocation}
+        transactionId={selectedTransaction?.id}
       />
     </View>
   );
