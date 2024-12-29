@@ -54,6 +54,12 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
           "locationWhenInUsePermission": "Show current location on map."
         }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoic2hvbG91IiwiYSI6ImNtNTQwMjdkbzBjNTYyanIzZ3p4NnFob2IifQ.FtGNhEoAKybgBHpJvygWrg"
+        }
       ]
     ],
     "extra": {
@@ -61,12 +67,12 @@
         "origin": false
       },
       "eas": {
-        "projectId": "8d90e6a0-f985-48af-8d71-22df4dbfbd6b"
+        "projectId": "cd15166f-64e2-46f1-93cd-f9ff4c7ba134"
       }
     },
     "runtimeVersion": "1.0.0",
     "updates": {
-      "url": "https://u.expo.dev/8d90e6a0-f985-48af-8d71-22df4dbfbd6b",
+      "url": "https://u.expo.dev/cd15166f-64e2-46f1-93cd-f9ff4c7ba134",
       "enabled": true,
       "fallbackToCacheTimeout": 0
     }
