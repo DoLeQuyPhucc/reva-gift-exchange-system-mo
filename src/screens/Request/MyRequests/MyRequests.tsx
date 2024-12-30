@@ -36,6 +36,7 @@ import {
   API_GET_REQUESTS_FOR_ME,
   API_REJECT_REQUEST,
 } from "@env";
+import { useNotificationStore } from "@/src/stores/notificationStore";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -63,6 +64,7 @@ export default function MyRequestsScreen() {
   const typeRequest = route.params.type;
 
   const { userData } = useAuthCheck();
+  const { sendNotification } = useNotificationStore();
 
   const [requests, setRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
@@ -227,11 +229,11 @@ export default function MyRequestsScreen() {
     )}`;
   };
 
-  const handleApprove = async (requestId: string) => {
+  const handleApprove = async (request: Request) => {
     if (!selectedTime) return;
     try {
       const requestResponse = await axiosInstance.post(
-        `${API_APPROVE_REQUEST}/${requestId}`,
+        `${API_APPROVE_REQUEST}/${request.id}`,
         approveMessage
       );
 
@@ -253,12 +255,18 @@ export default function MyRequestsScreen() {
 
         const convertedDate = date.toISOString().replace("Z", "");
         const transactionData = {
-          requestId: requestId,
+          requestId: request.id,
           appointmentDate: convertedDate,
         };
 
         console.log(transactionData);
         await axiosInstance.post(`${API_CREATE_TRANSACTION}`, transactionData);
+        
+        //Gửi thông báo cho người yêu cầu
+        sendNotification(request.requester.id, "Request", "Yêu cầu giao dịch của bạn đã được chấp nhận.");
+
+        //Gửi thông báo cho người nhận
+        sendNotification(request.charitarian.id, "Request", "Bạn đã chấp nhận yêu cầu giao dịch.");
       }
       fetchRequests(1);
       setShowTimeModal(false);
@@ -266,11 +274,11 @@ export default function MyRequestsScreen() {
       setSelectedTime(null);
       setApproveMessage("");
 
-      setAlertData({
-        title: "Thành công",
-        message: "Chấp nhận yêu cầu thành công!",
-      });
-      setShowAlertDialog(true);
+      // setAlertData({
+      //   title: "Thành công",
+      //   message: "Chấp nhận yêu cầu thành công!",
+      // });
+      // setShowAlertDialog(true);
     } catch (error) {
       console.error("Error approving request:", error);
     }
@@ -287,11 +295,11 @@ export default function MyRequestsScreen() {
     }
   };
 
-  const handleReject = async (requestId: string) => {
+  const handleReject = async (request: Request) => {
     try {
       const data = { reject_message: rejectMessage };
       const response = await axiosInstance.post(
-        `${API_REJECT_REQUEST}/${requestId}`,
+        `${API_REJECT_REQUEST}/${request.id}`,
         data
       );
 
@@ -299,13 +307,17 @@ export default function MyRequestsScreen() {
         fetchRequests(1);
         setShowRejectModal(false);
         setRejectMessage("");
+
+        sendNotification(request.requester.id, "Request", "Yêu cầu giao dịch của bạn đã bị từ chối.");
+
+        sendNotification(request.charitarian.id, "Request", "Bạn đã từ chối yêu cầu giao dịch.");
       }
 
-      setAlertData({
-        title: "Thành công",
-        message: "Bạn đã từ chối yêu cầu này!",
-      });
-      setShowAlertDialog(true);
+      // setAlertData({
+      //   title: "Thành công",
+      //   message: "Bạn đã từ chối yêu cầu này!",
+      // });
+      // setShowAlertDialog(true);
     } catch (error) {
       console.error("Error rejecting request:", error);
     }
@@ -841,7 +853,7 @@ export default function MyRequestsScreen() {
                   !selectedTime && styles.disabledButton,
                 ]}
                 onPress={() =>
-                  selectedRequest?.id && handleApprove(selectedRequest.id)
+                  selectedRequest?.id && handleApprove(selectedRequest)
                 }
                 disabled={!selectedTime}
               >
@@ -884,7 +896,7 @@ export default function MyRequestsScreen() {
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={() =>
-                  selectedRequest?.id && handleReject(selectedRequest.id)
+                  selectedRequest?.id && handleReject(selectedRequest)
                 }
               >
                 <Text style={styles.modalButtonText}>Xác nhận</Text>

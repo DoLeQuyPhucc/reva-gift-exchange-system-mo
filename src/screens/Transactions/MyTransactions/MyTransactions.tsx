@@ -19,11 +19,9 @@ import {
   TransactionRatingType,
   TransactionReportType,
 } from "@/src/shared/type";
-// import MapModal from "@/src/components/Map/MapModal";
 import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
 import { Buffer } from "buffer";
 import { useAuthCheck } from "@/src/hooks/useAuth";
-import { TouchableWithoutFeedback } from "react-native";
 import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 import ReportModal from "@/src/components/ReportModal";
 import { useNavigation } from "@/src/hooks/useNavigation";
@@ -43,6 +41,7 @@ import {
   API_RATING_TRANSACTION,
   API_REJECT_TRANSACTION,
 } from "@env";
+import { useNotificationStore } from "@/src/stores/notificationStore";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -54,6 +53,7 @@ const MyTransactions = () => {
   const requestId = route.params.requestId;
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { sendNotification } = useNotificationStore();
   const [showModal, setShowModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
@@ -221,14 +221,14 @@ const MyTransactions = () => {
     return "";
   };
 
-  const handleVerification = async (transactionId: string) => {
+  const handleVerification = async (transaction: Transaction) => {
     try {
       const data = {
-        transactionId: transactionId,
+        transactionId: transaction.id,
         transactionImages: [],
       };
       const res = await axiosInstance.put(`${API_APPROVE_TRANSACTION}`, data);
-      console.log(res.data);
+      if (res.data.isSuccess) {
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
           text: "OK",
@@ -238,29 +238,35 @@ const MyTransactions = () => {
           // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
+      sendNotification(transaction.requester.id, "TransactionApproved", "Giao dịch của bạn đã hoàn tất.");
+      sendNotification(transaction.charitarian.id, "TransactionApproved", "Giao dịch đã hoàn tất.");
+      }
       setShowConfirmModal(false);
     } catch (error) {
       Alert.alert("Lỗi", "Không thể xác nhận giao dịch. Vui lòng thử lại sau.");
     }
   };
 
-  const handleReject = async (transactionId: string) => {
+  const handleReject = async (transaction: Transaction) => {
     try {
       const data = {
-        transactionId: transactionId,
+        transactionId: transaction.id,
         message: rejectMessage,
         transactionImages: [],
       };
-      await axiosInstance.put(`${API_REJECT_TRANSACTION}`, data);
+      const res = await axiosInstance.put(`${API_REJECT_TRANSACTION}`, data);
+      if (res.data.isSuccess) {
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
           onPress: () => {
             setIsConfirm((prev) => !prev);
           },
-          // navigation.navigate("MyTransactions", { requestId: requestId }),
         },
       ]);
+      sendNotification(transaction.requester.id, "TransactionRejected", "Giao dịch của bạn đã bị từ chối.");
+      sendNotification(transaction.charitarian.id, "TransactionRejected", "Giao dịch đã bị từ chối.");
+    }
       setShowInputRejectMessage(false);
     } catch (error) {
       Alert.alert("Lỗi", "Không thể từ chối giao dịch. Vui lòng thử lại sau.");
@@ -1050,7 +1056,7 @@ const MyTransactions = () => {
                   style={[styles.modalButton, styles.verifyButton]}
                   onPress={() => {
                     if (selectedTransaction) {
-                      handleVerification(selectedTransaction.id);
+                      handleVerification(selectedTransaction);
                     }
                   }}
                 >
@@ -1116,7 +1122,7 @@ const MyTransactions = () => {
                   disabled={rejectMessage.length === 0}
                   onPress={() => {
                     if (selectedTransaction) {
-                      handleReject(selectedTransaction.id);
+                      handleReject(selectedTransaction);
                     }
                   }}
                 >

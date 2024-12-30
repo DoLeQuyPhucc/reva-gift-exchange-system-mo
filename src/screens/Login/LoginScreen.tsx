@@ -17,6 +17,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AppTextInput from "@/src/components/AppTextInput";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuthStore } from "@/src/stores/authStore";
+import axiosInstance from "@/src/api/axiosInstance";
+import { User } from "@/src/shared/type";
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -40,18 +43,59 @@ const LoginScreen: React.FC = () => {
       Alert.alert("Error", "Please fill in your phone number");
       return;
     }
-
+  
     setLoading(true);
     try {
-      navigation.navigate("OTPScreen", {
-        phoneNumber,
+      const response = await axiosInstance.post('/authentication/login', {
+        phone: phoneNumber
       });
+  
+      if (!response.data.isSuccess) {
+        throw new Error(response.data.message);
+      }
+  
+      const { token, refreshToken, userId, username, email, role, profileURL } = response.data.data;
+  
+      const user: User = {
+        id: userId,
+        username,
+        role,
+        phone: phoneNumber,
+        fullname: "",
+        email: email,
+        profilePicture: profileURL || "",
+        address: {
+          addressId: "",
+          address: "",
+          addressCoordinates: {
+            latitude: "",
+            longitude: ""
+          },
+          isDefault: false
+        },
+        dob: null,
+        gender: null
+      };
+  
+      const login = useAuthStore.getState().login;
+      await login({
+        accessToken: token,
+        refreshToken: refreshToken,
+        email: email || "",
+        userId: userId,
+        userRole: role,
+        user: user
+      });
+  
+      // Chỉ navigate khi toàn bộ xử lý thành công
+      navigation.navigate("OTPScreen", { phoneNumber });
     } catch (error: any) {
       Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
+  
 
   const handleGoBack = () => {
     try {

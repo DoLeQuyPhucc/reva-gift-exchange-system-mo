@@ -30,6 +30,8 @@ import useCategories from "@/src/hooks/useCategories";
 import useCreatePost from "@/src/hooks/useCreatePost";
 import { useCategoryStore } from "@/src/stores/categoryStore";
 import Colors from "@/src/constants/Colors";
+import { useNotificationStore } from "@/src/stores/notificationStore";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, "CreatePost">;
@@ -89,6 +91,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   navigation,
   route,
 }) => {
+  const { sendNotification } = useNotificationStore();
+  const { userData } = useAuthCheck();
   const initialCategory = route.params?.category;
   const initialCategoryId = route.params?.categoryId;
   const initialSubCategory = route.params?.subCategory;
@@ -613,6 +617,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       console.log("Submit response:", response);
 
       if (response === true) {
+        sendNotification(userData.userId as string, "post_created", "Bạn đã thêm một sản phẩm");
         setShowSuccessAlert(true);
       }
     } catch (error) {

@@ -359,7 +359,10 @@ const HomeScreen: React.FC = () => {
         ListHeaderComponent={renderHeader}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[
+          styles.container,
+          filteredProducts.length === 0 && { flex: 1 },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -373,6 +376,12 @@ const HomeScreen: React.FC = () => {
             </View>
           ) : null
         }
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Icon name="block" size={50} />
+            <Text style={styles.emptyText}>Không có sản phẩm nào</Text>
+          </View>
+        )}
       />
       {renderSortModal()}
     </TouchableOpacity>
@@ -769,6 +778,17 @@ const styles = StyleSheet.create({
   loadingMore: {
     paddingVertical: 20,
     alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 16,
   },
 });
 

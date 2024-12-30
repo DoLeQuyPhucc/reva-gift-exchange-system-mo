@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   SafeAreaView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/src/constants/Colors";
 import FontSize from "@/src/constants/FontSize";
 import Font from "@/src/constants/Font";
@@ -29,14 +28,36 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
+  const [otpResult, setOtpResult] = useState<string>("");
   const navigation = useNavigation();
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
+    const fetchOTP = async () => {
+      try {
+        // Add your fetch OTP API call here
+        const resOTP = await axiosInstance.post(
+          `user/send-otp?phoneNumber=${phoneNumber}&type=OTP`
+        );
+        if (resOTP.data.isSuccess) {
+          console.log("OTP sent to", phoneNumber);
+          const arr = resOTP.data.data.split(" ");
+          const otpArr = arr[arr.length - 1];
+          console.log("OTP:", otpArr);
+          setOtpResult(otpArr.toString());
+        }
+      } catch (error: any) {
+        Alert.alert(
+          "Error",
+          error.response?.data?.message || "Failed to send OTP"
+        );
+      }
+    };
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
+    fetchOTP();
 
     return () => clearInterval(interval);
   }, []);
@@ -83,52 +104,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
 
     setLoading(true);
     try {
-      if (otpString === "111111") {
-        const response = await axiosInstance.post(`${API_LOGIN}`, {
-          phone: phoneNumber,
-        });
-
-        const {
-          token,
-          refreshToken,
-          userId,
-          username,
-          email,
-          role,
-          profileURL,
-        } = response.data.data;
-
-        const user: User = {
-          id: userId,
-          username,
-          role,
-          phone: phoneNumber,
-          fullname: "",
-          email: email,
-          profilePicture: profileURL || "",
-          address: {
-            addressId: "",
-            address: "",
-            addressCoordinates: {
-              latitude: "",
-              longitude: "",
-            },
-            isDefault: false,
-          },
-          dob: null,
-          gender: null,
-        };
-
-        const login = useAuthStore.getState().login;
-        await login({
-          accessToken: token,
-          refreshToken: refreshToken,
-          email: email || "",
-          userId: userId,
-          userRole: role,
-          user: user,
-        });
-
+      if (otpString === otpResult) {
         navigation.navigate("Main", {
           screen: "Home",
         });

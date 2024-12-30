@@ -40,6 +40,12 @@ interface NotificationState {
     pageIndex: number,
     sizeIndex: number
   ) => Promise<void>;
+  clearNotifications: () => void;
+  sendNotification: (
+    userId: string,
+    type: string,
+    data: string
+  ) => Promise<void>;
 }
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   connection: null,
@@ -55,25 +61,27 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       .build();
     try {
       await newConnection.start();
-
+      console.log("SignalR Connection Established");
       await newConnection.invoke("JoinNotificationGroup", userId);
 
       await get().fetchInitialNotifications(1, 10);
 
       newConnection.on("ReceiveNotification", (notification: string) => {
-        const parsedNotification = JSON.parse(notification);
-        const notificationObj: Notification = {
-          id: parsedNotification.id,
-          type: parsedNotification.type,
-          data: parsedNotification.data,
-          read: false,
-          createdAt: new Date(parsedNotification.createdAt),
-          status: parsedNotification.status,
-        };
-        get().addNotification(notificationObj);
+        console.log("Received notification:", notification);
+        // const parsedNotification = JSON.parse(notification);
+        // const notificationObj: Notification = {
+        //   id: parsedNotification.id,
+        //   type: parsedNotification.type,
+        //   data: parsedNotification.data,
+        //   read: false,
+        //   createdAt: new Date(parsedNotification.createdAt),
+        //   status: parsedNotification.status,
+        // };
+        // console.log("Received notificationObj:", notificationObj);
+        // get().addNotification(notificationObj);
         Toast.show({
           type: "info",
-          text1: "You have new Notification",
+          text1: "Thông báo",
           text2: notification,
         });
       });
@@ -135,4 +143,13 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
   clearNotifications: () => set({ notifications: [] }),
+  sendNotification: async (userId: string, type: string, data: string) => {
+    try {
+      await axiosInstance.post(
+        `notification/send?userId=${userId}&type=${type}&data=${data}`
+      );
+    } catch (error) {
+      console.error("Error sending notification:", error);
+    }
+  },
 }));
