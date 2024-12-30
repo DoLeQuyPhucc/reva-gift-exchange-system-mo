@@ -18,6 +18,7 @@ import Colors from "@/src/constants/Colors";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { Product } from "@/src/shared/type";
 import { useAuthCheck } from "@/src/hooks/useAuth";
+import { API_GET_ALL_PRODUCT } from "@env";
 
 type SearchMode = "default" | "need" | "have";
 interface SortOption {
@@ -60,7 +61,7 @@ const HomeScreen: React.FC = () => {
       if (loadMore) setIsLoadingMore(true);
 
       const response = await axiosInstance.get(
-        `items?status=Approved&pageIndex=${
+        `${API_GET_ALL_PRODUCT}?status=Approved&pageIndex=${
           loadMore ? pageIndex + 1 : 1
         }&sizeIndex=${sizeIndex}`
       );
@@ -328,7 +329,7 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      
+
       {/*
         <Text style={styles.resultCount}>
           Hiển thị {filteredProducts.length} sản phẩm

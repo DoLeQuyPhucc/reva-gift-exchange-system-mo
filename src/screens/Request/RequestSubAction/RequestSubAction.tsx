@@ -1,13 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, View, ActivityIndicator, SafeAreaView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Card, Text } from 'react-native-paper';
-import axiosInstance from '@/api/axiosInstance';
-import { useNavigation } from '@/hooks/useNavigation';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import Colors from '@/src/constants/Colors';
-import { useAuthStore } from '@/src/stores/authStore';
+import React, { useEffect, useState } from "react";
+import {
+  ScrollView,
+  View,
+  ActivityIndicator,
+  SafeAreaView,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { Card, Text } from "react-native-paper";
+import axiosInstance from "@/api/axiosInstance";
+import { useNavigation } from "@/hooks/useNavigation";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import Colors from "@/src/constants/Colors";
+import { useAuthStore } from "@/src/stores/authStore";
+import { API_GET_PROFILE } from "@env";
 
-const setUserDataSelector = (state: ReturnType<typeof useAuthStore.getState>) => state.setUserData;
+const setUserDataSelector = (state: ReturnType<typeof useAuthStore.getState>) =>
+  state.setUserData;
 
 const RequestSubActionScreen = () => {
   const [loading, setLoading] = useState(false);
@@ -17,10 +27,10 @@ const RequestSubActionScreen = () => {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('/user/profile');
+      const response = await axiosInstance.get(`${API_GET_PROFILE}`);
       setUserData(response.data.data);
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error("Error fetching user data:", error);
     } finally {
       setLoading(false);
     }
@@ -32,15 +42,18 @@ const RequestSubActionScreen = () => {
 
   const handleAuthenticatedNavigation = (screenName: string) => {
     try {
-      if (screenName === 'RequestsForMe') {
+      if (screenName === "RequestsForMe") {
         // navigation.navigate('MyRequests', { productId: '', type: 'requestsForMe' });
-        navigation.navigate('CharitarianRequestItem');
-      } else if (screenName === 'MyRequests') {
-        navigation.navigate('MyRequests', { productId: '', type: 'itemRequestTo' });
+        navigation.navigate("CharitarianRequestItem");
+      } else if (screenName === "MyRequests") {
+        navigation.navigate("MyRequests", {
+          productId: "",
+          type: "itemRequestTo",
+        });
       }
     } catch (error) {
-      console.error('Navigation error:', error);
-      Alert.alert('Lỗi', 'Không thể chuyển đến trang yêu cầu');
+      console.error("Navigation error:", error);
+      Alert.alert("Lỗi", "Không thể chuyển đến trang yêu cầu");
     }
   };
 
@@ -54,14 +67,14 @@ const RequestSubActionScreen = () => {
 
   const menuItems = [
     {
-      title: 'Các yêu cầu của tôi',
-      icon: 'art-track',
-      onPress: () => handleAuthenticatedNavigation('MyRequests'),
+      title: "Các yêu cầu của tôi",
+      icon: "art-track",
+      onPress: () => handleAuthenticatedNavigation("MyRequests"),
     },
     {
-      title: 'Các yêu cầu được gửi đến tôi',
-      icon: 'article',
-      onPress: () => handleAuthenticatedNavigation('RequestsForMe'),
+      title: "Các yêu cầu được gửi đến tôi",
+      icon: "article",
+      onPress: () => handleAuthenticatedNavigation("RequestsForMe"),
     },
   ];
 
@@ -70,22 +83,25 @@ const RequestSubActionScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
-            
-          <TouchableOpacity
-          key={index}
-          style={styles.menuItem}
-          onPress={item.onPress}
-        >
-          <View style={styles.menuItemContent}>
-            <View style={styles.menuItemIcon}>
-              <Icon name={item.icon} size={24} color={Colors.orange500} />
-            </View>
-            <View style={styles.menuItemText}>
-              <Text style={styles.menuItemTitle}>{item.title}</Text>
-            </View>
-            <Icon name="arrow-forward-ios" size={20} color={Colors.gray400} />
-          </View>
-        </TouchableOpacity>
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={item.onPress}
+            >
+              <View style={styles.menuItemContent}>
+                <View style={styles.menuItemIcon}>
+                  <Icon name={item.icon} size={24} color={Colors.orange500} />
+                </View>
+                <View style={styles.menuItemText}>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
+                </View>
+                <Icon
+                  name="arrow-forward-ios"
+                  size={20}
+                  color={Colors.gray400}
+                />
+              </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
@@ -103,26 +119,26 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Colors.orange50,
   },
   menuCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     marginBottom: 12,
     elevation: 2,
     borderRadius: 12,
   },
   menuContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
   menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   menuText: {
     marginLeft: 12,
@@ -134,19 +150,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   menuItem: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   menuItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   menuItemIcon: {
     backgroundColor: Colors.orange50,
@@ -159,8 +175,8 @@ const styles = StyleSheet.create({
   },
   menuItemTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: "600",
+    color: "#1a1a1a",
     marginBottom: 4,
   },
   menuItemDescription: {

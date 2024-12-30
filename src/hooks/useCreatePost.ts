@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "@/api/axiosInstance";
 import { AddressData, AddressResponse, CreatePostData } from "@/shared/type";
+import { API_CREATE_POST, API_GET_OWNER_ADDRESS } from "@env";
 
 const useCreatePost = () => {
   const [addressData, setAddressData] = useState<AddressData[]>([]);
@@ -13,7 +14,7 @@ const useCreatePost = () => {
       setError(null);
 
       const response = await axiosInstance.get<AddressResponse>(
-        "/user/my-address"
+        `${API_GET_OWNER_ADDRESS}`
       );
 
       if (response.data.isSuccess) {
@@ -37,7 +38,7 @@ const useCreatePost = () => {
       setLoading(true);
       setError(null);
 
-      const response = await axiosInstance.post("/items", postData);
+      const response = await axiosInstance.post(`${API_CREATE_POST}`, postData);
 
       if (response.data.isSuccess) {
         return response.data.isSuccess;

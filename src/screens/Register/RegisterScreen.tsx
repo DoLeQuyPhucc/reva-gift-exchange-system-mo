@@ -22,8 +22,9 @@ import {
 } from "react-native-gesture-handler";
 import axiosInstance from "@/src/api/axiosInstance";
 import axios from "axios";
-import MapModal from "@/src/components/Map/MapModal";
+// import MapModal from "@/src/components/Map/MapModal";
 import { LocationMap } from "@/src/shared/type";
+import { API_REGISTER } from "@env";
 
 interface AddressItem {
   name: string;
@@ -228,7 +229,7 @@ const RegisterScreen = () => {
       setShowOTP(true);
 
       if (otp.match('111111')) {
-      const response = await axiosInstance.post('user/register', data);
+      const response = await axiosInstance.post(`${API_REGISTER}`, data);
       if (response.data.isSuccess === true) {
         Alert.alert('Success', 'Account created successfully');
         resetForm();
@@ -427,13 +428,13 @@ const RegisterScreen = () => {
         <SelectionModal />
         
 
-    <MapModal
+    {/* <MapModal
     open={showMapModal}
     onClose={setShowMapModal}
     location={addressCoordinates}
     onSetAddressCoordinates={setAddressCoordinates}
     canMarkerMove={true}
-  />
+  /> */}
       </ScrollView>
     </GestureHandlerRootView>
   );

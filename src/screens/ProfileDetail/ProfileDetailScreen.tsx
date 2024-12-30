@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,17 +8,19 @@ import {
   Image,
   TextInput,
   Alert,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import axiosInstance from '@/src/api/axiosInstance';
-import Colors from '@/src/constants/Colors';
-import { User } from '@/src/shared/type';
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import axiosInstance from "@/src/api/axiosInstance";
+import Colors from "@/src/constants/Colors";
+import { User } from "@/src/shared/type";
 
-import { useProfile } from '@/src/hooks/useProfile';
-import { useAuthStore } from '@/src/stores/authStore';
+import { useProfile } from "@/src/hooks/useProfile";
+import { useAuthStore } from "@/src/stores/authStore";
+import { API_GET_PROFILE } from "@env";
 
-const DEFAULT_PROFILE_PICTURE = 'https://res.cloudinary.com/djh9baokn/image/upload/v1731336465/png-clipart-man-wearing-blue-shirt-illustration-computer-icons-avatar-user-login-avatar-blue-child_ijzlxf.png';
+const DEFAULT_PROFILE_PICTURE =
+  "https://res.cloudinary.com/djh9baokn/image/upload/v1731336465/png-clipart-man-wearing-blue-shirt-illustration-computer-icons-avatar-user-login-avatar-blue-child_ijzlxf.png";
 
 const ProfileDetailScreen = () => {
   const { userData } = useAuthStore();
@@ -35,29 +37,29 @@ const ProfileDetailScreen = () => {
     setOtpInput,
     sendConfirmationEmail,
     updateProfile,
-  } = useProfile(userData?.email || '');
+  } = useProfile(userData?.email || "");
 
   const [formData, setFormData] = useState<User>({
-    id: '',
-    username: '',
-    role: '',
-    fullname: '',
-    email: '',
-    phone: '',
+    id: "",
+    username: "",
+    role: "",
+    fullname: "",
+    email: "",
+    phone: "",
     profilePicture: DEFAULT_PROFILE_PICTURE,
     address: {
       addressId: "",
       address: "",
       addressCoordinates: {
         latitude: "",
-        longitude: ""
+        longitude: "",
       },
-      isDefault: false
+      isDefault: false,
     },
     dob: null,
     gender: null,
     point: 0,
-    dateJoined: '',
+    dateJoined: "",
   });
 
   const [emailConfirmed, setEmailConfirmed] = useState(false);
@@ -68,13 +70,13 @@ const ProfileDetailScreen = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axiosInstance.get('user/profile');
+      const response = await axiosInstance.get(`${API_GET_PROFILE}`);
       if (response.data.isSuccess) {
         setProfile(response.data.data);
         setFormData(response.data.data);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to fetch profile');
+      Alert.alert("Error", "Failed to fetch profile");
       console.error(error);
     }
   };
@@ -86,24 +88,27 @@ const ProfileDetailScreen = () => {
       setLoading(false);
 
       if (emailSent) {
-        Alert.alert('Success', 'Verification email sent. Please check your email.');
+        Alert.alert(
+          "Success",
+          "Verification email sent. Please check your email."
+        );
       } else {
-        Alert.alert('Error', 'Failed to send verification email.');
+        Alert.alert("Error", "Failed to send verification email.");
       }
     } catch (error) {
       setLoading(false);
-      Alert.alert('Error', 'An error occurred while sending email.');
+      Alert.alert("Error", "An error occurred while sending email.");
     }
   };
 
   const handleSave = async () => {
     if (!emailConfirmed) {
-      Alert.alert('Error', 'Please confirm your email before saving.');
+      Alert.alert("Error", "Please confirm your email before saving.");
       return;
     }
 
     if (!otpInput || otpInput.trim().length !== 6) {
-      Alert.alert('Error', 'Please enter a valid OTP code.');
+      Alert.alert("Error", "Please enter a valid OTP code.");
       return;
     }
 
@@ -122,15 +127,18 @@ const ProfileDetailScreen = () => {
       setLoading(false);
 
       if (response.isSuccess) {
-        Alert.alert('Success', 'Profile updated successfully');
+        Alert.alert("Success", "Profile updated successfully");
         setProfile(formData);
         setIsEditing(false);
       } else {
-        Alert.alert('Error', response.message || 'Update failed.');
+        Alert.alert("Error", response.message || "Update failed.");
       }
     } catch (error: any) {
       setLoading(false);
-      Alert.alert('Error', error.message || 'An error occurred while updating the profile.');
+      Alert.alert(
+        "Error",
+        error.message || "An error occurred while updating the profile."
+      );
     }
   };
 
@@ -175,8 +183,8 @@ const ProfileDetailScreen = () => {
     <ScrollView style={styles.container}>
       {/* Profile Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.profileImageContainer} 
+        <TouchableOpacity
+          style={styles.profileImageContainer}
           onPress={isEditing ? pickImage : undefined}
         >
           <Image
@@ -189,21 +197,24 @@ const ProfileDetailScreen = () => {
             </View>
           )}
         </TouchableOpacity>
-        
+
         <TouchableOpacity
-          style={[styles.editButton, { backgroundColor: emailConfirmed ? Colors.orange500 : '#ccc' }]}
+          style={[
+            styles.editButton,
+            { backgroundColor: emailConfirmed ? Colors.orange500 : "#ccc" },
+          ]}
           onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
           disabled={loading || (isEditing && !emailConfirmed)}
         >
           <Text style={styles.editButtonText}>
-            {loading ? 'Saving...' : isEditing ? 'Save' : 'Edit Profile'}
+            {loading ? "Saving..." : isEditing ? "Save" : "Edit Profile"}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Profile Form */}
       <View style={styles.form}>
-      <View style={styles.formGroup}>
+        <View style={styles.formGroup}>
           <Text style={styles.label}>Email</Text>
           <TextInput
             placeholderTextColor="#c4c4c4"
@@ -228,24 +239,22 @@ const ProfileDetailScreen = () => {
         </View>
 
         {showOtpInput && isEditing && (
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Verification Code</Text>
-          <View style={styles.otpContainer}>
-            <TextInput
-              placeholderTextColor="#c4c4c4"
-              style={[styles.input, styles.otpInput]}
-              value={otpInput}
-              onChangeText={handleOtpInput}
-              placeholder="Enter OTP code"
-              keyboardType="number-pad"
-              maxLength={6}
-            />
-            {error && (
-              <Text style={styles.errorText}>{error}</Text>
-            )}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Verification Code</Text>
+            <View style={styles.otpContainer}>
+              <TextInput
+                placeholderTextColor="#c4c4c4"
+                style={[styles.input, styles.otpInput]}
+                value={otpInput}
+                onChangeText={handleOtpInput}
+                placeholder="Enter OTP code"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              {error && <Text style={styles.errorText}>{error}</Text>}
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>Phone</Text>
@@ -265,7 +274,12 @@ const ProfileDetailScreen = () => {
             placeholderTextColor="#c4c4c4"
             style={styles.input}
             value={formData.address.address}
-            onChangeText={(text) => setFormData({ ...formData, address: { ...formData.address, address: text } })}
+            onChangeText={(text) =>
+              setFormData({
+                ...formData,
+                address: { ...formData.address, address: text },
+              })
+            }
             editable={isEditing}
             multiline
           />
@@ -274,7 +288,9 @@ const ProfileDetailScreen = () => {
         <View style={styles.formGroup}>
           <Text style={styles.label}>Date Joined</Text>
           <Text style={styles.input}>
-            {profile.dateJoined ? new Date(profile.dateJoined).toLocaleDateString() : 'Not set'}
+            {profile.dateJoined
+              ? new Date(profile.dateJoined).toLocaleDateString()
+              : "Not set"}
           </Text>
         </View>
       </View>
@@ -293,37 +309,37 @@ const ProfileDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   profileImageContainer: {
-    position: 'relative',
+    position: "relative",
     width: 120,
     height: 120,
     borderRadius: 60,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 15,
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   editImageOverlay: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     padding: 5,
-    alignItems: 'center',
+    alignItems: "center",
   },
   editImageText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
   },
   editButton: {
@@ -333,7 +349,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   editButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
   },
   form: {
@@ -344,7 +360,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 5,
   },
   input: {
@@ -358,12 +374,12 @@ const styles = StyleSheet.create({
   },
   picker: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
   },
   coordinatesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   coordinateInput: {
     flex: 0.48,
@@ -373,13 +389,13 @@ const styles = StyleSheet.create({
   },
   otpInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 12,
     marginTop: 4,
   },
@@ -390,9 +406,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   sendButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 

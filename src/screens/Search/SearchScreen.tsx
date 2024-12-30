@@ -21,6 +21,7 @@ import { Product } from "@/src/shared/type";
 import { SearchMode, searchModes, getSearchValue } from "@/src/utils/search";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { ActivityIndicator } from "react-native";
+import { API_GET_ALL_PRODUCT } from "@env";
 
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -45,7 +46,7 @@ const SearchScreen: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await axiosInstance.get(
-        `items?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+        `${API_GET_ALL_PRODUCT}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
       );
 
       const { data, totalItems } = response.data.data;

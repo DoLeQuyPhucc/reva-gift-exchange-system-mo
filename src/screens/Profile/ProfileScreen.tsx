@@ -17,6 +17,7 @@ import { Alert } from "react-native";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import { useAuthStore } from "@/src/stores/authStore";
 import { useNotificationStore } from "@/src/stores/notificationStore";
+import { API_GET_PROFILE } from "@env";
 
 const userDataSelector = (state: ReturnType<typeof useAuthStore.getState>) =>
   state.userData;
@@ -38,7 +39,7 @@ const ProfileScreen = () => {
 
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/user/profile");
+      const response = await axiosInstance.get(`${API_GET_PROFILE}`);
       setUserData(response.data.data);
     } catch (error) {
       console.error("Error fetching user data:", error);

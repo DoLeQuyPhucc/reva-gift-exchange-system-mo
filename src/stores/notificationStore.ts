@@ -3,6 +3,7 @@ import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { useAuthStore } from "./authStore";
 import Toast from "react-native-toast-message";
 import axiosInstance from "../api/axiosInstance";
+import { API_GET_ALL_NOTIFICATION, API_SIGNALR_URL } from "@env";
 
 export interface Notification {
   id: string;
@@ -26,7 +27,6 @@ export interface NotificationResponse {
   };
 }
 
-const SIGNALR_URL = "http://103.142.139.142:6900/notificationsHub";
 const MAX_NOTIFICATIONS = 100;
 
 interface NotificationState {
@@ -48,7 +48,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const userId = useAuthStore.getState().userId;
     if (!userId) return;
     const newConnection = new HubConnectionBuilder()
-      .withUrl(SIGNALR_URL, {
+      .withUrl(`${API_SIGNALR_URL}`, {
         accessTokenFactory: () => useAuthStore.getState().accessToken || "",
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
@@ -115,7 +115,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   ) => {
     try {
       const response = await axiosInstance.get(
-        `notification/all?pageIndex=${pageIndex}&sizeIndex=${sizeIndex}`
+        `${API_GET_ALL_NOTIFICATION}?pageIndex=${pageIndex}&sizeIndex=${sizeIndex}`
       );
       const notificationResponse: NotificationResponse = response.data;
 

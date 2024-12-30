@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "@/api/axiosInstance";
 import { Category, SubCategory } from "@/shared/type";
+import { API_CATEGORY } from "@env";
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -26,7 +27,7 @@ export const useCategories = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axiosInstance.get(`category/${categoryId}`);
+      const response = await axiosInstance.get(`${API_CATEGORY}/${categoryId}`);
       setSubCategories(response.data.data.subCategories);
     } catch (err) {
       setError("Failed to fetch sub-categories");

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -8,28 +8,29 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
-} from 'react-native';
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/src/constants/Colors";
 import FontSize from "@/src/constants/FontSize";
 import Font from "@/src/constants/Font";
 import Spacing from "@/src/constants/Spacing";
 import { useNavigation } from "@/src/hooks/useNavigation";
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/src/layouts/types/navigationTypes';
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import axiosInstance from "@/src/api/axiosInstance";
 import { User } from "@/src/shared/type";
-import { useAuthStore } from '@/src/stores/authStore';
+import { useAuthStore } from "@/src/stores/authStore";
+import { API_LOGIN } from "@env";
 
-type OTPScreenProps = NativeStackScreenProps<RootStackParamList, 'OTPScreen'>;
+type OTPScreenProps = NativeStackScreenProps<RootStackParamList, "OTPScreen">;
 
 const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   const { phoneNumber } = route.params;
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
   const navigation = useNavigation();
-  
+
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
@@ -52,40 +53,51 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   };
 
   const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
   const handleResendOTP = async () => {
     if (timer > 0) return;
-    
+
     try {
       // Add your resend OTP API call here
       // await axiosInstance.post('/authentication/resend-otp', { phone: phoneNumber });
       setTimer(60);
-      Alert.alert('Success', 'OTP has been resent');
+      Alert.alert("Success", "OTP has been resent");
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to resend OTP');
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to resend OTP"
+      );
     }
   };
 
   const verifyOTP = async () => {
-    const otpString = otp.join('');
+    const otpString = otp.join("");
     if (otpString.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid OTP');
+      Alert.alert("Error", "Please enter a valid OTP");
       return;
     }
 
     setLoading(true);
     try {
-      if (otpString === '111111') {
-        const response = await axiosInstance.post('/authentication/login', {
-          phone: phoneNumber
+      if (otpString === "111111") {
+        const response = await axiosInstance.post(`${API_LOGIN}`, {
+          phone: phoneNumber,
         });
-      
-        const { token, refreshToken, userId, username, email, role, profileURL } = response.data.data;
-      
+
+        const {
+          token,
+          refreshToken,
+          userId,
+          username,
+          email,
+          role,
+          profileURL,
+        } = response.data.data;
+
         const user: User = {
           id: userId,
           username,
@@ -99,14 +111,14 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
             address: "",
             addressCoordinates: {
               latitude: "",
-              longitude: ""
+              longitude: "",
             },
-            isDefault: false
+            isDefault: false,
           },
           dob: null,
-          gender: null
+          gender: null,
         };
-  
+
         const login = useAuthStore.getState().login;
         await login({
           accessToken: token,
@@ -114,19 +126,19 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           email: email || "",
           userId: userId,
           userRole: role,
-          user: user
+          user: user,
         });
-      
+
         navigation.navigate("Main", {
-          screen: "Home"
+          screen: "Home",
         });
       } else {
-        Alert.alert('Error', 'Invalid OTP');
+        Alert.alert("Error", "Invalid OTP");
       }
     } catch (error: any) {
       console.log("Error: ", error);
-      
-      Alert.alert('Error', error.response?.data?.message || 'Invalid OTP');
+
+      Alert.alert("Error", error.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
@@ -139,7 +151,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
         <Text style={styles.subtitle}>
           Vui lòng nhập mã OTP đã được gửi đến số điện thoại {phoneNumber}
         </Text>
-        
+
         <View style={styles.otpContainer}>
           {otp.map((digit, index) => (
             <TextInput
@@ -168,13 +180,16 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.resendButton, timer > 0 && styles.disabledResendButton]}
+        <TouchableOpacity
+          style={[
+            styles.resendButton,
+            timer > 0 && styles.disabledResendButton,
+          ]}
           onPress={handleResendOTP}
           disabled={timer > 0}
         >
           <Text style={styles.resendText}>
-            {timer > 0 ? `Gửi lại mã (${timer}s)` : 'Gửi lại mã'}
+            {timer > 0 ? `Gửi lại mã (${timer}s)` : "Gửi lại mã"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -189,7 +204,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing * 2,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: FontSize.xLarge,
@@ -205,9 +220,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing * 3,
   },
   otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: Spacing * 2,
   },
   otpInput: {
@@ -217,13 +232,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.orange600,
     borderRadius: Spacing,
     margin: Spacing / 2,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: FontSize.large,
     fontFamily: Font["poppins-semiBold"],
     color: Colors.text,
   },
   verifyButton: {
-    width: '100%',
+    width: "100%",
     padding: Spacing * 2,
     backgroundColor: Colors.orange600,
     borderRadius: Spacing,
@@ -231,7 +246,7 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     color: Colors.onPrimary,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: FontSize.large,
     fontFamily: Font["poppins-bold"],
   },

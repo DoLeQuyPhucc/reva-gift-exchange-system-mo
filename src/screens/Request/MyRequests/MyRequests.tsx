@@ -28,6 +28,14 @@ import ImagesModalViewer from "@/src/components/modal/ImagesModalViewer";
 import { CustomAlert } from "@/src/components/CustomAlert";
 import { useNavigation } from "@/src/hooks/useNavigation";
 import { useAuthCheck } from "@/src/hooks/useAuth";
+import {
+  API_APPROVE_REQUEST,
+  API_CREATE_TRANSACTION,
+  API_GET_PROFILE,
+  API_GET_REQUESTS,
+  API_GET_REQUESTS_FOR_ME,
+  API_REJECT_REQUEST,
+} from "@env";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -96,11 +104,11 @@ export default function MyRequestsScreen() {
         case "itemRequestTo":
           if (itemId !== "") {
             requestsResponse = await axiosInstance.get(
-              `request/my-requests/${itemId}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+              `${API_GET_REQUESTS}/${itemId}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           } else {
             requestsResponse = await axiosInstance.get(
-              `request/my-requests?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+              `${API_GET_REQUESTS}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           }
           if (requestsResponse.data.data) {
@@ -115,11 +123,11 @@ export default function MyRequestsScreen() {
         case "requestsForMe":
           if (itemId !== "") {
             requestsResponse = await axiosInstance.get(
-              `request/requests-for-me/${itemId}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+              `${API_GET_REQUESTS_FOR_ME}/${itemId}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           } else {
             requestsResponse = await axiosInstance.get(
-              `request/requests-for-me?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+              `${API_GET_REQUESTS_FOR_ME}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
             );
           }
           setIsShowActions(true);
@@ -223,7 +231,7 @@ export default function MyRequestsScreen() {
     if (!selectedTime) return;
     try {
       const requestResponse = await axiosInstance.post(
-        `request/approve/${requestId}`,
+        `${API_APPROVE_REQUEST}/${requestId}`,
         approveMessage
       );
 
@@ -250,7 +258,7 @@ export default function MyRequestsScreen() {
         };
 
         console.log(transactionData);
-        await axiosInstance.post(`transaction/create`, transactionData);
+        await axiosInstance.post(`${API_CREATE_TRANSACTION}`, transactionData);
       }
       fetchRequests(1);
       setShowTimeModal(false);
@@ -271,7 +279,7 @@ export default function MyRequestsScreen() {
   const handleShowInfoUser = async (userId: string) => {
     try {
       console.log(userId);
-      const response = await axiosInstance.get(`user/profile/${userId}`);
+      const response = await axiosInstance.get(`${API_GET_PROFILE}/${userId}`);
       setUser(response.data.data);
       setShowInfoUser(true);
     } catch (error) {
@@ -283,7 +291,7 @@ export default function MyRequestsScreen() {
     try {
       const data = { reject_message: rejectMessage };
       const response = await axiosInstance.post(
-        `request/reject/${requestId}`,
+        `${API_REJECT_REQUEST}/${requestId}`,
         data
       );
 
@@ -333,19 +341,22 @@ export default function MyRequestsScreen() {
           />
           <View style={styles.userInfo}>
             {userData.userId !== request.requester.id ? (
-            <View>
-              <Text style={styles.listItemName}>{request.requester.name}</Text>
-              <Text style={styles.listItemTime}>
-                {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
-              </Text>
-            </View>
+              <View>
+                <Text style={styles.listItemName}>
+                  {request.requester.name}
+                </Text>
+                <Text style={styles.listItemTime}>
+                  {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
+                </Text>
+              </View>
             ) : (
               <View>
                 <Text style={styles.listItemName}>Tôi</Text>
                 <Text style={styles.listItemTime}>
                   {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
                 </Text>
-              </View>)}
+              </View>
+            )}
           </View>
           <View
             style={[
@@ -464,21 +475,24 @@ export default function MyRequestsScreen() {
                   />
                 </TouchableOpacity>
 
-              {userData.userId !== request.requester.id ? (
-                <TouchableOpacity
-                  onPress={() => handleShowInfoUser(request.requester.id)}
-                  style={styles.userInfo}
-                >
-                  <Text style={styles.userName}>{request.requester.name}</Text>
-                </TouchableOpacity>) : (
-                <TouchableOpacity 
-                onPress={() => handleShowInfoUser(request.requester.id)}
-                style={styles.userInfo}
-              >
-                <Text style={styles.userName}>Tôi</Text>
-              </TouchableOpacity>
-              )}
-                
+                {userData.userId !== request.requester.id ? (
+                  <TouchableOpacity
+                    onPress={() => handleShowInfoUser(request.requester.id)}
+                    style={styles.userInfo}
+                  >
+                    <Text style={styles.userName}>
+                      {request.requester.name}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => handleShowInfoUser(request.requester.id)}
+                    style={styles.userInfo}
+                  >
+                    <Text style={styles.userName}>Tôi</Text>
+                  </TouchableOpacity>
+                )}
+
                 <View
                   style={[
                     styles.statusBadge,
@@ -548,13 +562,12 @@ export default function MyRequestsScreen() {
                   request.status === "Not_Completed") && (
                   <TouchableOpacity
                     style={styles.viewDetailButton}
-                    onPress={() =>{
+                    onPress={() => {
                       navigation.navigate("MyTransactions", {
                         requestId: request.id,
-                      })
-                      setShowDetailModal(false)
-                    }
-                    }
+                      });
+                      setShowDetailModal(false);
+                    }}
                   >
                     <Icon
                       name="arrow-forward"

@@ -11,6 +11,7 @@ import {
 import { Camera, CameraView } from "expo-camera";
 import { useNavigation } from "../hooks/useNavigation";
 import axiosInstance from "../api/axiosInstance";
+import { API_VALIDATE_QR } from "@env";
 
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const SCAN_AREA_SIZE = WINDOW_WIDTH * 0.7; // Kích thước khung scan (70% chiều rộng màn hình)
@@ -34,7 +35,7 @@ export default function QRScanner() {
     setScanned(true);
     try {
       const checkValidateQR = await axiosInstance.get(
-        `/transaction/validate-qr/${data}`
+        `${API_VALIDATE_QR}/${data}`
       );
 
       if (!checkValidateQR.data.isSuccess) {

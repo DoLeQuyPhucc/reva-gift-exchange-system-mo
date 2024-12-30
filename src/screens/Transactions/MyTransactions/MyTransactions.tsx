@@ -19,7 +19,7 @@ import {
   TransactionRatingType,
   TransactionReportType,
 } from "@/src/shared/type";
-import MapModal from "@/src/components/Map/MapModal";
+// import MapModal from "@/src/components/Map/MapModal";
 import UserRatingModal from "@/src/components/modal/RatingUserTransactionModal";
 import { Buffer } from "buffer";
 import { useAuthCheck } from "@/src/hooks/useAuth";
@@ -31,6 +31,18 @@ import { TextInput } from "react-native";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import { useProximityStore } from "@/src/stores/proximityStore";
+import {
+  API_APPROVE_TRANSACTION,
+  API_CREATE_POINT_TRANSACTION,
+  API_CREATE_RATING_TRANSACTION,
+  API_CREATE_REPORT,
+  API_GET_OWN_TRANSACTIONS,
+  API_GET_QR_CODE,
+  API_GET_TRANSACTION_BY_ID,
+  API_GET_VALIDATE_TIME_TRANSACTION,
+  API_RATING_TRANSACTION,
+  API_REJECT_TRANSACTION,
+} from "@env";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -95,7 +107,7 @@ const MyTransactions = () => {
       let response;
       if (requestId === "") {
         const result = await axiosInstance.get(
-          `transaction/own-transactions?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+          `${API_GET_OWN_TRANSACTIONS}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
         );
         response = result.data.data.data;
         if (!response) {
@@ -123,7 +135,9 @@ const MyTransactions = () => {
 
         setTotalPages(Math.ceil(totalItems / PAGE_SIZE));
       } else {
-        const result = await axiosInstance.get(`transaction/${requestId}`);
+        const result = await axiosInstance.get(
+          `${API_GET_TRANSACTION_BY_ID}/${requestId}`
+        );
         response = result.data.data;
         if (!response) {
           return;
@@ -134,7 +148,7 @@ const MyTransactions = () => {
 
             try {
               const isValidTime = await axiosInstance.get(
-                `transaction/validate-time/${transaction.id}`
+                `${API_GET_VALIDATE_TIME_TRANSACTION}/${transaction.id}`
               );
               updatedTransaction.isValidTime = isValidTime.data.data;
             } catch (error) {
@@ -151,7 +165,7 @@ const MyTransactions = () => {
             ) {
               try {
                 const rating = await axiosInstance.get<RatingResponse>(
-                  `rating/transaction/${transaction.id}`
+                  `${API_RATING_TRANSACTION}/${transaction.id}`
                 );
                 if (rating.data.data.length === 0) {
                   updatedTransaction.rating = null;
@@ -213,7 +227,7 @@ const MyTransactions = () => {
         transactionId: transactionId,
         transactionImages: [],
       };
-      const res = await axiosInstance.put(`transaction/approve`, data);
+      const res = await axiosInstance.put(`${API_APPROVE_TRANSACTION}`, data);
       console.log(res.data);
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
         {
@@ -237,7 +251,7 @@ const MyTransactions = () => {
         message: rejectMessage,
         transactionImages: [],
       };
-      await axiosInstance.put(`transaction/reject`, data);
+      await axiosInstance.put(`${API_REJECT_TRANSACTION}`, data);
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
           text: "OK",
@@ -313,7 +327,7 @@ const MyTransactions = () => {
 
       // API call to submit rating
       const response = await axiosInstance.post<RatingResponse>(
-        "rating",
+        `${API_CREATE_RATING_TRANSACTION}`,
         JSON.stringify(ratingData),
         {
           headers: {
@@ -348,7 +362,10 @@ const MyTransactions = () => {
 
       console.log("pointData", pointData);
 
-      const pointResponse = await axiosInstance.post("user/point", pointData);
+      const pointResponse = await axiosInstance.post(
+        `${API_CREATE_POINT_TRANSACTION}`,
+        pointData
+      );
 
       if (response.data.isSuccess && pointResponse.data.isSuccess) {
         setIsConfirm((prev) => !prev);
@@ -380,7 +397,7 @@ const MyTransactions = () => {
     try {
       // API call to submit rating
       const response = await axiosInstance.post(
-        "report/create",
+        `${API_CREATE_REPORT}`,
         JSON.stringify(reportData),
         {
           headers: {
@@ -449,7 +466,7 @@ const MyTransactions = () => {
   const fetchQRCode = async (transactionId: string) => {
     try {
       const response = await axiosInstance.get(
-        `qr/generate?transactionId=${transactionId}`,
+        `${API_GET_QR_CODE}?transactionId=${transactionId}`,
         {
           responseType: "arraybuffer",
         }
@@ -1152,13 +1169,13 @@ const MyTransactions = () => {
         }}
       />
 
-      <MapModal
+      {/* <MapModal
         open={showMapModal}
         onClose={setShowMapModal}
         sourceLocation={location}
         destinationLocation={destinationLocation}
         transactionId={selectedTransaction?.id}
-      />
+      /> */}
     </View>
   );
 };

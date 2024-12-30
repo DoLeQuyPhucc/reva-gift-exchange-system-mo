@@ -21,6 +21,11 @@ import { Alert } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import Checkbox from "expo-checkbox";
 import Toast from "react-native-toast-message";
+import {
+  API_DELETE_ALL_NOTIFICATION,
+  API_DELETE_ONE_NOTIFICATION,
+  API_GET_ALL_NOTIFICATION,
+} from "@env";
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications } = useNotificationStore();
@@ -73,7 +78,7 @@ export default function NotificationsScreen() {
   const handleDeleteSingle = async (notificationId: string) => {
     try {
       const response = await axiosInstance.put(
-        `notification/clear/${notificationId}`
+        `${API_DELETE_ONE_NOTIFICATION}/${notificationId}`
       );
       if (response.data.isSuccess) {
         setNotifications(notifications.filter((n) => n.id !== notificationId));
@@ -103,7 +108,7 @@ export default function NotificationsScreen() {
           onPress: async () => {
             try {
               const response = await axiosInstance.put(
-                "notification/clear-all"
+                `${API_DELETE_ALL_NOTIFICATION}`
               );
               if (response.data.isSuccess) {
                 setNotifications([]);
@@ -143,7 +148,7 @@ export default function NotificationsScreen() {
       }
       setError(null);
       const response = await axiosInstance.get(
-        `notification/all?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+        `${API_GET_ALL_NOTIFICATION}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
       );
       if (response.data.isSuccess) {
         const { data, totalItems } = response.data.data;

@@ -16,6 +16,7 @@ import Colors from "@/src/constants/Colors";
 import { Product } from "@/src/shared/type";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@/src/hooks/useNavigation";
+import { API_CHARITARIAN_REQUEST_ITEM } from "@env";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -55,7 +56,7 @@ const CharitarianRequestItem = () => {
     setIsLoading(true);
     try {
       const response = await axiosInstance.get(
-        `/charitarian-item/current-user?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+        `${API_CHARITARIAN_REQUEST_ITEM}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
       );
       const { data, totalItems } = response.data.data;
 

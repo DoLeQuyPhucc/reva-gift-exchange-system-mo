@@ -1,10 +1,26 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "@env";
+
+const BASE_URL = API_URL;
+
+// const BASE_URL = (() => {
+//   if (!API_URL) {
+//     console.warn("API_URL is undefined in .env");
+//     return "http://103.142.139.142:6900/api/";
+//   }
+
+//   try {
+//     const url = new URL(API_URL);
+//     return url.toString();
+//   } catch (error) {
+//     console.warn("Invalid API_URL format in .env:", error);
+//     return "http://103.142.139.142:6900/api/";
+//   }
+// })();
 
 const axiosInstance = axios.create({
-  // baseURL: "https://fengshuikoiapi.onrender.com/api",
-  baseURL: "http://103.142.139.142:6900/api/",
-  // baseURL: "http://localhost:6900/api",
+  baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },

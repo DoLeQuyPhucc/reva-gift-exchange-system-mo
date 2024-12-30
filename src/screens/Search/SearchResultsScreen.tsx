@@ -18,6 +18,7 @@ import axiosInstance from "@/src/api/axiosInstance";
 import { Product } from "@/src/shared/type";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { SearchMode, searchModes, getSearchValue } from "@/src/utils/search";
+import { API_SEARCH_ITEMS } from "@env";
 
 type RouteParams = {
   searchTerm: string;
@@ -51,10 +52,9 @@ const SearchResultsScreen: React.FC = () => {
       const searchValue = getSearchValue(searchTerm, searchMode);
 
       const response = await axiosInstance.get(
-        `items/search?searchData=${searchValue}&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
+        `${API_SEARCH_ITEMS}?searchData=${searchValue}&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
       );
 
-      console.log(`items/search?searchData=${searchValue}&pageIndex=${page}&sizeIndex=${PAGE_SIZE}`)
       const { data, totalItems } = response.data.data;
 
       filterProducts(page, data);
@@ -128,7 +128,7 @@ const SearchResultsScreen: React.FC = () => {
     );
   };
 
-  const renderEmptyState = () => (
+  const renderEmptyState = () =>
     !loading && (
       <View style={styles.emptyContainer}>
         <Icon name="search-off" size={64} color="#666" />
@@ -140,8 +140,7 @@ const SearchResultsScreen: React.FC = () => {
           Thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc
         </Text>
       </View>
-    )
-  );
+    );
 
   const renderProductItem = ({ item }: { item: Product }) => (
     <TouchableOpacity
@@ -197,24 +196,24 @@ const SearchResultsScreen: React.FC = () => {
           <ActivityIndicator size="large" color={Colors.orange500} />
         </View>
       ) : ( */}
-        <FlatList
-          data={filteredProducts}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={() =>
-            loading ? (
-              <View style={styles.loadingMore}>
-                <ActivityIndicator size="small" color="#f97316" />
-              </View>
-            ) : null
-          }
-        />
+      <FlatList
+        data={filteredProducts}
+        renderItem={renderProductItem}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmptyState}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          loading ? (
+            <View style={styles.loadingMore}>
+              <ActivityIndicator size="small" color="#f97316" />
+            </View>
+          ) : null
+        }
+      />
       {/* )} */}
     </SafeAreaView>
   );

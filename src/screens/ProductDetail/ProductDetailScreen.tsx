@@ -31,6 +31,11 @@ import DateTimePickerCustom, {
   convertDayOfWeek,
 } from "@/src/components/modal/DateTimePickerCustom";
 import CalendarPickerCustom from "@/src/components/modal/CalendarPickerCustom";
+import {
+  API_CREATE_REQUEST,
+  API_GET_BUSY_TIME,
+  API_GET_PRODUCT_BY_ID,
+} from "@env";
 
 type TimeSlot = {
   id: string;
@@ -110,14 +115,19 @@ export default function ProductDetailScreen() {
 
       try {
         setLoading(true);
-        const response = await axiosInstance.get(`/items/${itemId}`);
+        const response = await axiosInstance.get(
+          `${API_GET_PRODUCT_BY_ID}/${itemId}`
+        );
         if (response.data.isSuccess && response.data.data) {
           console.log("Product data:", response.data.data.id);
           setProduct(response.data.data);
           setCustomTimeRanges(
-            response.data.data?.availableTime || "officeHours 9:00_17:00 mon_tue_wed_thu_fri"
+            response.data.data?.availableTime ||
+              "officeHours 9:00_17:00 mon_tue_wed_thu_fri"
           );
-          const nextValidDate = getNextValidDate(response.data.data?.availableTime);
+          const nextValidDate = getNextValidDate(
+            response.data.data?.availableTime
+          );
           console.log("Next valid date:", nextValidDate);
           setSelectedDate(nextValidDate);
         } else {
@@ -147,33 +157,34 @@ export default function ProductDetailScreen() {
       sat: 6,
       sun: 0,
     };
-  
+
     // Lấy danh sách ngày hợp lệ từ availableTime
     let validDays: number[] = [];
-    const timePattern = /mon_tue_wed_thu_fri_sat_sun|mon_tue_wed_thu_fri|mon_tue_wed_thu|sun|sat|fri|thu|wed|tue|mon/;
+    const timePattern =
+      /mon_tue_wed_thu_fri_sat_sun|mon_tue_wed_thu_fri|mon_tue_wed_thu|sun|sat|fri|thu|wed|tue|mon/;
     const match = availableTime.match(timePattern);
-  
+
     if (match) {
       const daysString = match[0];
-      const days = daysString.split('_');
+      const days = daysString.split("_");
       validDays = days.map((day) => daysOfWeekMap[day]);
     }
-  
+
     // Lấy ngày hiện tại
     const currentDate = new Date();
     const currentDayOfWeek = currentDate.getDay();
-  
+
     // Nếu ngày hiện tại là hợp lệ, trả về ngày hiện tại
     if (validDays.includes(currentDayOfWeek)) {
       return currentDate;
     }
-  
+
     // Tìm ngày hợp lệ gần nhất
     let nextValidDate = new Date(currentDate);
     while (!validDays.includes(nextValidDate.getDay())) {
       nextValidDate.setDate(nextValidDate.getDate() + 1);
     }
-  
+
     return nextValidDate;
   };
 
@@ -433,18 +444,21 @@ export default function ProductDetailScreen() {
   const generateHourRange = () => {
     const timeRange = getTimeRangeForSelectedDate(selectedDate);
     if (!timeRange) return [];
-  
+
     const { start, end } = timeRange;
-  
+
     let hourRanges;
-  
+
     // Nếu start <= end, tạo range bình thường
     if (start.hour <= end.hour) {
-      hourRanges = Array.from({ length: end.hour - start.hour + 1 }, (_, i) => ({
-        hour: start.hour + i,
-        minStart: i === 0 ? start.minute : 0,
-        minEnd: i === end.hour - start.hour ? end.minute : 59,
-      }));
+      hourRanges = Array.from(
+        { length: end.hour - start.hour + 1 },
+        (_, i) => ({
+          hour: start.hour + i,
+          minStart: i === 0 ? start.minute : 0,
+          minEnd: i === end.hour - start.hour ? end.minute : 59,
+        })
+      );
     } else {
       // Nếu start > end (qua nửa đêm)
       hourRanges = [
@@ -462,15 +476,15 @@ export default function ProductDetailScreen() {
         })),
       ];
     }
-  
+
     // Loại bỏ giờ 12:00 - 12:59 nếu type === 'officeHour'
-    if (typeTimeRange === 'officeHours') {
+    if (typeTimeRange === "officeHours") {
       hourRanges = hourRanges.filter(({ hour }) => hour !== 12);
     }
-  
+
     return hourRanges;
   };
-  
+
   const generateMinuteRange = (selectedHour: number | null) => {
     if (selectedHour === null) return [];
 
@@ -698,7 +712,9 @@ export default function ProductDetailScreen() {
   const fetchUserItems = async () => {
     setLoadingUserItems(true);
     try {
-      const response = await axiosInstance.get(`/items/user/${userData.userId}?status=Approved&pageIndex=1&sizeIndex=100`);
+      const response = await axiosInstance.get(
+        `/items/user/${userData.userId}?status=Approved&pageIndex=1&sizeIndex=100`
+      );
       if (response.data.isSuccess) {
         setUserItems(response.data.data.data);
       } else {
@@ -716,7 +732,7 @@ export default function ProductDetailScreen() {
     setLoadingUserItems(true);
     try {
       const busyTimeResponse = await axiosInstance.get(
-        `/items/get-busy-time?itemId=${itemId}`
+        `${API_GET_BUSY_TIME}?itemId=${itemId}`
       );
       if (busyTimeResponse.data.isSuccess) {
         setBusyTime(busyTimeResponse.data.data[0].busyTimes);
@@ -795,7 +811,7 @@ export default function ProductDetailScreen() {
 
       const timeRange = formatTimeRange(selectedTimeSlots[0].dateTime);
 
-      const response = await axiosInstance.post("/request/create", data);
+      const response = await axiosInstance.post(`${API_CREATE_REQUEST}`, data);
 
       if (response.data.isSuccess) {
         // Reset form
@@ -2124,7 +2140,7 @@ const styles = StyleSheet.create({
     color: "#e53e3e",
     fontStyle: "italic",
     padding: 12,
-    paddingTop: 4
+    paddingTop: 4,
   },
   timeRangeRow: {
     paddingHorizontal: 16,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axiosInstance from "@/api/axiosInstance";
+import { API_EDIT_PROFILE, API_SEND_CONFIRM_EMAIL } from "@env";
 
 interface UpdateProfilePayload {
   username: string;
@@ -24,7 +25,7 @@ export const useProfile = (originalEmail: string) => {
       setIsLoading(true);
       setError(null);
 
-      await axiosInstance.post("user/send-confirmation-email", {
+      await axiosInstance.post(`${API_SEND_CONFIRM_EMAIL}`, {
         email: newEmail,
       });
       setShowOtpInput(true);
@@ -53,7 +54,7 @@ export const useProfile = (originalEmail: string) => {
 
       console.log("useProfile - Sending payload:", payload);
 
-      const response = await axiosInstance.put("user/profile", payload);
+      const response = await axiosInstance.put(`${API_EDIT_PROFILE}`, payload);
       console.log("useProfile - Response:", response.data);
 
       setShowOtpInput(false);

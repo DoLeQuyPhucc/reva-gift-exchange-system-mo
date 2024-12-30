@@ -19,6 +19,7 @@ import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Alert } from "react-native";
+import { API_APPROVE_TRANSACTION, API_GET_OWN_TRANSACTIONS, API_REJECT_TRANSACTION } from "@env";
 
 type RootStackParamList = {
   ResultScanTransaction: { transactionResult: any };
@@ -53,7 +54,7 @@ export default function ResultScanTransaction() {
       setIsLoading(true);
       setError(null);
       const response = await axiosInstance.get(
-        `transaction/own-transactions/${transactionResult.transactionId}`
+        `${API_GET_OWN_TRANSACTIONS}/${transactionResult.transactionId}`
       );
 
       console.log("response", response.data.data[0]);
@@ -146,7 +147,7 @@ export default function ResultScanTransaction() {
         transactionImages: [],
       }
       const res = await axiosInstance.put(
-        `transaction/approve`, data
+        `${API_APPROVE_TRANSACTION}`, data
       );
       console.log(res.data);
       Alert.alert("Thành công", "Đã xác nhận giao dịch", [
@@ -172,7 +173,7 @@ export default function ResultScanTransaction() {
         transactionImages: [],
       }
       await axiosInstance.put(
-        `transaction/reject`, data
+        `${API_REJECT_TRANSACTION}`, data
       );
       Alert.alert("Thành công", "Đã từ chối giao dịch", [
         {
