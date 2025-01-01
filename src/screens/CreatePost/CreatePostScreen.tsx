@@ -1123,7 +1123,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             styles.publishButton,
             !isTermsAccepted && styles.disabledButton,
           ]}
-          onPress={handleSubmitConfirm}
+          onPress={handleSubmit}
           disabled={!isTermsAccepted || isLoading}
         >
           {isLoading ? (

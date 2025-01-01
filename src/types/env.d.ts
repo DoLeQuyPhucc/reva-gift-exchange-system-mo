@@ -1,6 +1,11 @@
 declare module "@env" {
   export const API_URL: string;
   export const API_SIGNALR_URL: string;
+  export const API_GOONG_URL: string;
+  export const API_APP_ID_AGORA: string;
+  export const API_TOKEN_AGORA: string;
+  export const API_TOKEN_GOONG: string;
+  export const API_CHANNEL_NAME_AGORA: string;
   export const API_KEY: string;
   export const API_LOGIN: string;
   export const API_REGISTER: string;

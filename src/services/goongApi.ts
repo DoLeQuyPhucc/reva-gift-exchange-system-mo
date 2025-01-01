@@ -1,5 +1,7 @@
-const GOONG_API_KEY = "EiVlij4sGBI3kqNoebCG5eTotTTdvJ1ZzIMsUlp0";
-const GOONG_API_URL = "https://rsapi.goong.io";
+import { API_GOONG_URL, API_TOKEN_GOONG } from "@env";
+
+const GOONG_API_KEY = API_TOKEN_GOONG;
+const GOONG_API_URL = API_GOONG_URL;
 
 export interface DirectionsResponse {
   status: string;

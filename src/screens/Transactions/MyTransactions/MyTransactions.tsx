@@ -42,6 +42,7 @@ import {
   API_REJECT_TRANSACTION,
 } from "@env";
 import { useNotificationStore } from "@/src/stores/notificationStore";
+import MapModal from "@/src/components/Map/MapModal";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -229,17 +230,25 @@ const MyTransactions = () => {
       };
       const res = await axiosInstance.put(`${API_APPROVE_TRANSACTION}`, data);
       if (res.data.isSuccess) {
-      Alert.alert("Thành công", "Đã xác nhận giao dịch", [
-        {
-          text: "OK",
-          onPress: () => {
-            setIsConfirm((prev) => !prev);
+        Alert.alert("Thành công", "Đã xác nhận giao dịch", [
+          {
+            text: "OK",
+            onPress: () => {
+              setIsConfirm((prev) => !prev);
+            },
+            // navigation.navigate("MyTransactions", { requestId: requestId }),
           },
-          // navigation.navigate("MyTransactions", { requestId: requestId }),
-        },
-      ]);
-      sendNotification(transaction.requester.id, "TransactionApproved", "Giao dịch của bạn đã hoàn tất.");
-      sendNotification(transaction.charitarian.id, "TransactionApproved", "Giao dịch đã hoàn tất.");
+        ]);
+        sendNotification(
+          transaction.requester.id,
+          "TransactionApproved",
+          "Giao dịch của bạn đã hoàn tất."
+        );
+        sendNotification(
+          transaction.charitarian.id,
+          "TransactionApproved",
+          "Giao dịch đã hoàn tất."
+        );
       }
       setShowConfirmModal(false);
     } catch (error) {
@@ -256,17 +265,25 @@ const MyTransactions = () => {
       };
       const res = await axiosInstance.put(`${API_REJECT_TRANSACTION}`, data);
       if (res.data.isSuccess) {
-      Alert.alert("Thành công", "Đã từ chối giao dịch", [
-        {
-          text: "OK",
-          onPress: () => {
-            setIsConfirm((prev) => !prev);
+        Alert.alert("Thành công", "Đã từ chối giao dịch", [
+          {
+            text: "OK",
+            onPress: () => {
+              setIsConfirm((prev) => !prev);
+            },
           },
-        },
-      ]);
-      sendNotification(transaction.requester.id, "TransactionRejected", "Giao dịch của bạn đã bị từ chối.");
-      sendNotification(transaction.charitarian.id, "TransactionRejected", "Giao dịch đã bị từ chối.");
-    }
+        ]);
+        sendNotification(
+          transaction.requester.id,
+          "TransactionRejected",
+          "Giao dịch của bạn đã bị từ chối."
+        );
+        sendNotification(
+          transaction.charitarian.id,
+          "TransactionRejected",
+          "Giao dịch đã bị từ chối."
+        );
+      }
       setShowInputRejectMessage(false);
     } catch (error) {
       Alert.alert("Lỗi", "Không thể từ chối giao dịch. Vui lòng thử lại sau.");
@@ -1175,13 +1192,13 @@ const MyTransactions = () => {
         }}
       />
 
-      {/* <MapModal
+      <MapModal
         open={showMapModal}
         onClose={setShowMapModal}
         sourceLocation={location}
         destinationLocation={destinationLocation}
         transactionId={selectedTransaction?.id}
-      /> */}
+      />
     </View>
   );
 };
