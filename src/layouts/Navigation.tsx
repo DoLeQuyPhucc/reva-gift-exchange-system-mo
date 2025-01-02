@@ -39,6 +39,7 @@ import ResultScanTransaction from "../screens/Transactions/ResultScanTransaction
 import CharitarianRequestItem from "../screens/Request/CharitarianRequestItem/CharitarianRequestItem";
 import PreviewPostScreen from "../screens/PreviewPost/PreviewPostScreen";
 import { ButtonMoreActionHeader } from "../components/ButtonMoreActionHeader";
+import { setNavigationRef } from "../stores/notificationStore";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -105,7 +106,7 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer
+    <NavigationContainer ref={(ref) => setNavigationRef(ref)}
       theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
       <Stack.Navigator

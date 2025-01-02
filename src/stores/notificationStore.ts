@@ -4,6 +4,7 @@ import { useAuthStore } from "./authStore";
 import Toast from "react-native-toast-message";
 import axiosInstance from "../api/axiosInstance";
 import { API_GET_ALL_NOTIFICATION, API_SIGNALR_URL } from "@env";
+import { useNavigation } from "../hooks/useNavigation";
 
 export interface Notification {
   id: string;
@@ -51,6 +52,13 @@ interface NotificationState {
   clearNotifications: () => void;
   sendNotification: (userId: string, data: NotificationData) => Promise<void>;
 }
+
+let navigationRef: any = null;
+
+export const setNavigationRef = (ref: any) => {
+  navigationRef = ref;
+};
+
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   connection: null,
   notifications: [],
@@ -74,18 +82,46 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         console.log("Received notification:", notification);
         const parsedNotification = JSON.parse(notification);
         const notificationObj: NotificationData = {
-          title: parsedNotification.title,
-          type: parsedNotification.type,
-          message: parsedNotification.message,
-          entity: parsedNotification.entity,
-          entityId: parsedNotification.id,
+          title: parsedNotification.title || parsedNotification.Title,
+          type: parsedNotification.type || parsedNotification.Type,
+          message: parsedNotification.message || parsedNotification.Message,
+          entity: parsedNotification.entity || parsedNotification.Entity,
+          entityId: parsedNotification.id || parsedNotification.EntityId,
         };
-        console.log("Received notificationObj:", notificationObj);
-        // get().addNotification(notificationObj);
-        Toast.show({
+        // Convert NotificationData to Notification
+        const newNotification: Notification = {
+          id: Math.random().toString(),
           type: notificationObj.type,
+          data: JSON.stringify(notificationObj),
+          read: false,
+          createdAt: new Date(),
+          status: "Active",
+        };
+
+        get().addNotification(newNotification);
+        Toast.show({
+          type: notificationObj.type.toLowerCase(),
           text1: `Thông báo ${notificationObj.title}`,
           text2: notificationObj.message,
+          onPress: () => {
+            if (!navigationRef) return;
+
+            switch (notificationObj.entity) {
+              case "Item":
+                navigationRef.navigate("ProductDetail", {
+                  productId: notificationObj.entityId,
+                });
+                break;
+              case "Request":
+                console.log("Navigate to request detail");
+                break;
+              case "Transaction":
+                navigationRef.navigate("MyTransactions", {
+                  requestId: notificationObj.entityId,
+                });
+                break;
+            }
+          },
         });
       });
       set({ connection: newConnection });

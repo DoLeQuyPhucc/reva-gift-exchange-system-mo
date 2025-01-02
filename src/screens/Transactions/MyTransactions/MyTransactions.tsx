@@ -42,7 +42,7 @@ import {
   API_REJECT_TRANSACTION,
 } from "@env";
 import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
-import MapModal from "@/src/components/Map/MapModal";
+// import MapModal from "@/src/components/Map/MapModal";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -245,7 +245,7 @@ const MyTransactions = () => {
           title: "Chấp nhận giao dịch",
           message: "Giao dịch của bạn đã hoàn tất.",
           entity: "Transaction",
-          entityId: transaction.id,
+          entityId: transaction.requestId,
         };
 
         sendNotification(
@@ -287,7 +287,7 @@ const MyTransactions = () => {
           title: "Từ chối giao dịch",
           message: "Giao dịch của bạn đã bị từ chối.",
           entity: "Transaction",
-          entityId: transaction.id,
+          entityId: transaction.requestId,
         };
 
         sendNotification(
@@ -300,7 +300,7 @@ const MyTransactions = () => {
           title: "Từ chối giao dịch",
           message: "Bạn đã từ chối giao dịch.",
           entity: "Transaction",
-          entityId: transaction.id,
+          entityId: transaction.requestId,
         };
 
         sendNotification(
@@ -819,7 +819,7 @@ const MyTransactions = () => {
                   </Text>
                 )}
 
-                {transaction.isValidTime && (
+                {!transaction.isValidTime && (
                   <>
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (
@@ -1216,13 +1216,13 @@ const MyTransactions = () => {
         }}
       />
 
-      <MapModal
+      {/* <MapModal
         open={showMapModal}
         onClose={setShowMapModal}
         sourceLocation={location}
         destinationLocation={destinationLocation}
         transactionId={selectedTransaction?.id}
-      />
+      /> */}
     </View>
   );
 };
