@@ -15,8 +15,9 @@ import * as Location from "expo-location";
 import { Modal } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import { goongApi } from "@/src/services/goongApi";
+import axiosInstance from "@/src/api/axiosInstance";
 import { useProximityStore } from "@/src/stores/proximityStore";
-import { API_TOKEN_GOONG } from "@env";
+import { API_TOKEN_GOONG, API_VALIDATE_DISTANCE } from "@env";
 
 interface MapModalProps {
   open: boolean;
@@ -75,7 +76,7 @@ export default function MapModal({
   onClose,
   sourceLocation,
   destinationLocation,
-  transactionId,
+  transactionId: initialTransactionId,
 }: MapModalProps) {
   const [routeInfo, setRouteInfo] = useState<{
     distance: string;
@@ -93,6 +94,8 @@ export default function MapModal({
   const [isLoading, setIsLoading] = useState(false);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const hasAlertedRef = useRef(false);
+  const transactionIdRef = useRef<string | null>(null);
+  const hasLoggedPositions = useRef(false);
   const [routeProgress, setRouteProgress] = useState(0);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
@@ -120,6 +123,13 @@ export default function MapModal({
   };
 
   useEffect(() => {
+    if (initialTransactionId) {
+      transactionIdRef.current = initialTransactionId;
+      useProximityStore.getState().setTransactionId(initialTransactionId);
+    }
+  }, [initialTransactionId]);
+
+  useEffect(() => {
     let locationSubscription: Location.LocationSubscription | null = null;
 
     const requestLocationPermission = async () => {
@@ -135,7 +145,7 @@ export default function MapModal({
           timeInterval: 1000,
           distanceInterval: 1,
         },
-        (newLocation) => {
+        async (newLocation) => {
           setCurrentLocation(newLocation);
 
           const distance = calculateDistance(
@@ -145,14 +155,61 @@ export default function MapModal({
             destinationLocation.longitude
           );
 
-          if (distance <= 50) {
-            useProximityStore.getState().setIsNearDestination(true);
-            if (!hasAlertedRef.current) {
-              Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
-              hasAlertedRef.current = true;
+          // Always update proximity state
+          const isNear = distance <= 50;
+          useProximityStore.getState().setIsNearDestination(isNear);
+
+          // Log positions only once when getting near
+          if (distance <= 50 && !hasLoggedPositions.current) {
+            console.log("=== ENTERED 50m CONDITION ===");
+            console.log("Current Position:", {
+              latitude: newLocation.coords.latitude,
+              longitude: newLocation.coords.longitude,
+            });
+            console.log("Destination Position:", destinationLocation);
+
+            try {
+              console.log("Preparing for API call...");
+              // Get fresh transaction ID from store
+              const currentTransactionId =
+                useProximityStore.getState().transactionId;
+              console.log("Current transaction ID:", currentTransactionId);
+
+              if (!currentTransactionId) {
+                console.error("Transaction ID is missing");
+                Alert.alert("Lỗi", "Không tìm thấy mã giao dịch");
+                return;
+              }
+
+              const response = await axiosInstance.get(
+                `${API_VALIDATE_DISTANCE}?transactionId=${currentTransactionId}&latitude=${destinationLocation.latitude}&longitude=${destinationLocation.longitude}`
+              );
+
+              console.log("API call successful:", response.data);
+              hasLoggedPositions.current = true;
+            } catch (error) {
+              console.error("Error in validation API call:", error);
+              Alert.alert("Lỗi", "Không thể xác thực vị trí");
             }
           } else {
-            useProximityStore.getState().setIsNearDestination(false);
+            console.log("Condition not met:", {
+              isWithinDistance: distance <= 50,
+              hasNotLogged: !hasLoggedPositions.current,
+            });
+          }
+
+          // Reset flag when moving away
+          if (distance > 50) {
+            hasLoggedPositions.current = false;
+            console.log("Reset hasLoggedPositions to false");
+          }
+
+          // Show alert only once when getting near
+          if (isNear && !hasAlertedRef.current) {
+            console.log("Showing alert...");
+
+            Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
+            hasAlertedRef.current = true;
           }
 
           if (routeInfo?.coordinates && routeInfo.coordinates.length > 0) {
@@ -173,17 +230,12 @@ export default function MapModal({
       requestLocationPermission();
     }
 
-    // Reset flag when modal closes
-    if (!open) {
-      hasAlertedRef.current = false;
-    }
-
     return () => {
       if (locationSubscription) {
         locationSubscription.remove();
       }
     };
-  }, [open, routeInfo, destinationLocation, transactionId]);
+  }, [open, routeInfo, destinationLocation, initialTransactionId]);
 
   useEffect(() => {
     MapboxGL.setAccessToken(GOONG_ACCESS_TOKEN);

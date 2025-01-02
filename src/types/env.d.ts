@@ -29,6 +29,7 @@ declare module "@env" {
   export const API_APPROVE_REQUEST: string;
   export const API_REJECT_REQUEST: string;
   export const API_CREATE_TRANSACTION: string;
+  export const API_VALIDATE_DISTANCE: string;
   export const API_SEARCH_ITEMS: string;
   export const API_GET_OWN_TRANSACTIONS: string;
   export const API_GET_TRANSACTION_BY_ID: string;

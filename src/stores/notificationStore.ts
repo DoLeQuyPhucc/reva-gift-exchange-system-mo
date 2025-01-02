@@ -5,6 +5,7 @@ import Toast from "react-native-toast-message";
 import axiosInstance from "../api/axiosInstance";
 import { API_GET_ALL_NOTIFICATION, API_SIGNALR_URL } from "@env";
 import { useNavigation } from "../hooks/useNavigation";
+import { useProximityStore } from "./proximityStore";
 
 export interface Notification {
   id: string;
@@ -88,6 +89,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           entity: parsedNotification.entity || parsedNotification.Entity,
           entityId: parsedNotification.id || parsedNotification.EntityId,
         };
+
+        if (notificationObj.message === "Người nhận đã đến khu vực của bạn") {
+          useProximityStore.getState().setRecipientHasArrived(true);
+          useProximityStore
+            .getState()
+            .setTransactionId(notificationObj.entityId);
+        }
+
         // Convert NotificationData to Notification
         const newNotification: Notification = {
           id: Math.random().toString(),

@@ -41,7 +41,11 @@ import {
   API_RATING_TRANSACTION,
   API_REJECT_TRANSACTION,
 } from "@env";
-import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
+import {
+  NotificationData,
+  useNotificationStore,
+} from "@/src/stores/notificationStore";
+import MapModal from "@/src/components/Map/MapModal";
 // import MapModal from "@/src/components/Map/MapModal";
 
 type MyTransactionsScreenRouteProp = RouteProp<
@@ -91,6 +95,9 @@ const MyTransactions = () => {
   const isNearDestination = useProximityStore(
     (state) => state.isNearDestination
   );
+
+  const { recipientHasArrived, transactionId } = useProximityStore();
+
   const PAGE_SIZE = 10;
 
   useEffect(() => {
@@ -248,15 +255,9 @@ const MyTransactions = () => {
           entityId: transaction.requestId,
         };
 
-        sendNotification(
-          transaction.requester.id,
-          dataSuccess
-        );
+        sendNotification(transaction.requester.id, dataSuccess);
 
-        sendNotification(
-          transaction.charitarian.id,
-          dataSuccess
-        );
+        sendNotification(transaction.charitarian.id, dataSuccess);
       }
       setShowConfirmModal(false);
     } catch (error) {
@@ -290,10 +291,7 @@ const MyTransactions = () => {
           entityId: transaction.requestId,
         };
 
-        sendNotification(
-          transaction.requester.id,
-          dataErrorRequester
-        );
+        sendNotification(transaction.requester.id, dataErrorRequester);
 
         const dataErrorCharitarian: NotificationData = {
           type: "error",
@@ -303,10 +301,7 @@ const MyTransactions = () => {
           entityId: transaction.requestId,
         };
 
-        sendNotification(
-          transaction.charitarian.id,
-          dataErrorCharitarian
-        );
+        sendNotification(transaction.charitarian.id, dataErrorCharitarian);
       }
       setShowInputRejectMessage(false);
     } catch (error) {
@@ -869,6 +864,10 @@ const MyTransactions = () => {
                               setShowMapModal(true);
                               setLocation(sourceLocation);
                               setDestinationLocation(destinationLocation);
+                              // Pass transactionId to MapModal
+                              useProximityStore
+                                .getState()
+                                .setTransactionId(transaction.id);
                             }}
                           >
                             <View style={styles.detailsButtonContent}>
@@ -907,7 +906,22 @@ const MyTransactions = () => {
                       checkRole(transaction) === "charitarian" && (
                         <>
                           <TouchableOpacity
-                            style={styles.verifyButton}
+                            style={[
+                              styles.verifyButton,
+                              {
+                                opacity:
+                                  recipientHasArrived &&
+                                  transaction.id === transactionId
+                                    ? 1
+                                    : 0.5,
+                              },
+                            ]}
+                            disabled={
+                              !(
+                                recipientHasArrived &&
+                                transaction.id === transactionId
+                              )
+                            }
                             onPress={() => {
                               navigation.navigate("QRScanner");
                             }}
@@ -1216,13 +1230,13 @@ const MyTransactions = () => {
         }}
       />
 
-      {/* <MapModal
+      <MapModal
         open={showMapModal}
         onClose={setShowMapModal}
         sourceLocation={location}
         destinationLocation={destinationLocation}
         transactionId={selectedTransaction?.id}
-      /> */}
+      />
     </View>
   );
 };
