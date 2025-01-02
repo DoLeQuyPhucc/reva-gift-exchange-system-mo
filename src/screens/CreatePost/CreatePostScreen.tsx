@@ -30,7 +30,7 @@ import useCategories from "@/src/hooks/useCategories";
 import useCreatePost from "@/src/hooks/useCreatePost";
 import { useCategoryStore } from "@/src/stores/categoryStore";
 import Colors from "@/src/constants/Colors";
-import { useNotificationStore } from "@/src/stores/notificationStore";
+import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
 import { useAuthCheck } from "@/src/hooks/useAuth";
 
 interface CreatePostScreenProps {
@@ -616,10 +616,17 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
       console.log("Submit response:", response);
 
-      if (response === true) {
-        sendNotification(userData.userId as string, "post_created", "Bạn đã thêm một sản phẩm");
-        setShowSuccessAlert(true);
-      }
+      // if (response === true) {
+      //   const data: NotificationData = {
+      //     title: "Đăng tin thành công",
+      //     type: "post_created",
+      //     message: "Bạn đã thêm một sản phẩm",
+      //     entity: "post",
+      //     entityId: "",
+      //   }
+      //   sendNotification(userData.userId as string, "post_created", "Bạn đã thêm một sản phẩm");
+      //   setShowSuccessAlert(true);
+      // }
     } catch (error) {
       Alert.alert("Error", "Failed to create post");
       console.error("Submit error:", error);

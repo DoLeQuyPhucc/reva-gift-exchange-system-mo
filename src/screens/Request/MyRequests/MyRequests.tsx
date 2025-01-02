@@ -36,7 +36,7 @@ import {
   API_GET_REQUESTS_FOR_ME,
   API_REJECT_REQUEST,
 } from "@env";
-import { useNotificationStore } from "@/src/stores/notificationStore";
+import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
 
 const STATUS_COLORS: { [key: string]: string } = {
   Pending: Colors.orange500,
@@ -261,12 +261,29 @@ export default function MyRequestsScreen() {
 
         console.log(transactionData);
         await axiosInstance.post(`${API_CREATE_TRANSACTION}`, transactionData);
+
+        const dataSuccessRequester: NotificationData = {
+          type: "success",
+          title: "Yêu cầu của bạn",
+          message: "Yêu cầu giao dịch của bạn đã được chấp nhận.",
+          entity: "Request",
+          entityId: request.id,
+        };
         
         //Gửi thông báo cho người yêu cầu
-        sendNotification(request.requester.id, "Request", "Yêu cầu giao dịch của bạn đã được chấp nhận.");
+        sendNotification(request.requester.id, dataSuccessRequester);
+
+
+        const dataSuccessCharitarian: NotificationData = {
+          type: "success",
+          title: "Yêu cầu của bạn",
+          message: "Bạn đã chấp nhận yêu cầu giao dịch.",
+          entity: "Request",
+          entityId: request.id,
+        };
 
         //Gửi thông báo cho người nhận
-        sendNotification(request.charitarian.id, "Request", "Bạn đã chấp nhận yêu cầu giao dịch.");
+        sendNotification(request.charitarian.id, dataSuccessCharitarian);
       }
       fetchRequests(1);
       setShowTimeModal(false);
@@ -308,9 +325,25 @@ export default function MyRequestsScreen() {
         setShowRejectModal(false);
         setRejectMessage("");
 
-        sendNotification(request.requester.id, "Request", "Yêu cầu giao dịch của bạn đã bị từ chối.");
+        const dataErrorRequester: NotificationData = {
+          type: "error",
+          title: "Yêu cầu của bạn",
+          message: "Yêu cầu giao dịch của bạn đã bị từ chối.",
+          entity: "Request",
+          entityId: request.id,
+        };
 
-        sendNotification(request.charitarian.id, "Request", "Bạn đã từ chối yêu cầu giao dịch.");
+        sendNotification(request.requester.id, dataErrorRequester);
+
+        const dataErrorCharitarian: NotificationData = {
+          type: "error",
+          title: "Yêu cầu của bạn",
+          message: "Bạn đã từ chối yêu cầu giao dịch.",
+          entity: "Request",
+          entityId: request.id,
+        };
+
+        sendNotification(request.charitarian.id, dataErrorCharitarian);
       }
 
       // setAlertData({

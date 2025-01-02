@@ -20,12 +20,14 @@ import axiosInstance from "@/src/api/axiosInstance";
 import { User } from "@/src/shared/type";
 import { useAuthStore } from "@/src/stores/authStore";
 import { API_LOGIN } from "@env";
+import { useNotificationStore } from "@/src/stores/notificationStore";
 
 type OTPScreenProps = NativeStackScreenProps<RootStackParamList, "OTPScreen">;
 
 const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   const { phoneNumber } = route.params;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const { initializeConnection } = useNotificationStore();
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
   const [otpResult, setOtpResult] = useState<string>("");
@@ -36,7 +38,6 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   useEffect(() => {
     const fetchOTP = async () => {
       try {
-        // Add your fetch OTP API call here
         const resOTP = await axiosInstance.post(
           `user/send-otp?phoneNumber=${phoneNumber}&type=OTP`
         );

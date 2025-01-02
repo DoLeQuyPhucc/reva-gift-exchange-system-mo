@@ -41,7 +41,7 @@ import {
   API_RATING_TRANSACTION,
   API_REJECT_TRANSACTION,
 } from "@env";
-import { useNotificationStore } from "@/src/stores/notificationStore";
+import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
 import MapModal from "@/src/components/Map/MapModal";
 
 type MyTransactionsScreenRouteProp = RouteProp<
@@ -239,15 +239,23 @@ const MyTransactions = () => {
             // navigation.navigate("MyTransactions", { requestId: requestId }),
           },
         ]);
+
+        const dataSuccess: NotificationData = {
+          type: "success",
+          title: "Chấp nhận giao dịch",
+          message: "Giao dịch của bạn đã hoàn tất.",
+          entity: "Transaction",
+          entityId: transaction.id,
+        };
+
         sendNotification(
           transaction.requester.id,
-          "TransactionApproved",
-          "Giao dịch của bạn đã hoàn tất."
+          dataSuccess
         );
+
         sendNotification(
           transaction.charitarian.id,
-          "TransactionApproved",
-          "Giao dịch đã hoàn tất."
+          dataSuccess
         );
       }
       setShowConfirmModal(false);
@@ -273,15 +281,31 @@ const MyTransactions = () => {
             },
           },
         ]);
+
+        const dataErrorRequester: NotificationData = {
+          type: "error",
+          title: "Từ chối giao dịch",
+          message: "Giao dịch của bạn đã bị từ chối.",
+          entity: "Transaction",
+          entityId: transaction.id,
+        };
+
         sendNotification(
           transaction.requester.id,
-          "TransactionRejected",
-          "Giao dịch của bạn đã bị từ chối."
+          dataErrorRequester
         );
+
+        const dataErrorCharitarian: NotificationData = {
+          type: "error",
+          title: "Từ chối giao dịch",
+          message: "Bạn đã từ chối giao dịch.",
+          entity: "Transaction",
+          entityId: transaction.id,
+        };
+
         sendNotification(
           transaction.charitarian.id,
-          "TransactionRejected",
-          "Giao dịch đã bị từ chối."
+          dataErrorCharitarian
         );
       }
       setShowInputRejectMessage(false);
@@ -769,7 +793,7 @@ const MyTransactions = () => {
                   </View>
                 )}
 
-                {!transaction.isValidTime && (
+                {transaction.isValidTime && (
                   <>
                     <View style={styles.dateInfo}>
                       <Text style={styles.dateLabel}>
@@ -795,7 +819,7 @@ const MyTransactions = () => {
                   </Text>
                 )}
 
-                {!transaction.isValidTime && (
+                {transaction.isValidTime && (
                   <>
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (

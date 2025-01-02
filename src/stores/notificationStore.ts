@@ -14,6 +14,14 @@ export interface Notification {
   status: string;
 }
 
+export interface NotificationData {
+  entityId: string;
+  type: string;
+  message: string;
+  title: string;
+  entity: string;
+}
+
 export interface NotificationResponse {
   isSuccess: boolean;
   code: number;
@@ -41,11 +49,7 @@ interface NotificationState {
     sizeIndex: number
   ) => Promise<void>;
   clearNotifications: () => void;
-  sendNotification: (
-    userId: string,
-    type: string,
-    data: string
-  ) => Promise<void>;
+  sendNotification: (userId: string, data: NotificationData) => Promise<void>;
 }
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   connection: null,
@@ -68,21 +72,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       newConnection.on("ReceiveNotification", (notification: string) => {
         console.log("Received notification:", notification);
-        // const parsedNotification = JSON.parse(notification);
-        // const notificationObj: Notification = {
-        //   id: parsedNotification.id,
-        //   type: parsedNotification.type,
-        //   data: parsedNotification.data,
-        //   read: false,
-        //   createdAt: new Date(parsedNotification.createdAt),
-        //   status: parsedNotification.status,
-        // };
-        // console.log("Received notificationObj:", notificationObj);
+        const parsedNotification = JSON.parse(notification);
+        const notificationObj: NotificationData = {
+          title: parsedNotification.title,
+          type: parsedNotification.type,
+          message: parsedNotification.message,
+          entity: parsedNotification.entity,
+          entityId: parsedNotification.id,
+        };
+        console.log("Received notificationObj:", notificationObj);
         // get().addNotification(notificationObj);
         Toast.show({
-          type: "info",
-          text1: "Thông báo",
-          text2: notification,
+          type: notificationObj.type,
+          text1: `Thông báo ${notificationObj.title}`,
+          text2: notificationObj.message,
         });
       });
       set({ connection: newConnection });
@@ -143,11 +146,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
   clearNotifications: () => set({ notifications: [] }),
-  sendNotification: async (userId: string, type: string, data: string) => {
+  sendNotification: async (userId: string, data: NotificationData) => {
     try {
-      await axiosInstance.post(
-        `notification/send?userId=${userId}&type=${type}&data=${data}`
-      );
+      await axiosInstance.post(`notification/send?userId=${userId}`, data);
     } catch (error) {
       console.error("Error sending notification:", error);
     }
