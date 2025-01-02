@@ -28,7 +28,7 @@ import {
   API_GET_ALL_NOTIFICATION,
 } from "@env";
 import Colors from "@/src/constants/Colors";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications } = useNotificationStore();
@@ -110,11 +110,24 @@ export default function NotificationsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await axiosInstance.put(
-                `${API_DELETE_ALL_NOTIFICATION}`
-              );
-              if (response.data.isSuccess) {
-                setNotifications([]);
+              if (selectedItems.length === notifications.length) {
+                const response = await axiosInstance.put(
+                  `${API_DELETE_ALL_NOTIFICATION}`
+                );
+                if (response.data.isSuccess) {
+                  setNotifications([]);
+                  setSelectedItems([]);
+                  setIsSelectionMode(false);
+                  Toast.show({
+                    type: "success",
+                    text1: "Thành công",
+                    text2: `Đã xóa ${selectedItems.length} thông báo`,
+                  });
+                }
+              } else {
+                for (const id of selectedItems) {
+                  await handleDeleteSingle(id);
+                }
                 setSelectedItems([]);
                 setIsSelectionMode(false);
                 Toast.show({
@@ -210,19 +223,23 @@ export default function NotificationsScreen() {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Invalid date";
-  
 
       const now = new Date();
-      const diffInSeconds = Math.abs(Math.floor((now.getTime() - date.getTime()) / 1000));
+      const diffInSeconds = Math.abs(
+        Math.floor((now.getTime() - date.getTime()) / 1000)
+      );
       console.log(date, now);
       console.log(date.getTime(), now.getTime());
       console.log(diffInSeconds);
-  
+
       if (diffInSeconds < 60) return "Vừa xong";
-      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
-  
+      if (diffInSeconds < 3600)
+        return `${Math.floor(diffInSeconds / 60)} phút trước`;
+      if (diffInSeconds < 86400)
+        return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+      if (diffInSeconds < 604800)
+        return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+
       return date.toLocaleDateString("vi-VN", {
         year: "numeric",
         month: "2-digit",
@@ -234,17 +251,6 @@ export default function NotificationsScreen() {
       console.error("Error formatting date:", error);
       return "Invalid date";
     }
-  };
-
-  const getTypeColor = (type: string) => {
-      const types: { [key: string]: { bg: string; text: string } } = {
-        success: { bg: '#E8F5E9', text: '#2E7D32' },
-        error: { bg: '#FFEBEE', text: '#C62828' },
-        warning: { bg: '#FFF3E0', text: '#EF6C00' },
-        info: { bg: '#E3F2FD', text: '#1565C0' },
-        default: { bg: '#F5F5F5', text: '#616161' }
-      };
-      return types[type.toLowerCase()] || types.default;
   };
 
   const handlePressNotification = async (notification: Notification) => {
@@ -284,34 +290,38 @@ export default function NotificationsScreen() {
     }
   };
 
-  const renderNotification = ({ notification, onPress, isSelectionMode, isSelected, onSelect }: { notification: Notification; onPress: () => void; isSelectionMode: boolean; isSelected: boolean; onSelect: () => void }) => {
+  const renderNotification = ({
+    notification,
+    onPress,
+    isSelectionMode,
+    isSelected,
+    onSelect,
+  }: {
+    notification: Notification;
+    onPress: () => void;
+    isSelectionMode: boolean;
+    isSelected: boolean;
+    onSelect: () => void;
+  }) => {
     const parsedData = JSON.parse(notification.data);
-    const typeColors = getTypeColor(notification.type);
-  
+
     return (
-      <TouchableOpacity onPress={onPress} style={enhancedStyles.notificationContent}>
+      <TouchableOpacity
+        onPress={onPress}
+        style={enhancedStyles.notificationContent}
+      >
         <View style={enhancedStyles.header}>
           {isSelectionMode && (
             <Checkbox
               value={isSelected}
               onValueChange={onSelect}
-              style={{marginRight: 10}}
+              style={{ marginRight: 10 }}
+              color={isSelected ? "#007AFF" : "#666"}
             />
           )}
           <View style={enhancedStyles.titleContainer}>
             <Text style={enhancedStyles.title}>{parsedData.title}</Text>
             <View style={enhancedStyles.metadata}>
-              <View style={[
-                enhancedStyles.typeTag,
-                { backgroundColor: typeColors.bg }
-              ]}>
-                <Text style={[
-                  enhancedStyles.typeText,
-                  { color: typeColors.text }
-                ]}>
-                  {notification.type}
-                </Text>
-              </View>
               <Text style={enhancedStyles.time}>
                 {formatDate(notification.createdAt.toString())}
               </Text>
@@ -319,36 +329,42 @@ export default function NotificationsScreen() {
           </View>
           {!notification.read && <View style={styles.unreadIndicator} />}
         </View>
-  
+
         <Text style={enhancedStyles.message}>{parsedData.message}</Text>
-  
+
         <View style={enhancedStyles.footer}>
           <View style={enhancedStyles.entityInfo}>
-            <Ionicons 
+            <Ionicons
               name={
-                parsedData.entity === 'Item' ? 'cube-outline' :
-                parsedData.entity === 'Request' ? 'document-text-outline' :
-                'card-outline'
-              } 
-              size={16} 
+                parsedData.entity === "Item"
+                  ? "cube-outline"
+                  : parsedData.entity === "Request"
+                  ? "document-text-outline"
+                  : "card-outline"
+              }
+              size={16}
               color="#666"
             />
             <Text style={enhancedStyles.entityText}>
               {/* {parsedData.entity} #{parsedData.entityId.slice(-6)} */}
             </Text>
           </View>
-          <View style={[
-            enhancedStyles.statusTag,
-            { 
-              backgroundColor: notification.read ? '#E9ECEF' : '#E3F2FD',
-              opacity: notification.read ? 0.8 : 1
-            }
-          ]}>
-            <Text style={{
-              fontSize: 12,
-              color: notification.read ? '#6C757D' : '#1565C0'
-            }}>
-              {notification.read ? 'Đã đọc' : 'Chưa đọc'}
+          <View
+            style={[
+              enhancedStyles.statusTag,
+              {
+                backgroundColor: notification.read ? "#E9ECEF" : "#E3F2FD",
+                opacity: notification.read ? 0.8 : 1,
+              },
+            ]}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                color: notification.read ? "#6C757D" : "#1565C0",
+              }}
+            >
+              {notification.read ? "Đã đọc" : "Chưa đọc"}
             </Text>
           </View>
         </View>
@@ -469,7 +485,9 @@ export default function NotificationsScreen() {
                 isSelected: selectedItems.includes(notification.id),
                 onSelect: () => {
                   if (selectedItems.includes(notification.id)) {
-                    setSelectedItems(selectedItems.filter(id => id !== notification.id));
+                    setSelectedItems(
+                      selectedItems.filter((id) => id !== notification.id)
+                    );
                   } else {
                     setSelectedItems([...selectedItems, notification.id]);
                   }
@@ -483,7 +501,6 @@ export default function NotificationsScreen() {
   );
 }
 
-
 const enhancedStyles = StyleSheet.create({
   notificationContent: {
     padding: 16,
@@ -494,11 +511,11 @@ const enhancedStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    marginBottom: 16
+    marginBottom: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   titleContainer: {
@@ -507,13 +524,13 @@ const enhancedStyles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    fontWeight: "600",
+    color: "#1A1A1A",
     marginBottom: 4,
   },
   metadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   typeTag: {
@@ -524,41 +541,41 @@ const enhancedStyles = StyleSheet.create({
   },
   typeText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   time: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   message: {
     fontSize: 15,
-    color: '#1A1A1A',
+    color: "#1A1A1A",
     lineHeight: 20,
     marginBottom: 8,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
+    borderTopColor: "#E9ECEF",
   },
   entityInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   entityText: {
     fontSize: 13,
-    color: '#666',
+    color: "#666",
     marginLeft: 4,
   },
   statusTag: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-  }
+  },
 });
 
 const styles = StyleSheet.create({
