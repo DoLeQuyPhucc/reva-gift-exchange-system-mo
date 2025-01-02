@@ -12,6 +12,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   Notification,
+  NotificationData,
   useNotificationStore,
 } from "@/src/stores/notificationStore";
 import axiosInstance from "@/src/api/axiosInstance";
@@ -26,6 +27,8 @@ import {
   API_DELETE_ONE_NOTIFICATION,
   API_GET_ALL_NOTIFICATION,
 } from "@env";
+import Colors from "@/src/constants/Colors";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications } = useNotificationStore();
@@ -206,29 +209,20 @@ export default function NotificationsScreen() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
+      if (isNaN(date.getTime())) return "Invalid date";
+  
 
       const now = new Date();
-      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-      if (diffInSeconds < 60) {
-        return "Vừa xong";
-      }
-      if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} phút trước`;
-      }
-      if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} giờ trước`;
-      }
-      if (diffInSeconds < 604800) {
-        const days = Math.floor(diffInSeconds / 86400);
-        return `${days} ngày trước`;
-      }
-
+      const diffInSeconds = Math.abs(Math.floor((now.getTime() - date.getTime()) / 1000));
+      console.log(date, now);
+      console.log(date.getTime(), now.getTime());
+      console.log(diffInSeconds);
+  
+      if (diffInSeconds < 60) return "Vừa xong";
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+  
       return date.toLocaleDateString("vi-VN", {
         year: "numeric",
         month: "2-digit",
@@ -242,110 +236,125 @@ export default function NotificationsScreen() {
     }
   };
 
-  const renderNotification = useCallback(
-    ({ item: notification, index }: { item: Notification; index: number }) => {
-      const renderRightActions = () => (
-        <TouchableOpacity
-          style={styles.deleteAction}
-          onPress={() => notification.id && handleDeleteSingle(notification.id)}
-        >
-          <Text style={styles.deleteActionText}>Xóa</Text>
-        </TouchableOpacity>
-      );
+  const getTypeColor = (type: string) => {
+      const types: { [key: string]: { bg: string; text: string } } = {
+        success: { bg: '#E8F5E9', text: '#2E7D32' },
+        error: { bg: '#FFEBEE', text: '#C62828' },
+        warning: { bg: '#FFF3E0', text: '#EF6C00' },
+        info: { bg: '#E3F2FD', text: '#1565C0' },
+        default: { bg: '#F5F5F5', text: '#616161' }
+      };
+      return types[type.toLowerCase()] || types.default;
+  };
 
-      const formattedDate = notification.createdAt
-        ? formatDate(notification.createdAt.toString())
-        : "Unknown date";
+  const handlePressNotification = async (notification: Notification) => {
+    if (!notification.read && notification.id) {
+      markAsRead(notification.id);
+    }
 
-      let parsedData;
+    if (typeof notification.data === "string") {
       try {
-        parsedData =
-          typeof notification.data === "string"
-            ? JSON.parse(notification.data)
-            : { message: notification.data };
+        const parsedNotification = JSON.parse(notification.data);
+        const notificationObj: NotificationData = {
+          title: parsedNotification.title || parsedNotification.Title,
+          type: parsedNotification.type || parsedNotification.Type,
+          message: parsedNotification.message || parsedNotification.Message,
+          entity: parsedNotification.entity || parsedNotification.Entity,
+          entityId: parsedNotification.id || parsedNotification.EntityId,
+        };
+
+        switch (notificationObj.entity) {
+          case "Item":
+            navigation.navigate("ProductDetail", {
+              productId: notificationObj.entityId,
+            });
+            break;
+          case "Request":
+            console.log("Navigate to request detail");
+            break;
+          case "Transaction":
+            navigation.navigate("MyTransactions", {
+              requestId: notificationObj.entityId,
+            });
+            break;
+        }
       } catch (error) {
-        parsedData = { message: notification.data };
+        console.error("Error parsing notification data:", error);
       }
+    }
+  };
 
-      return (
-        <Animated.View
-          key={notification.id}
-          style={[
-            styles.notification,
-            {
-              opacity: fadeAnim,
-              transform: [
-                {
-                  translateY: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Swipeable renderRightActions={renderRightActions}>
-            <TouchableOpacity
-              onPress={() =>
-                !notification.read &&
-                notification.id &&
-                markAsRead(notification.id)
-              }
-              style={[
-                styles.notificationContent,
-                !notification.read && styles.unreadNotification,
-              ]}
-            >
-              <View style={styles.notificationHeader}>
-                {isSelectionMode && (
-                  <View style={styles.checkboxContainer}>
-                    <Checkbox
-                      value={
-                        notification.id
-                          ? selectedItems.includes(notification.id)
-                          : false
-                      }
-                      onValueChange={(newValue) => {
-                        if (notification.id) {
-                          if (newValue) {
-                            setSelectedItems([
-                              ...selectedItems,
-                              notification.id,
-                            ]);
-                          } else {
-                            setSelectedItems(
-                              selectedItems.filter(
-                                (id) => id !== notification.id
-                              )
-                            );
-                          }
-                        }
-                      }}
-                      color={
-                        selectedItems.includes(notification.id || "")
-                          ? "#007AFF"
-                          : undefined
-                      }
-                    />
-                  </View>
-                )}
-                <Text style={styles.notificationTime}>{formattedDate}</Text>
-                {!notification.read && <View style={styles.unreadIndicator} />}
+  const renderNotification = ({ notification, onPress, isSelectionMode, isSelected, onSelect }: { notification: Notification; onPress: () => void; isSelectionMode: boolean; isSelected: boolean; onSelect: () => void }) => {
+    const parsedData = JSON.parse(notification.data);
+    const typeColors = getTypeColor(notification.type);
+  
+    return (
+      <TouchableOpacity onPress={onPress} style={enhancedStyles.notificationContent}>
+        <View style={enhancedStyles.header}>
+          {isSelectionMode && (
+            <Checkbox
+              value={isSelected}
+              onValueChange={onSelect}
+              style={{marginRight: 10}}
+            />
+          )}
+          <View style={enhancedStyles.titleContainer}>
+            <Text style={enhancedStyles.title}>{parsedData.title}</Text>
+            <View style={enhancedStyles.metadata}>
+              <View style={[
+                enhancedStyles.typeTag,
+                { backgroundColor: typeColors.bg }
+              ]}>
+                <Text style={[
+                  enhancedStyles.typeText,
+                  { color: typeColors.text }
+                ]}>
+                  {notification.type}
+                </Text>
               </View>
-
-              <Text style={styles.notificationText}>{parsedData.message}</Text>
-
-              {!notification.read && (
-                <Text style={styles.tapToMark}>Nhấn để đánh dấu đã đọc!</Text>
-              )}
-            </TouchableOpacity>
-          </Swipeable>
-        </Animated.View>
-      );
-    },
-    [fadeAnim, markAsRead, isSelectionMode, selectedItems]
-  );
+              <Text style={enhancedStyles.time}>
+                {formatDate(notification.createdAt.toString())}
+              </Text>
+            </View>
+          </View>
+          {!notification.read && <View style={styles.unreadIndicator} />}
+        </View>
+  
+        <Text style={enhancedStyles.message}>{parsedData.message}</Text>
+  
+        <View style={enhancedStyles.footer}>
+          <View style={enhancedStyles.entityInfo}>
+            <Ionicons 
+              name={
+                parsedData.entity === 'Item' ? 'cube-outline' :
+                parsedData.entity === 'Request' ? 'document-text-outline' :
+                'card-outline'
+              } 
+              size={16} 
+              color="#666"
+            />
+            <Text style={enhancedStyles.entityText}>
+              {/* {parsedData.entity} #{parsedData.entityId.slice(-6)} */}
+            </Text>
+          </View>
+          <View style={[
+            enhancedStyles.statusTag,
+            { 
+              backgroundColor: notification.read ? '#E9ECEF' : '#E3F2FD',
+              opacity: notification.read ? 0.8 : 1
+            }
+          ]}>
+            <Text style={{
+              fontSize: 12,
+              color: notification.read ? '#6C757D' : '#1565C0'
+            }}>
+              {notification.read ? 'Đã đọc' : 'Chưa đọc'}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -454,8 +463,17 @@ export default function NotificationsScreen() {
               key={notification.id || `temp-${Date.now()}-${Math.random()}`}
             >
               {renderNotification({
-                item: notification,
-                index: notifications.indexOf(notification),
+                notification: notification,
+                onPress: () => handlePressNotification(notification),
+                isSelectionMode: isSelectionMode,
+                isSelected: selectedItems.includes(notification.id),
+                onSelect: () => {
+                  if (selectedItems.includes(notification.id)) {
+                    setSelectedItems(selectedItems.filter(id => id !== notification.id));
+                  } else {
+                    setSelectedItems([...selectedItems, notification.id]);
+                  }
+                },
               })}
             </View>
           ))
@@ -464,6 +482,84 @@ export default function NotificationsScreen() {
     </ScrollView>
   );
 }
+
+
+const enhancedStyles = StyleSheet.create({
+  notificationContent: {
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 16
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  metadata: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  typeTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  typeText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  time: {
+    fontSize: 12,
+    color: '#666',
+  },
+  message: {
+    fontSize: 15,
+    color: '#1A1A1A',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+  },
+  entityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  entityText: {
+    fontSize: 13,
+    color: '#666',
+    marginLeft: 4,
+  },
+  statusTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  }
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -545,7 +641,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#DC3545",
+    color: Colors.lightRed,
     marginBottom: 16,
     textAlign: "center",
   },
@@ -573,7 +669,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   deleteAction: {
-    backgroundColor: "#DC3545",
+    backgroundColor: Colors.lightRed,
     justifyContent: "center",
     alignItems: "center",
     width: 80,
@@ -616,7 +712,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   deleteSelectedButton: {
-    backgroundColor: "#DC3545",
+    backgroundColor: Colors.lightRed,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
