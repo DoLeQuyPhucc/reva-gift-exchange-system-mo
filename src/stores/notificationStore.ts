@@ -83,11 +83,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         console.log("Received notification:", notification);
         const parsedNotification = JSON.parse(notification);
         const notificationObj: NotificationData = {
-          title: parsedNotification.title || parsedNotification.Title,
-          type: parsedNotification.type || parsedNotification.Type,
-          message: parsedNotification.message || parsedNotification.Message,
-          entity: parsedNotification.entity || parsedNotification.Entity,
-          entityId: parsedNotification.id || parsedNotification.EntityId,
+          title: parsedNotification.title,
+          type: parsedNotification.type,
+          message: parsedNotification.message,
+          entity: parsedNotification.entity,
+          entityId: parsedNotification.entityId,
         };
 
         if (notificationObj.message === "Người nhận đã đến khu vực của bạn") {

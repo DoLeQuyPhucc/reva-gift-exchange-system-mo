@@ -113,6 +113,7 @@ const MyTransactions = () => {
   const fetchTransactions = async (page: number) => {
     try {
       let response;
+      console.log(requestId)
       if (requestId === "") {
         const result = await axiosInstance.get(
           `${API_GET_OWN_TRANSACTIONS}?pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
@@ -814,7 +815,7 @@ const MyTransactions = () => {
                   </Text>
                 )}
 
-                {!transaction.isValidTime && (
+                {transaction.isValidTime && (
                   <>
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (

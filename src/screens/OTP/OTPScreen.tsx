@@ -43,7 +43,8 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
         );
         if (resOTP.data.isSuccess) {
           console.log("OTP sent to", phoneNumber);
-          const arr = resOTP.data.data.split(" ");
+          const parseOTP = JSON.parse(resOTP.data.data);
+          const arr = parseOTP.message.split(" ");
           const otpArr = arr[arr.length - 1];
           console.log("OTP:", otpArr);
           setOtpResult(otpArr.toString());

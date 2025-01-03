@@ -228,9 +228,6 @@ export default function NotificationsScreen() {
       const diffInSeconds = Math.abs(
         Math.floor((now.getTime() - date.getTime()) / 1000)
       );
-      console.log(date, now);
-      console.log(date.getTime(), now.getTime());
-      console.log(diffInSeconds);
 
       if (diffInSeconds < 60) return "Vừa xong";
       if (diffInSeconds < 3600)
