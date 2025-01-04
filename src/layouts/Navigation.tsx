@@ -192,7 +192,7 @@ export default function Navigation() {
         <Stack.Screen
           name="ResultScanTransaction"
           component={ResultScanTransaction}
-          options={{ title: "Transaction Details", headerShown: true, headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{ title: "Kết quả quét QR", headerShown: true, headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
         />
         <Stack.Screen
           name="QRScanner"

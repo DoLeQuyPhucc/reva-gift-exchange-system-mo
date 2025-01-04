@@ -17,52 +17,62 @@ import { useNavigation } from "@/src/hooks/useNavigation";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import axiosInstance from "@/src/api/axiosInstance";
-import { User } from "@/src/shared/type";
-import { useAuthStore } from "@/src/stores/authStore";
-import { API_LOGIN } from "@env";
 import { useNotificationStore } from "@/src/stores/notificationStore";
+import { useProximityStore } from "@/src/stores/proximityStore";
 
 type OTPScreenProps = NativeStackScreenProps<RootStackParamList, "OTPScreen">;
 
 const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   const { phoneNumber } = route.params;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const { initializeConnection } = useNotificationStore();
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
-  const [otpResult, setOtpResult] = useState<string>("");
   const navigation = useNavigation();
+
+  const { OTP, setIsVerifyOTP } = useProximityStore();
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
-    const fetchOTP = async () => {
-      try {
-        const resOTP = await axiosInstance.post(
-          `user/send-otp?phoneNumber=${phoneNumber}&type=OTP`
-        );
-        if (resOTP.data.isSuccess) {
-          console.log("OTP sent to", phoneNumber);
-          const parseOTP = JSON.parse(resOTP.data.data);
-          const arr = parseOTP.message.split(" ");
-          const otpArr = arr[arr.length - 1];
-          console.log("OTP:", otpArr);
-          setOtpResult(otpArr.toString());
-        }
-      } catch (error: any) {
-        Alert.alert(
-          "Error",
-          error.response?.data?.message || "Failed to send OTP"
-        );
-      }
-    };
+    const timeout = setTimeout(() => {
+      sendOTP();
+    }, 3000);
+
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    fetchOTP();
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, []);
+
+  const sendOTP = async () => {
+    try {
+      await axiosInstance.post(
+        `user/send-otp?phoneNumber=${phoneNumber}&type=OTP`
+      );
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to send OTP"
+      );
+    }
+  };
+
+  const resendOTP = async () => {
+    if (timer > 0) return;
+    try {
+      sendOTP();
+      setTimer(60);
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to send OTP"
+      );
+    }
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
@@ -81,22 +91,6 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
     }
   };
 
-  const handleResendOTP = async () => {
-    if (timer > 0) return;
-
-    try {
-      // Add your resend OTP API call here
-      // await axiosInstance.post('/authentication/resend-otp', { phone: phoneNumber });
-      setTimer(60);
-      Alert.alert("Success", "OTP has been resent");
-    } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.response?.data?.message || "Failed to resend OTP"
-      );
-    }
-  };
-
   const verifyOTP = async () => {
     const otpString = otp.join("");
     if (otpString.length !== 6) {
@@ -106,7 +100,8 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
 
     setLoading(true);
     try {
-      if (otpString === otpResult) {
+      if (otpString === OTP) {
+        setIsVerifyOTP(true);
         navigation.navigate("Main", {
           screen: "Home",
         });
@@ -121,6 +116,16 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
       setLoading(false);
     }
   };
+
+  // const handleLogout = async () => {
+  //   try {
+  //     const logout = useAuthStore.getState().logout;
+  //     useNotificationStore.getState().setNotifications([]);
+  //     await logout();
+  //   } catch (error) {
+  //     console.error("Error clearing session:", error);
+  //   }
+  // };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -163,7 +168,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
             styles.resendButton,
             timer > 0 && styles.disabledResendButton,
           ]}
-          onPress={handleResendOTP}
+          onPress={resendOTP}
           disabled={timer > 0}
         >
           <Text style={styles.resendText}>

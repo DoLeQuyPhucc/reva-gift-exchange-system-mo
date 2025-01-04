@@ -20,14 +20,23 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuthStore } from "@/src/stores/authStore";
 import axiosInstance from "@/src/api/axiosInstance";
 import { User } from "@/src/shared/type";
+import { useProximityStore } from "@/src/stores/proximityStore";
+import { useNotificationStore } from "@/src/stores/notificationStore";
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
+  const { isVerifyOTP } = useProximityStore();
+
   useFocusEffect(
     React.useCallback(() => {
+      console.log("isVerifyOTP", isVerifyOTP);
+      if (!isVerifyOTP) {
+        handleLogout();
+      }
+
       const onBackPress = () => {
         return true;
       };
@@ -35,8 +44,18 @@ const LoginScreen: React.FC = () => {
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [])
+    }, [isVerifyOTP])
   );
+
+      const handleLogout = async () => {
+        try {
+          const logout = useAuthStore.getState().logout;
+          useNotificationStore.getState().setNotifications([]);
+          await logout();
+        } catch (error) {
+          console.error("Error clearing session:", error);
+        }
+      };
 
   const handleLogin = async () => {
     if (!phoneNumber) {

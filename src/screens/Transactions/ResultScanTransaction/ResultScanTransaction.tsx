@@ -20,6 +20,7 @@ import { useAuthCheck } from "@/src/hooks/useAuth";
 import axiosInstance from "@/src/api/axiosInstance";
 import { Alert } from "react-native";
 import { API_APPROVE_TRANSACTION, API_GET_OWN_TRANSACTIONS, API_REJECT_TRANSACTION } from "@env";
+import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
 
 type RootStackParamList = {
   ResultScanTransaction: { transactionResult: any };
@@ -32,6 +33,7 @@ type ResultScanTransactionRouteProp = RouteProp<
 
 export default function ResultScanTransaction() {
   const route = useRoute<ResultScanTransactionRouteProp>();
+  const { sendNotification } = useNotificationStore();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +140,24 @@ export default function ResultScanTransaction() {
     return `${formatTime(startTime)} - ${formatTime(
       endTime
     )} ${formatDate_DD_MM_YYYY(date.toISOString())}`;
+  };
+  
+  const handleVerification_v2 = async (transaction: Transaction) => {
+    const dataNoti: NotificationData = {
+      title: "Xác thực giao dịch",
+      message: "Giao dịch đã được xác thực",
+      entity: "Transaction",
+      entityId: transaction.requestId,
+      type: "success"
+    };
+
+    sendNotification(transaction.charitarian.id, dataNoti);
+
+    sendNotification(transaction.requester.id, dataNoti);
+
+    setShowConfirmModal(false);
+
+    navigation.navigate("MyTransactions", { requestId: transaction.requestId });
   };
 
   const handleVerification = async (transactionId: string) => {
@@ -317,20 +337,6 @@ export default function ResultScanTransaction() {
                 </View>
               </View>
 
-              {transaction.requestNote !== "" && (
-                <View style={styles.dateInfo}>
-                  <Text style={styles.dateLabel}>
-                    <Icon
-                      name="question-answer"
-                      size={12}
-                      color={Colors.orange500}
-                    />
-                    {"  "}
-                    Lời nhắn từ người cho: {transaction.requestNote}
-                  </Text>
-                </View>
-              )}
-
               {transaction.status === "In_Progress" &&
                 checkRole(transaction) === "charitarian" && (
                   <View style={styles.actionContainer}>
@@ -339,7 +345,7 @@ export default function ResultScanTransaction() {
                       onPress={() => setShowConfirmModal(true)}
                     >
                       <Text style={styles.verifyButtonText}>
-                        Xác thực giao dịch
+                        Xác nhận
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -347,7 +353,7 @@ export default function ResultScanTransaction() {
                       onPress={() => setShowInputRejectMessage(true)}
                     >
                       <Text style={styles.verifyButtonText}>
-                        Từ chối giao dịch
+                        Không phải giao dịch của tôi
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -370,7 +376,9 @@ export default function ResultScanTransaction() {
             >
               <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Xác nhận giao dịch</Text>
+                  <Text style={styles.modalTitle}>Xác thực giao dịch</Text>
+
+                  <Text>Đây có phải là giao dịch của bạn?</Text>
 
                   <View style={styles.modalButtonContainer}>
                     <View style={styles.topButtonRow}>
@@ -386,7 +394,7 @@ export default function ResultScanTransaction() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.modalButton, styles.verifyButton]}
-                        onPress={() => handleVerification(transaction.id)}
+                        onPress={() => handleVerification_v2(transaction)}
                       >
                         <Text style={styles.buttonText}>Xác nhận</Text>
                       </TouchableOpacity>
@@ -735,13 +743,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f00",
   },
   cancelButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    borderColor: Colors.orange500,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "center",
+    backgroundColor: "#666",
   },
   backButton: {
     padding: 12,

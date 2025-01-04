@@ -616,17 +616,9 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
       console.log("Submit response:", response);
 
-      // if (response === true) {
-      //   const data: NotificationData = {
-      //     title: "Đăng tin thành công",
-      //     type: "post_created",
-      //     message: "Bạn đã thêm một sản phẩm",
-      //     entity: "post",
-      //     entityId: "",
-      //   }
-      //   sendNotification(userData.userId as string, "post_created", "Bạn đã thêm một sản phẩm");
-      //   setShowSuccessAlert(true);
-      // }
+      navigation.navigate("Main", {
+        screen: "Home",
+      });
     } catch (error) {
       Alert.alert("Error", "Failed to create post");
       console.error("Submit error:", error);

@@ -97,6 +97,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
             .setTransactionId(notificationObj.entityId);
         }
 
+        if (notificationObj.message === "Giao dịch đã được xác thực") {
+          useProximityStore.getState().setIsVerifyTransaction(true);
+        }
+
+        if (notificationObj.title === "OTP") {
+          const arr = notificationObj.message.split(" ");
+          const otpArr = arr[arr.length - 1];
+          console.log("OTP:", otpArr);
+          useProximityStore.getState().setOTP(otpArr.toString());
+        }
+
         // Convert NotificationData to Notification
         const newNotification: Notification = {
           id: Math.random().toString(),

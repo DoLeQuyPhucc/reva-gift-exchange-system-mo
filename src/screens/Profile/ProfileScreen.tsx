@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { Avatar, Button, Card, Text, Title } from "react-native-paper";
+import { Avatar, Text } from "react-native-paper";
 import axiosInstance from "@/api/axiosInstance";
 import { useNavigation } from "@/hooks/useNavigation";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -18,6 +18,7 @@ import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import { useAuthStore } from "@/src/stores/authStore";
 import { useNotificationStore } from "@/src/stores/notificationStore";
 import { API_GET_PROFILE } from "@env";
+import { useProximityStore } from "@/src/stores/proximityStore";
 
 const userDataSelector = (state: ReturnType<typeof useAuthStore.getState>) =>
   state.userData;
@@ -29,6 +30,8 @@ const ProfileScreen = () => {
   const userData = useAuthStore(userDataSelector);
   const setUserData = useAuthStore(setUserDataSelector);
   const [loading, setLoading] = useState(false);
+  
+  const { isVerifyOTP, setIsVerifyOTP } = useProximityStore();
   const navigation = useNavigation();
 
   const fetchUserData = async () => {
@@ -57,6 +60,9 @@ const ProfileScreen = () => {
       const logout = useAuthStore.getState().logout;
       useNotificationStore.getState().setNotifications([]);
       await logout();
+      if (isVerifyOTP) {
+        setIsVerifyOTP(false);
+      }
       navigation.navigate("Main", {
         screen: "Home",
       });
