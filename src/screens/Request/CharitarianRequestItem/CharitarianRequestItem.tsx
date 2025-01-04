@@ -233,7 +233,7 @@ const CharitarianRequestItem = () => {
         {activeTab === "approved" && renderProducts(filteredProducts)}
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={Colors.orange500} />
+            <ActivityIndicator size="large" color={Colors.orange500} />
           </View>
         )}
       </ScrollView>

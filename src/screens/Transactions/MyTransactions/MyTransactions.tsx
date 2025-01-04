@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
@@ -91,6 +92,7 @@ const MyTransactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const isNearDestination = useProximityStore(
     (state) => state.isNearDestination
@@ -198,6 +200,9 @@ const MyTransactions = () => {
         console.log(transactionsList);
         setTransactions(transactionsList);
       }
+
+      
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
@@ -527,6 +532,14 @@ const MyTransactions = () => {
       console.error("Error fetching QR code:", error);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.orange500} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -1251,6 +1264,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
   resultCount: {
     color: "#666",

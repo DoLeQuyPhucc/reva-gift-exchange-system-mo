@@ -815,8 +815,8 @@ export default function MyRequestsScreen() {
         ListFooterComponent={() =>
           isLoading ? (
             <View style={styles.loadingMore}>
-              <ActivityIndicator size="small" color="#f97316" />
-            </View>
+      <ActivityIndicator size="large" color={Colors.orange500} />
+    </View>
           ) : null
         }
         style={styles.scrollView}

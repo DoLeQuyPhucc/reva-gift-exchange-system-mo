@@ -46,6 +46,7 @@ const MyProducts = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<{
@@ -146,6 +147,7 @@ const MyProducts = () => {
     if (isLoading || (totalPages !== 0 && page > totalPages)) return;
 
     setIsLoading(true);
+    setLoading(true);
     try {
       switch (activeTab) {
         case "approved":
@@ -162,8 +164,10 @@ const MyProducts = () => {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
+      setLoading(false);
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -359,6 +363,14 @@ const MyProducts = () => {
     ));
   };
 
+    if (loading) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.orange500} />
+        </View>
+      );
+    }
+
   return (
     <View style={styles.container}>
       <View style={styles.tabs}>
@@ -456,6 +468,12 @@ const MyProducts = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
   tabs: {
     flexDirection: "row",

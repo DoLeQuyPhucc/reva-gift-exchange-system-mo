@@ -375,7 +375,7 @@ export default function NotificationsScreen() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={Colors.orange500} />
       </View>
     );
   }
