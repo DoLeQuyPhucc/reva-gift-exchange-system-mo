@@ -19,24 +19,26 @@ import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import axiosInstance from "@/src/api/axiosInstance";
 import { useNotificationStore } from "@/src/stores/notificationStore";
 import { useProximityStore } from "@/src/stores/proximityStore";
+import { useAuthStore } from "@/src/stores/authStore";
 
 type OTPScreenProps = NativeStackScreenProps<RootStackParamList, "OTPScreen">;
 
 const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
-  const { phoneNumber } = route.params;
+  const { user, token, refreshToken } = route.params;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
   const navigation = useNavigation();
+
+  const { initializeConnectionForOTP, disconnectSignalR } =
+    useNotificationStore();
 
   const { OTP, setIsVerifyOTP } = useProximityStore();
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      sendOTP();
-    }, 3000);
+    initializeConnectionForOTP(user.id);
 
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
@@ -44,14 +46,14 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
 
     return () => {
       clearInterval(interval);
-      clearTimeout(timeout);
     };
   }, []);
 
   const sendOTP = async () => {
     try {
+      console.log("User: ", user.phone);
       await axiosInstance.post(
-        `user/send-otp?phoneNumber=${phoneNumber}&type=OTP`
+        `user/send-otp?phoneNumber=${user.phone}&type=OTP`
       );
     } catch (error: any) {
       Alert.alert(
@@ -101,6 +103,16 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
     setLoading(true);
     try {
       if (otpString === OTP) {
+        disconnectSignalR();
+        const login = useAuthStore.getState().login;
+        await login({
+          accessToken: token,
+          refreshToken: refreshToken,
+          email: user.email || "",
+          userId: user.id,
+          userRole: user.role,
+          user: user,
+        });
         setIsVerifyOTP(true);
         navigation.navigate("Main", {
           screen: "Home",
@@ -132,7 +144,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
       <View style={styles.content}>
         <Text style={styles.title}>Xác thực OTP</Text>
         <Text style={styles.subtitle}>
-          Vui lòng nhập mã OTP đã được gửi đến số điện thoại {phoneNumber}
+          Vui lòng nhập mã OTP đã được gửi đến số điện thoại {user.phone}
         </Text>
 
         <View style={styles.otpContainer}>

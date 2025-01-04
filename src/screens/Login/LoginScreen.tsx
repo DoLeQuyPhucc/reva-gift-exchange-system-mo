@@ -20,61 +20,63 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuthStore } from "@/src/stores/authStore";
 import axiosInstance from "@/src/api/axiosInstance";
 import { User } from "@/src/shared/type";
-import { useProximityStore } from "@/src/stores/proximityStore";
 import { useNotificationStore } from "@/src/stores/notificationStore";
+import { useProximityStore } from "@/src/stores/proximityStore";
 
 const LoginScreen: React.FC = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
+  const { disconnectSignalR } = useNotificationStore();
   const { isVerifyOTP } = useProximityStore();
 
   useFocusEffect(
     React.useCallback(() => {
-      console.log("isVerifyOTP", isVerifyOTP);
       if (!isVerifyOTP) {
-        handleLogout();
+        disconnectSignalR();
       }
-
       const onBackPress = () => {
         return true;
       };
 
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      BackHandler.addEventListener("hardwareBackPress", onBackPress);
 
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [isVerifyOTP])
+      return () =>
+        BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+    }, [])
   );
 
-      const handleLogout = async () => {
-        try {
-          const logout = useAuthStore.getState().logout;
-          useNotificationStore.getState().setNotifications([]);
-          await logout();
-        } catch (error) {
-          console.error("Error clearing session:", error);
-        }
-      };
+  const handleLogout = async () => {
+    try {
+      const logout = useAuthStore.getState().logout;
+      useNotificationStore.getState().setNotifications([]);
+      await logout();
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error clearing session:", error);
+    }
+  };
 
   const handleLogin = async () => {
     if (!phoneNumber) {
       Alert.alert("Error", "Please fill in your phone number");
       return;
     }
-  
+
     setLoading(true);
     try {
-      const response = await axiosInstance.post('/authentication/login', {
-        phone: phoneNumber
+      const response = await axiosInstance.post("/authentication/login", {
+        phone: phoneNumber,
       });
-  
+
       if (!response.data.isSuccess) {
         throw new Error(response.data.message);
       }
-  
-      const { token, refreshToken, userId, username, email, role, profileURL } = response.data.data;
-  
+
+      const { token, refreshToken, userId, username, email, role, profileURL } =
+        response.data.data;
+
       const user: User = {
         id: userId,
         username,
@@ -88,48 +90,40 @@ const LoginScreen: React.FC = () => {
           address: "",
           addressCoordinates: {
             latitude: "",
-            longitude: ""
+            longitude: "",
           },
-          isDefault: false
+          isDefault: false,
         },
         dob: null,
-        gender: null
+        gender: null,
       };
-  
-      const login = useAuthStore.getState().login;
-      await login({
-        accessToken: token,
-        refreshToken: refreshToken,
-        email: email || "",
-        userId: userId,
-        userRole: role,
-        user: user
-      });
-  
+
       // Chỉ navigate khi toàn bộ xử lý thành công
-      navigation.navigate("OTPScreen", { phoneNumber });
+      navigation.navigate("OTPScreen", { user, token, refreshToken });
     } catch (error: any) {
-      Alert.alert("Login Error", error.response?.data?.message || "Something went wrong");
+      Alert.alert(
+        "Login Error",
+        error.response?.data?.message || "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   };
-  
 
   const handleGoBack = () => {
     try {
-      navigation.goBack();
+      handleLogout();
     } catch (error) {
-      console.error('Navigation error:', error);
+      console.error("Navigation error:", error);
     }
   };
 
   return (
     <SafeAreaView>
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={handleGoBack}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: Spacing * 2,
           top: Spacing * 6,
           zIndex: 1,
@@ -145,8 +139,8 @@ const LoginScreen: React.FC = () => {
           </Text>
         </View>
         <View style={{ marginVertical: Spacing * 3 }}>
-          <AppTextInput 
-            placeholder="Số điện thoại" 
+          <AppTextInput
+            placeholder="Số điện thoại"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             autoCapitalize="none"
@@ -166,20 +160,35 @@ const LoginScreen: React.FC = () => {
             <Text style={styles.signInText}>Đăng nhập</Text>
           )}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")} style={{ padding: Spacing }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("RegisterScreen")}
+          style={{ padding: Spacing }}
+        >
           <Text style={styles.createAccountText}>Tạo tài khoản mới</Text>
         </TouchableOpacity>
         <View style={{ marginVertical: Spacing * 3 }}>
           <Text style={styles.orContinueText}>Bạn có thể bắt đầu với</Text>
           <View style={styles.socialIconsContainer}>
             <TouchableOpacity style={styles.socialIcon}>
-              <Ionicons name="logo-google" color={Colors.text} size={Spacing * 2} />
+              <Ionicons
+                name="logo-google"
+                color={Colors.text}
+                size={Spacing * 2}
+              />
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialIcon}>
-              <Ionicons name="logo-apple" color={Colors.text} size={Spacing * 2} />
+              <Ionicons
+                name="logo-apple"
+                color={Colors.text}
+                size={Spacing * 2}
+              />
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialIcon}>
-              <Ionicons name="logo-facebook" color={Colors.text} size={Spacing * 2} />
+              <Ionicons
+                name="logo-facebook"
+                color={Colors.text}
+                size={Spacing * 2}
+              />
             </TouchableOpacity>
           </View>
         </View>

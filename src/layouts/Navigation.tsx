@@ -40,6 +40,7 @@ import CharitarianRequestItem from "../screens/Request/CharitarianRequestItem/Ch
 import PreviewPostScreen from "../screens/PreviewPost/PreviewPostScreen";
 import { ButtonMoreActionHeader } from "../components/ButtonMoreActionHeader";
 import { setNavigationRef } from "../stores/notificationStore";
+import RequestDetail from "../screens/Request/RequestDetail/RequestDetail";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -198,6 +199,11 @@ export default function Navigation() {
           name="QRScanner"
           component={QRScanner}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RequestDetail"
+          component={RequestDetail}
+          options={{ headerShown: true, title: "Chi tiết yêu cầu", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
         />
         <Stack.Screen
           name="CharitarianRequestItem"

@@ -69,7 +69,7 @@ export default function MyRequestsScreen() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectMessage, setRejectMessage] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -286,7 +286,7 @@ export default function MyRequestsScreen() {
         sendNotification(request.charitarian.id, dataSuccessCharitarian);
       }
       fetchRequests(1);
-      setShowTimeModal(false);
+      setShowApproveModal(false);
       setSelectedRequest(null);
       setSelectedTime(null);
       setApproveMessage("");
@@ -525,16 +525,28 @@ export default function MyRequestsScreen() {
                     onPress={() => handleShowInfoUser(request.requester.id)}
                     style={styles.userInfo}
                   >
-                    <Text style={styles.userName}>
-                      {request.requester.name}
-                    </Text>
+                    <View>
+                      <Text style={styles.listItemName}>
+                        {request.requester.name}
+                      </Text>
+                <Text style={styles.listItemTime}>
+                  {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
+                </Text>
+
+                    </View>
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
                     onPress={() => handleShowInfoUser(request.requester.id)}
                     style={styles.userInfo}
                   >
-                    <Text style={styles.userName}>Tôi</Text>
+                    <View>
+                <Text style={styles.listItemName}>Tôi</Text>
+                <Text style={styles.listItemTime}>
+                  {formatDate_HHmm_DD_MM_YYYY(request.createdAt)}
+                </Text>
+
+                    </View>
                   </TouchableOpacity>
                 )}
 
@@ -818,7 +830,8 @@ export default function MyRequestsScreen() {
           setSelectedRequest(null);
         }}
         onApprove={(request) => {
-          setShowTimeModal(true);
+          setSelectedRequest(request);
+          setShowApproveModal(true);
           setShowDetailModal(false);
           setSelectedTime(request.appointmentDate[0]);
         }}
@@ -830,7 +843,7 @@ export default function MyRequestsScreen() {
         isShowActions={isShowActions}
       />
 
-      <Modal visible={showTimeModal} transparent animationType="slide">
+      <Modal visible={showApproveModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={[styles.modalTitle, styles.textCenter]}>
@@ -870,7 +883,7 @@ export default function MyRequestsScreen() {
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
-                  setShowTimeModal(false);
+                  setShowApproveModal(false);
                   setSelectedRequest(null);
                   setSelectedTime(null);
                   setApproveMessage("");

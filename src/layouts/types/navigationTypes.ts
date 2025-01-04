@@ -1,5 +1,5 @@
 import { DayTimeFrame } from "@/src/screens/CreatePost/CreatePostScreen";
-import { Category, Product, SubCategory } from "@/src/shared/type";
+import { Category, Product, SubCategory, User } from "@/src/shared/type";
 import { SearchMode } from "@/src/utils/search";
 
 export type RootStackParamList = {
@@ -42,6 +42,7 @@ export type RootStackParamList = {
     searchMode: SearchMode;
   };
   MyRequests: { productId: string; type: string };
+  RequestDetail: { requestId: string };
   RequestsForMe: { productId: string };
   RequestSubAction: undefined;
   MyTransactions: { requestId: string };
@@ -49,7 +50,9 @@ export type RootStackParamList = {
   PackageScreen: undefined;
   MyPackageScreen: undefined;
   OTPScreen: {
-    phoneNumber: string;
+    user: User;
+    token: string;
+    refreshToken: string;
   };
   QRScanner: undefined;
   ResultScanTransaction: { transactionResult: any };

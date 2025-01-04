@@ -10,6 +10,7 @@ import {
   Animated,
   Dimensions,
   Alert,
+  Image,
 } from "react-native";
 import { BottomTabParamList } from "@/src/layouts/types/navigationTypes";
 import Colors from "@/constants/Colors";
@@ -19,6 +20,7 @@ import { useNavigation } from "@/hooks/useNavigation";
 import useCategories from "@/hooks/useCategories";
 import { useAuthStore } from "@/src/stores/authStore";
 import { useNotificationStore } from "../stores/notificationStore";
+import { useProximityStore } from "../stores/proximityStore";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -35,6 +37,8 @@ export interface TabBarProps {
 
 const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { userData } = useAuthStore();
+  const { isVerifyOTP } = useProximityStore();
   const userEmail = useAuthStore((state) => state.email);
   const { categories, subCategories, getSubCategories, isLoading } =
     useCategories();
@@ -52,7 +56,7 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && isVerifyOTP) {
       fetchInitialNotifications(1, 10);
     }
   }, [isAuthenticated]);
@@ -254,13 +258,25 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
             component={tabProps.component}
             options={{
               tabBarLabel: tabProps.tabBarLabel,
-              tabBarIcon: ({ color, size }) => (
-                <Icon
-                  name={tabProps.tabBarIconProps.iconName}
-                  color={color}
-                  size={20}
-                />
-              ),
+              tabBarIcon: ({ color, size }) => 
+                tabProps.route === "Profile" && isAuthenticated && isVerifyOTP ? (
+                  <Image
+                    source={{
+                      uri: userData?.profilePicture,
+                    }}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                    }}
+                  />
+                ) : (
+                  <Icon
+                    name={tabProps.tabBarIconProps.iconName}
+                    color={color}
+                    size={20}
+                  />
+                ),
               tabBarBadge:
                 tabProps.route === "Notifications" && unreadCount > 0
                   ? unreadCount

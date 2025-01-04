@@ -43,6 +43,7 @@ interface NotificationState {
   connection: HubConnection | null;
   notifications: Notification[];
   initializeConnection: () => Promise<void>;
+  initializeConnectionForOTP: (userId: string) => Promise<void>;
   disconnectSignalR: () => Promise<void>;
   setNotifications: (notifications: Notification[]) => void;
   addNotification: (notification: Notification) => void;
@@ -110,7 +111,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
         // Convert NotificationData to Notification
         const newNotification: Notification = {
-          id: Math.random().toString(),
+          id: parsedNotification.notificationId,
           type: notificationObj.type,
           data: JSON.stringify(notificationObj),
           read: false,
@@ -118,7 +119,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           status: "Active",
         };
 
-        get().addNotification(newNotification);
+        if (notificationObj.title !== "OTP") {
+          get().addNotification(newNotification);
+        }
         Toast.show({
           type: notificationObj.type.toLowerCase(),
           text1: `Thông báo ${notificationObj.title}`,
@@ -133,7 +136,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
                 });
                 break;
               case "Request":
-                console.log("Navigate to request detail");
+                navigationRef.navigate("RequestDetail", {
+                  requestId: notificationObj.entityId,
+                });
                 break;
               case "Transaction":
                 navigationRef.navigate("MyTransactions", {
@@ -143,6 +148,47 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
             }
           },
         });
+      });
+      set({ connection: newConnection });
+    } catch (error) {
+      console.error("SignalR Connection Error:", error);
+    }
+  },
+  initializeConnectionForOTP: async (userId: string) => {
+    if (!userId) return;
+    const newConnection = new HubConnectionBuilder()
+      .withUrl(`${API_SIGNALR_URL}`, {
+        accessTokenFactory: () => useAuthStore.getState().accessToken || "",
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+      .build();
+    try {
+      await newConnection.start();
+      console.log("SignalR Connection Established");
+      await newConnection.invoke("JoinNotificationGroup", userId);
+
+      newConnection.on("ReceiveNotification", (notification: string) => {
+        console.log("Received notification OTP:", notification);
+        const parsedNotification = JSON.parse(notification);
+        const notificationObj: NotificationData = {
+          title: parsedNotification.title,
+          type: parsedNotification.type,
+          message: parsedNotification.message,
+          entity: parsedNotification.entity,
+          entityId: parsedNotification.entityId,
+        };
+
+        if (notificationObj.title === "OTP") {
+          const arr = notificationObj.message.split(" ");
+          const otpArr = arr[arr.length - 1];
+          console.log("OTP:", otpArr);
+          useProximityStore.getState().setOTP(otpArr.toString());
+          Toast.show({
+            type: notificationObj.type.toLowerCase(),
+            text1: `Thông báo ${notificationObj.title}`,
+            text2: notificationObj.message,
+          });
+        }
       });
       set({ connection: newConnection });
     } catch (error) {

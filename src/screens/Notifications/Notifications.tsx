@@ -251,6 +251,7 @@ export default function NotificationsScreen() {
   };
 
   const handlePressNotification = async (notification: Notification) => {
+    console.log("noti", notification)
     if (!notification.read && notification.id) {
       markAsRead(notification.id);
     }
@@ -259,11 +260,11 @@ export default function NotificationsScreen() {
       try {
         const parsedNotification = JSON.parse(notification.data);
         const notificationObj: NotificationData = {
-          title: parsedNotification.title || parsedNotification.Title,
-          type: parsedNotification.type || parsedNotification.Type,
-          message: parsedNotification.message || parsedNotification.Message,
-          entity: parsedNotification.entity || parsedNotification.Entity,
-          entityId: parsedNotification.id || parsedNotification.EntityId,
+          title: parsedNotification.title,
+          type: parsedNotification.type,
+          message: parsedNotification.message,
+          entity: parsedNotification.entity,
+          entityId: parsedNotification.entityId,
         };
 
         switch (notificationObj.entity) {
@@ -273,7 +274,9 @@ export default function NotificationsScreen() {
             });
             break;
           case "Request":
-            console.log("Navigate to request detail");
+            navigation.navigate("RequestDetail", {
+              requestId: notificationObj.entityId,
+            });
             break;
           case "Transaction":
             navigation.navigate("MyTransactions", {

@@ -19,6 +19,7 @@ import { useAuthStore } from "@/src/stores/authStore";
 import { useNotificationStore } from "@/src/stores/notificationStore";
 import { API_GET_PROFILE } from "@env";
 import { useProximityStore } from "@/src/stores/proximityStore";
+import { useFocusEffect } from "@react-navigation/native";
 
 const userDataSelector = (state: ReturnType<typeof useAuthStore.getState>) =>
   state.userData;
@@ -30,12 +31,12 @@ const ProfileScreen = () => {
   const userData = useAuthStore(userDataSelector);
   const setUserData = useAuthStore(setUserDataSelector);
   const [loading, setLoading] = useState(false);
-  
+
   const { isVerifyOTP, setIsVerifyOTP } = useProximityStore();
   const navigation = useNavigation();
 
   const fetchUserData = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isVerifyOTP) {
       setUserData(null);
       return;
     }
@@ -55,11 +56,19 @@ const ProfileScreen = () => {
     fetchUserData();
   }, [isAuthenticated]);
 
-  const handleLogout = async () => {
+  const logoutFunc = async () => {
     try {
       const logout = useAuthStore.getState().logout;
       useNotificationStore.getState().setNotifications([]);
       await logout();
+    } catch (error) {
+      console.error("Error clearing session:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      logoutFunc();
       if (isVerifyOTP) {
         setIsVerifyOTP(false);
       }
