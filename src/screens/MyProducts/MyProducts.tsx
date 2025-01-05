@@ -326,6 +326,7 @@ const MyProducts = () => {
                   type: "itemRequestTo",
                 })
               }
+              disabled={item.itemRequestTo === 0}
             >
               <Text style={styles.requestLabel}>Yêu cầu đã gửi</Text>
               <View style={styles.requestInfo}>
@@ -347,6 +348,7 @@ const MyProducts = () => {
                   type: "requestsForMe",
                 })
               }
+              disabled={item.requestForItem === 0}
             >
               <Text style={styles.requestLabel}>Yêu cầu nhận được</Text>
               <View style={styles.requestInfo}>

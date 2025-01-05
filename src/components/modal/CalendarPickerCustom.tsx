@@ -15,6 +15,7 @@ interface CalendarPickerCustomProps {
   allowedDays: string;
   timeRanges?: DayTimeRange[];
   onClose: () => void;
+  onConfirm: () => void;
 }
 
 export const convertDayOfWeek = (allowedDays: string): string => {
@@ -54,6 +55,7 @@ const CalendarPickerCustom: React.FC<CalendarPickerCustomProps> = ({
   allowedDays,
   timeRanges,
   onClose,
+  onConfirm,
 }) => {
   const dayMap: { [key: string]: number } = {
     sun: 0,
@@ -163,7 +165,7 @@ const CalendarPickerCustom: React.FC<CalendarPickerCustomProps> = ({
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.confirmButton}
-              onPress={() => onClose()}
+              onPress={() => onConfirm()}
             >
               <Text style={styles.confirmButtonText}>OK</Text>
             </TouchableOpacity>

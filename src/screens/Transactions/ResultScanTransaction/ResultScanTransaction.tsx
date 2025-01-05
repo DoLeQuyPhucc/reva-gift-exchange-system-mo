@@ -279,7 +279,7 @@ export default function ResultScanTransaction() {
                   </View>
 
                   <View style={styles.exchangeContainer}>
-                    <Icon name="swap-vert" size={24} color={Colors.orange500} />
+                    <Icon name="swap-horiz" size={24} color={Colors.orange500} />
                   </View>
 
                   {/* Recipient's Product */}

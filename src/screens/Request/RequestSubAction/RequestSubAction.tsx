@@ -90,7 +90,7 @@ const RequestSubActionScreen = () => {
             >
               <View style={styles.menuItemContent}>
                 <View style={styles.menuItemIcon}>
-                  <Icon name={item.icon} size={24} color={Colors.orange500} />
+                  <Icon name={item.icon} size={20} color={Colors.orange500} />
                 </View>
                 <View style={styles.menuItemText}>
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   menuItemIcon: {
     backgroundColor: Colors.orange50,
-    padding: 12,
+    padding: 10,
     borderRadius: 12,
     marginRight: 16,
   },
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#1a1a1a",
     marginBottom: 4,

@@ -271,7 +271,6 @@ const RequestDetail: React.FC = () => {
         <View style={styles.modalView}>
           <ScrollView style={styles.modalScrollView}>
             <View style={styles.modalHeader}>
-              <View></View>
               <Text style={styles.modalTitle}>
                 {isExchangeRequest
                   ? "Chi tiết trao đổi sản phẩm"
@@ -1159,7 +1158,7 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingVertical: 12,
   },
   listItemType: {

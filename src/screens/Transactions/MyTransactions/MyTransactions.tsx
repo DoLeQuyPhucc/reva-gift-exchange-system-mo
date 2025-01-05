@@ -622,7 +622,7 @@ const MyTransactions = () => {
 
                     <View style={styles.exchangeContainerList}>
                       <Icon
-                        name="swap-vert"
+                        name="swap-horiz"
                         size={24}
                         color={Colors.orange500}
                       />
@@ -736,7 +736,7 @@ const MyTransactions = () => {
 
                     <View style={styles.exchangeContainer}>
                       <Icon
-                        name="swap-vert"
+                        name="swap-horiz"
                         size={24}
                         color={Colors.orange500}
                       />

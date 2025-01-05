@@ -16,8 +16,8 @@ export function ButtonMoreActionHeader({
 
   const menuOptions: Array<{ label: string; value: keyof BottomTabParamList }> =
     [
-      { label: "Home", value: "Home" },
-      { label: "Profile", value: "Profile" },
+      { label: "Trang chủ", value: "Home" },
+      { label: "Cá nhân", value: "Profile" },
     ];
 
   const handleOptionSelect = (screen: keyof BottomTabParamList) => {

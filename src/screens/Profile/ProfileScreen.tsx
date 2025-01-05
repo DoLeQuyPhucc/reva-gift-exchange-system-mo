@@ -225,10 +225,24 @@ const ProfileScreen = () => {
                   <Text style={styles.contactText}>{userData.email}</Text>
                 </View>
               )}
+              {userData?.point && (
+                <View style={styles.contactRow}>
+                  <Icon name="leaf-outline" size={16} color={getPointColor(userData?.point || 0)} />
+                  
+                <Text
+                  style={[
+                    styles.contactText,
+                    { color: getPointColor(userData?.point || 0) },
+                  ]}
+                >
+                  {userData?.point || 0} Điểm
+                </Text>
+                </View>
+              )}
             </View>
           </View>
 
-          {isAuthenticated && (
+          {/* {isAuthenticated && (
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Text
@@ -250,7 +264,7 @@ const ProfileScreen = () => {
                 <Text style={styles.statLabel}>Năm tham gia</Text>
               </View>
             </View>
-          )}
+          )} */}
         </View>
 
         {/* Menu Section */}
@@ -263,7 +277,7 @@ const ProfileScreen = () => {
             >
               <View style={styles.menuItemContent}>
                 <View style={styles.menuItemIcon}>
-                  <Icon name={item.icon} size={24} color={Colors.orange500} />
+                  <Icon name={item.icon} size={20} color={Colors.orange500} />
                 </View>
                 <View style={styles.menuItemText}>
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
@@ -291,7 +305,7 @@ const ProfileScreen = () => {
               >
                 <Icon
                   name="pencil-outline"
-                  size={20}
+                  size={14}
                   color="#fff"
                   style={styles.buttonIcon}
                 />
@@ -304,7 +318,7 @@ const ProfileScreen = () => {
               >
                 <Icon
                   name="log-out-outline"
-                  size={20}
+                  size={14}
                   color={Colors.orange500}
                   style={styles.buttonIcon}
                 />
@@ -360,7 +374,7 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     flexDirection: "row",
-    marginBottom: 24,
+    // marginBottom: 24,
   },
   avatarContainer: {
     position: "relative",
@@ -372,7 +386,7 @@ const styles = StyleSheet.create({
   },
   editAvatarButton: {
     position: "absolute",
-    bottom: 0,
+    bottom: 10,
     right: 0,
     backgroundColor: "#fff",
     padding: 8,
@@ -391,12 +405,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: "#1a1a1a",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginBottom: 4,
   },
   contactText: {
     marginLeft: 8,
@@ -436,7 +450,8 @@ const styles = StyleSheet.create({
   menuItem: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -449,7 +464,7 @@ const styles = StyleSheet.create({
   },
   menuItemIcon: {
     backgroundColor: Colors.orange50,
-    padding: 12,
+    padding: 10,
     borderRadius: 12,
     marginRight: 16,
   },
@@ -457,13 +472,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
     color: "#1a1a1a",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   menuItemDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.gray600,
   },
   actionButtons: {
@@ -476,14 +491,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 12,
     borderRadius: 12,
-    marginVertical: 6,
+    marginVertical: 4,
   },
   buttonIcon: {
     marginRight: 8,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   editButton: {

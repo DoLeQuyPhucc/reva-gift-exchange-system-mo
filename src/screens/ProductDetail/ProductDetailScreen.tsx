@@ -1051,8 +1051,8 @@ export default function ProductDetailScreen() {
           <View style={[styles.badge, { backgroundColor: Colors.orange500 }]}>
             <Text style={styles.badgeText}>{product.category.name}</Text>
           </View>
-          <View style={[styles.badge, { backgroundColor: Colors.lightGreen }]}>
-            <Text style={styles.badgeText}>{product.condition}</Text>
+          <View style={[styles.badge, { backgroundColor: "#fff", borderColor: Colors.orange500, borderWidth: 1}]}>
+            <Text style={[styles.badgeText, {color: Colors.orange500 }]}>{product.condition === "Used" ? "Đã sử dụng" : "Mới"}</Text>
           </View>
           {(() => {
             switch (product.status) {
@@ -1127,25 +1127,25 @@ export default function ProductDetailScreen() {
 
         <View style={styles.detailsContainer}>
           <View style={styles.detailItem}>
-            <Icon name="calendar-month" size={20} />
+            <Icon name="calendar-month" size={16} />
             <Text style={styles.detailText}>
               Ngày đăng: {formatDate(product.createdAt)}
             </Text>
           </View>
-          <View style={styles.detailItem}>
-            <Icon name="now-widgets" size={20} />
+          {/* <View style={styles.detailItem}>
+            <Icon name="now-widgets" size={16} />
             <Text style={styles.detailText}>Số lượng: {product.quantity}</Text>
-          </View>
+          </View> */}
           <View style={styles.detailItem}>
-            <Icon name="loop" size={20} />
+            <Icon name="loop" size={16} />
             <Text style={styles.detailText}>
-              Tình trạng: {product.condition}
+              Tình trạng: {product.condition === "Used" ? "Đã sử dụng" : "Mới"}
             </Text>
           </View>
           {/* Hiển thị khung giờ */}
           <View style={styles.timeRangeContainer}>
             <View style={styles.detailItemSub}>
-              <Icon name="access-time" size={20} />
+              <Icon name="access-time" size={14} />
               <Text style={styles.detailText}>Khung giờ:</Text>
             </View>
             {timeRanges.length > 0 ? (
@@ -1156,7 +1156,7 @@ export default function ProductDetailScreen() {
           </View>
           {product.isGift === false && product.desiredCategory !== null && (
             <View style={styles.detailItem}>
-              <Icon name="compare-arrows" size={20} />
+              <Icon name="compare-arrows" size={16} />
               <Text style={styles.detailText}>
                 Mong muốn trao đổi với: {product.desiredCategory?.name}
               </Text>
@@ -1164,7 +1164,7 @@ export default function ProductDetailScreen() {
           )}
           {product.isGift && (
             <View style={styles.detailItem}>
-              <Icon name="card-giftcard" size={20} color={Colors.orange500} />
+              <Icon name="card-giftcard" size={16} color={Colors.orange500} />
               <Text style={[styles.detailText, styles.giftText]}>
                 Sản phẩm này là quà tặng
               </Text>
@@ -1459,7 +1459,8 @@ export default function ProductDetailScreen() {
                         setDate={setSelectedDate}
                         allowedDays={daysOnly}
                         timeRanges={timeRanges}
-                        onClose={() => setShowDatePicker(false)}
+                        onClose={() => {setShowDatePicker(false)}}
+                        onConfirm={() => {setShowDatePicker(false); setShowHourModal(true)}}
                       />
                       {/* {showDatePicker && (
                         <DateTimePickerCustom
@@ -1478,7 +1479,7 @@ export default function ProductDetailScreen() {
                             style={styles.timeInput}
                             onPress={() => setShowHourModal(true)}
                           >
-                            <Text style={styles.timeInputText}>
+                            <Text style={[styles.timeInputText, { color: selectedHour === null ? "#c4c4c4" : "#000" }]}>
                               {selectedHour !== null
                                 ? selectedHour.toString().padStart(2, "0")
                                 : "Giờ"}
@@ -1497,8 +1498,8 @@ export default function ProductDetailScreen() {
                               setShowMinuteModal(true);
                             }}
                           >
-                            <Text style={styles.timeInputText}>
-                              {selectedMinute !== null
+                          <Text style={[styles.timeInputText, { color: selectedHour === null ? "#c4c4c4" : "#000" }]}>
+                            {selectedMinute !== null
                                 ? selectedMinute.toString().padStart(2, "0")
                                 : "Phút"}
                             </Text>
@@ -1654,6 +1655,7 @@ const styles = StyleSheet.create({
     color: Colors.orange500,
     fontWeight: "bold",
     marginBottom: 16,
+    textAlign: "center",
   },
   description: {
     fontSize: 16,
@@ -1666,7 +1668,7 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
     marginBottom: 12,
     padding: 12,
     backgroundColor: "#f8f8f8",
@@ -1675,13 +1677,14 @@ const styles = StyleSheet.create({
   detailItemSub: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 12,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 4,
     backgroundColor: "#f8f8f8",
     borderRadius: 8,
   },
   detailText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
   },
   giftText: {
@@ -1760,7 +1763,7 @@ const styles = StyleSheet.create({
     color: Colors.orange600,
   },
   modalDescription: {
-    fontSize: 16,
+    fontSize: 14,
     marginTop: 16,
     marginBottom: 8,
     fontWeight: "bold",
@@ -1791,7 +1794,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     width: "48%",
-    backgroundColor: "#e53e3e",
+    backgroundColor: Colors.lightRed,
   },
   confirmButton: {
     width: "48%",
@@ -1834,7 +1837,7 @@ const styles = StyleSheet.create({
   },
   datePickerButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14,
     textAlign: "center",
   },
   timeGrid: {
@@ -2099,14 +2102,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   timeInputText: {
-    color: "#777",
+    color: "#000",
     textAlign: "center",
   },
   timeRangeText: {
     // marginTop: 8,
-    marginBottom: 8,
+    // marginBottom: 8,
     color: Colors.orange500,
     fontSize: 14,
+    fontWeight: "bold",
   },
   busyTimeText: {
     color: "#e53e3e",
@@ -2118,18 +2122,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: "#f8f8f8",
     borderRadius: 8,
+    paddingVertical: 8,
   },
   timeRangeLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
     paddingLeft: 12,
-    paddingTop: 12,
+    marginBottom: 4,
   },
   timeRangeInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 12,
+    paddingHorizontal: 12,
   },
   selectedDateText: {
     fontSize: 14,
