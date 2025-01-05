@@ -472,8 +472,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "600",
     color: "#1a1a1a",
     marginBottom: 2,
   },
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
   },
   editButton: {
