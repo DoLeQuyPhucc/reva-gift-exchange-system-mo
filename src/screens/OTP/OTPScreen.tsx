@@ -40,12 +40,17 @@ const OTPScreen: React.FC<OTPScreenProps> = ({ route }) => {
   useEffect(() => {
     initializeConnectionForOTP(user.id);
 
+    const timeout = setTimeout(() => {
+      sendOTP();
+    }, 3000);
+
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => {
       clearInterval(interval);
+      clearTimeout(timeout);
     };
   }, []);
 
