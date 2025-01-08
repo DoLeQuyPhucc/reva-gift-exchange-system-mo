@@ -28,6 +28,9 @@ interface MapModalProps {
 }
 
 const GOONG_ACCESS_TOKEN = API_TOKEN_GOONG;
+const DISTANCE_THRESHOLD = 50;
+const MIN_TIME_BETWEEN_CALLS = 10000;
+const MIN_DISTANCE_CHANGE = 5;
 
 const calculateProgressAlongRoute = (
   currentPoint: number[],
@@ -96,30 +99,56 @@ export default function MapModal({
   const hasAlertedRef = useRef(false);
   const transactionIdRef = useRef<string | null>(null);
   const hasLoggedPositions = useRef(false);
+  const lastApiCallTime = useRef<number>(0);
+  const lastKnownDistance = useRef<number | null>(null);
+  const isCallingApi = useRef<boolean>(false);
+  const apiCallQueue = useRef<(() => Promise<void>)[]>([]);
   const [routeProgress, setRouteProgress] = useState(0);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
   const [traveledDistance, setTraveledDistance] = useState(0);
 
-  const findClosestPointIndex = (
-    currentPoint: any,
-    routePoints: number[][]
-  ) => {
-    let minDistance = Infinity;
-    let closestIndex = 0;
+  // Thêm hàm debounce để kiểm soát API calls
+  const shouldMakeApiCall = (currentDistance: number): boolean => {
+    const now = Date.now();
 
-    routePoints.forEach((point: number[], index: number) => {
-      const distance = Math.sqrt(
-        Math.pow(currentPoint.coords.longitude - point[0], 2) +
-          Math.pow(currentPoint.coords.latitude - point[1], 2)
+    // Kiểm tra thời gian giữa các lần gọi
+    if (now - lastApiCallTime.current < MIN_TIME_BETWEEN_CALLS) {
+      return false;
+    }
+
+    // Kiểm tra sự thay đổi khoảng cách có đáng kể
+    if (lastKnownDistance.current !== null) {
+      const distanceChange = Math.abs(
+        currentDistance - lastKnownDistance.current
       );
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestIndex = index;
+      if (distanceChange < MIN_DISTANCE_CHANGE) {
+        return false;
       }
-    });
+    }
 
-    return closestIndex;
+    return true;
+  };
+
+  // Hàm xử lý API call với queue
+  const processApiCallQueue = async () => {
+    if (isCallingApi.current || apiCallQueue.current.length === 0) {
+      return;
+    }
+
+    isCallingApi.current = true;
+    try {
+      const nextApiCall = apiCallQueue.current.shift();
+      if (nextApiCall) {
+        await nextApiCall();
+      }
+    } finally {
+      isCallingApi.current = false;
+      // Kiểm tra queue tiếp theo
+      if (apiCallQueue.current.length > 0) {
+        setTimeout(processApiCallQueue, MIN_TIME_BETWEEN_CALLS);
+      }
+    }
   };
 
   useEffect(() => {
@@ -143,7 +172,7 @@ export default function MapModal({
         {
           accuracy: Location.Accuracy.BestForNavigation,
           timeInterval: 1000,
-          distanceInterval: 1,
+          distanceInterval: MIN_DISTANCE_CHANGE, // Chỉ update khi di chuyển ít nhất 5m
         },
         async (newLocation) => {
           setCurrentLocation(newLocation);
@@ -155,72 +184,55 @@ export default function MapModal({
             destinationLocation.longitude
           );
 
-          // Always update proximity state
-          const isNear = distance <= 50;
+          const isNear = distance <= DISTANCE_THRESHOLD;
           useProximityStore.getState().setIsNearDestination(isNear);
 
-          // Log positions only once when getting near
-          if (distance <= 50 && !hasLoggedPositions.current) {
-            console.log("=== ENTERED 50m CONDITION ===");
-            console.log("Current Position:", {
-              latitude: newLocation.coords.latitude,
-              longitude: newLocation.coords.longitude,
-            });
-            console.log("Destination Position:", destinationLocation);
+          // Kiểm tra điều kiện gọi API
+          if (
+            isNear &&
+            !hasLoggedPositions.current &&
+            shouldMakeApiCall(distance)
+          ) {
+            const apiCall = async () => {
+              try {
+                console.log("=== ENTERED 50m CONDITION ===");
+                const currentTransactionId =
+                  useProximityStore.getState().transactionId;
 
-            try {
-              console.log("Preparing for API call...");
-              // Get fresh transaction ID from store
-              const currentTransactionId =
-                useProximityStore.getState().transactionId;
-              console.log("Current transaction ID:", currentTransactionId);
+                if (!currentTransactionId) {
+                  console.error("Transaction ID is missing");
+                  return;
+                }
 
-              if (!currentTransactionId) {
-                console.error("Transaction ID is missing");
-                Alert.alert("Lỗi", "Không tìm thấy mã giao dịch");
-                return;
+                const response = await axiosInstance.get(
+                  `${API_VALIDATE_DISTANCE}?transactionId=${currentTransactionId}&latitude=${destinationLocation.latitude}&longitude=${destinationLocation.longitude}`
+                );
+
+                console.log("API call successful:", response.data);
+                hasLoggedPositions.current = true;
+                lastApiCallTime.current = Date.now();
+                lastKnownDistance.current = distance;
+
+                if (!hasAlertedRef.current) {
+                  Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
+                  hasAlertedRef.current = true;
+                }
+              } catch (error) {
+                console.error("Error in validation API call:", error);
+                // Không hiển thị alert lỗi để tránh spam
               }
+            };
 
-              const response = await axiosInstance.get(
-                `${API_VALIDATE_DISTANCE}?transactionId=${currentTransactionId}&latitude=${destinationLocation.latitude}&longitude=${destinationLocation.longitude}`
-              );
-
-              console.log("API call successful:", response.data);
-              hasLoggedPositions.current = true;
-            } catch (error) {
-              console.error("Error in validation API call:", error);
-              Alert.alert("Lỗi", "Không thể xác thực vị trí");
-            }
-          } else {
-            console.log("Condition not met:", {
-              isWithinDistance: distance <= 50,
-              hasNotLogged: !hasLoggedPositions.current,
-            });
+            // Thêm API call vào queue
+            apiCallQueue.current.push(apiCall);
+            processApiCallQueue();
           }
 
-          // Reset flag when moving away
-          if (distance > 50) {
+          // Reset flags khi ra khỏi vùng
+          if (distance > DISTANCE_THRESHOLD + MIN_DISTANCE_CHANGE) {
             hasLoggedPositions.current = false;
-            console.log("Reset hasLoggedPositions to false");
-          }
-
-          // Show alert only once when getting near
-          if (isNear && !hasAlertedRef.current) {
-            console.log("Showing alert...");
-
-            Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
-            hasAlertedRef.current = true;
-          }
-
-          if (routeInfo?.coordinates && routeInfo.coordinates.length > 0) {
-            const closestIndex = findClosestPointIndex(
-              newLocation,
-              routeInfo.coordinates
-            );
-
-            if (closestIndex > 0) {
-              setTraveledDistance(closestIndex);
-            }
+            hasAlertedRef.current = false;
+            lastKnownDistance.current = null;
           }
         }
       );
@@ -234,6 +246,8 @@ export default function MapModal({
       if (locationSubscription) {
         locationSubscription.remove();
       }
+      // Clear queue khi unmount
+      apiCallQueue.current = [];
     };
   }, [open, routeInfo, destinationLocation, initialTransactionId]);
 
