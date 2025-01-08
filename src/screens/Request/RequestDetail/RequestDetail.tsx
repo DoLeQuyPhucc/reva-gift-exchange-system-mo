@@ -428,9 +428,6 @@ const RequestDetail: React.FC = () => {
                     <Text style={styles.itemName}>
                       {request.requesterItem?.itemName}
                     </Text>
-                    <Text style={styles.itemQuantity}>
-                      Số lượng: {request.requesterItem?.itemQuantity}
-                    </Text>
                   </TouchableOpacity>
                   <Icon name="swap-horiz" size={24} color={Colors.orange500} />
                   <TouchableOpacity
@@ -447,9 +444,6 @@ const RequestDetail: React.FC = () => {
                     />
                     <Text style={styles.itemName}>
                       {request.charitarianItem.itemName}
-                    </Text>
-                    <Text style={styles.itemQuantity}>
-                      Số lượng: {request.charitarianItem.itemQuantity}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -469,20 +463,9 @@ const RequestDetail: React.FC = () => {
                   <Text style={styles.itemName}>
                     {request.charitarianItem.itemName}
                   </Text>
-                  <Text style={styles.itemQuantity}>
-                    Số lượng: {request.charitarianItem.itemQuantity}
-                  </Text>
                 </TouchableOpacity>
               )}
             </View>
-
-            {/* Message Section */}
-            {request.requestMessage && (
-              <View style={styles.messageSection}>
-                <Text style={styles.sectionTitle}>Lời nhắn</Text>
-                <Text>{request.requestMessage}</Text>
-              </View>
-            )}
 
             {/* Reject Message if any */}
             {request.rejectMessage && (
@@ -498,7 +481,7 @@ const RequestDetail: React.FC = () => {
                 )}
               </View>
             )}
-
+            
             {/* Appointment Times */}
             <View style={styles.timeSection}>
               <Text style={styles.sectionTitle}>Thời gian mong muốn</Text>
@@ -509,6 +492,14 @@ const RequestDetail: React.FC = () => {
                 </View>
               ))}
             </View>
+
+            {/* Message Section */}
+            {request.requestMessage && (
+              <View style={styles.messageSection}>
+                <Text style={styles.sectionTitle}>Lời nhắn</Text>
+                <Text>{request.requestMessage}</Text>
+              </View>
+            )}
 
             {/* Actions */}
             {checkRole(request) === "charitarian" &&
@@ -838,14 +829,12 @@ const styles = StyleSheet.create({
   textCenter: {
     textAlign: "center",
   },
-  timeSlot: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.gray100,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
+    timeSlot: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: Colors.gray100,
+      borderRadius: 8,
+    },
   selectedTimeSlot: {
     backgroundColor: "#e3f2fd",
     borderColor: "#2196F3",
@@ -1065,11 +1054,12 @@ const styles = StyleSheet.create({
     color: "#666",
     flex: 1,
   },
-  timeSection: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
-    paddingVertical: 16,
-  },
+    timeSection: {
+      backgroundColor: Colors.gray100,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+    },
   timeSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1231,7 +1221,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffe3e3",
     // marginHorizontal: 16,
     borderRadius: 12,
-    marginTop: 16,
+    marginBottom: 16,
   },
 
   closeButton: {
@@ -1287,7 +1277,7 @@ const styles = StyleSheet.create({
   statusMessageBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.gray100,
     padding: 12,
     borderRadius: 8,
     marginTop: 10,

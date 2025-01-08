@@ -655,9 +655,6 @@ export default function MyRequestsScreen() {
                       <Text style={styles.itemName}>
                         {request.requesterItem?.itemName}
                       </Text>
-                      <Text style={styles.itemQuantity}>
-                        Số lượng: {request.requesterItem?.itemQuantity}
-                      </Text>
                     </TouchableOpacity>
                     <Icon
                       name="swap-horiz"
@@ -679,9 +676,6 @@ export default function MyRequestsScreen() {
                       <Text style={styles.itemName}>
                         {request.charitarianItem.itemName}
                       </Text>
-                      <Text style={styles.itemQuantity}>
-                        Số lượng: {request.charitarianItem.itemQuantity}
-                      </Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -700,20 +694,9 @@ export default function MyRequestsScreen() {
                     <Text style={styles.itemName}>
                       {request.charitarianItem.itemName}
                     </Text>
-                    <Text style={styles.itemQuantity}>
-                      Số lượng: {request.charitarianItem.itemQuantity}
-                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
-
-              {/* Message Section */}
-              {request.requestMessage && (
-                <View style={styles.messageSection}>
-                  <Text style={styles.sectionTitle}>Lời nhắn</Text>
-                  <Text>{request.requestMessage}</Text>
-                </View>
-              )}
 
               {/* Reject Message if any */}
               {request.rejectMessage && (
@@ -744,6 +727,14 @@ export default function MyRequestsScreen() {
                   </View>
                 ))}
               </View>
+
+              {/* Message Section */}
+              {request.requestMessage && (
+                <View style={styles.messageSection}>
+                  <Text style={styles.sectionTitle}>Lời nhắn</Text>
+                  <Text>{request.requestMessage}</Text>
+                </View>
+              )}
 
               {/* Actions */}
               {isShowActions && request.status === "Pending" && (
@@ -1168,9 +1159,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.gray100,
-    padding: 12,
     borderRadius: 8,
-    marginBottom: 8,
   },
   selectedTimeSlot: {
     backgroundColor: "#e3f2fd",
@@ -1392,9 +1381,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   timeSection: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.gray100,
     borderRadius: 12,
-    paddingVertical: 16,
+    padding: 16,
+    marginBottom: 16,
   },
   timeSectionHeader: {
     flexDirection: "row",
@@ -1557,7 +1547,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffe3e3",
     // marginHorizontal: 16,
     borderRadius: 12,
-    marginTop: 16,
+    marginBottom: 16,
   },
 
   closeButton: {
@@ -1613,7 +1603,7 @@ const styles = StyleSheet.create({
   statusMessageBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.gray100,
     padding: 12,
     borderRadius: 8,
     marginTop: 10,

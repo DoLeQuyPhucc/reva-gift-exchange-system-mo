@@ -805,7 +805,7 @@ const MyTransactions = () => {
                 )}
 
                 {/* Chưa tới giờ thì hiện, nên có dấu ! nha */}
-                {!transaction.isValidTime && checkRole(transaction) === "requester" && (
+                {!transaction.isValidTime && checkRole(transaction) === "requester" && transaction.status === "In_Progress" && (
                   <>
                     <View style={styles.dateInfo}>
                       <Text style={styles.dateLabel}>
@@ -833,7 +833,7 @@ const MyTransactions = () => {
 
 
                 {/* tới giờ thì mới hiện, nên KHÔNG có dấu ! nha */}
-                {!transaction.isValidTime && (
+                {transaction.isValidTime && (
                   <>
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (
