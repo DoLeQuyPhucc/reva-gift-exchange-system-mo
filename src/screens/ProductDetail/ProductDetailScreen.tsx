@@ -1125,6 +1125,10 @@ export default function ProductDetailScreen() {
 
         <Text style={styles.description}>{product.description}</Text>
 
+        {product.status === "Rejected" && (
+          <Text style={styles.rejectMessage}>{product.rejectMessage}</Text>
+        )}
+
         <View style={styles.detailsContainer}>
           <View style={styles.detailItem}>
             <Icon name="calendar-month" size={16} />
@@ -1660,6 +1664,11 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     color: "#666",
+    marginBottom: 16,
+  },
+  rejectMessage: {
+    fontSize: 16,
+    color: Colors.orange700,
     marginBottom: 16,
   },
   detailsContainer: {

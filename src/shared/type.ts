@@ -32,6 +32,8 @@ export interface Product {
   requestForItem: number;
   itemPendingRequestTo: number;
   pendingRequestForItem: number;
+
+  rejectMessage: string | null;
 }
 
 export interface SubInfoAddress {
