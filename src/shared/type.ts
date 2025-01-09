@@ -5,11 +5,13 @@ export interface Product {
   category: {
     id: string;
     parentId: string;
+    parentName: string | null;
     name: string;
   };
   desiredCategory: {
     id: string;
     parentId: string;
+    parentName: string | null;
     name: string;
   } | null;
   condition: string;

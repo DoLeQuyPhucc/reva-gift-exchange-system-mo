@@ -1049,7 +1049,7 @@ export default function ProductDetailScreen() {
 
         <View style={styles.badgeContainer}>
           <View style={[styles.badge, { backgroundColor: Colors.orange500 }]}>
-            <Text style={styles.badgeText}>{product.category.name}</Text>
+            <Text style={styles.badgeText}>{`${product.category.parentName}, `} {product.category.name}</Text>
           </View>
           <View style={[styles.badge, { backgroundColor: "#fff", borderColor: Colors.orange500, borderWidth: 1}]}>
             <Text style={[styles.badgeText, {color: Colors.orange500 }]}>{product.condition === "Used" ? "Đã sử dụng" : "Mới"}</Text>
@@ -1126,7 +1126,7 @@ export default function ProductDetailScreen() {
         <Text style={styles.description}>{product.description}</Text>
 
         {product.status === "Rejected" && (
-          <Text style={styles.rejectMessage}>{product.rejectMessage}</Text>
+          <Text style={styles.rejectMessage}>Lý do từ chối: {product.rejectMessage}</Text>
         )}
 
         <View style={styles.detailsContainer}>
@@ -1162,7 +1162,7 @@ export default function ProductDetailScreen() {
             <View style={styles.detailItem}>
               <Icon name="compare-arrows" size={16} />
               <Text style={styles.detailText}>
-                Mong muốn trao đổi với: {product.desiredCategory?.name}
+                Mong muốn trao đổi với: {product.desiredCategory?.parentName !== null ? `${product.desiredCategory?.parentName}, ` : ''} {product.desiredCategory?.name}
               </Text>
             </View>
           )}

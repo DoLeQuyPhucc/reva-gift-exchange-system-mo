@@ -607,7 +607,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId,
-        desiredCategoryId: desiredCategoryId === "" ? null : desiredCategoryId,
+        desiredCategoryId: desiredSubCategoryId === "" ? null : desiredSubCategoryId,
       };
 
       console.log("Form Data: ", postData);
