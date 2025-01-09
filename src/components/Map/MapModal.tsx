@@ -154,7 +154,7 @@ export default function MapModal({
   useEffect(() => {
     if (initialTransactionId) {
       transactionIdRef.current = initialTransactionId;
-      useProximityStore.getState().setTransactionId(initialTransactionId);
+      useProximityStore.getState().initializeTransaction(initialTransactionId);
     }
   }, [initialTransactionId]);
 
@@ -177,6 +177,9 @@ export default function MapModal({
         async (newLocation) => {
           setCurrentLocation(newLocation);
 
+          const currentRequestIdInTransactionId =
+          useProximityStore.getState().requestIdInTransaction;
+
           const distance = calculateDistance(
             newLocation.coords.latitude,
             newLocation.coords.longitude,
@@ -185,7 +188,6 @@ export default function MapModal({
           );
 
           const isNear = distance <= DISTANCE_THRESHOLD;
-          useProximityStore.getState().setIsNearDestination(isNear);
 
           // Kiểm tra điều kiện gọi API
           if (
@@ -196,8 +198,7 @@ export default function MapModal({
             const apiCall = async () => {
               try {
                 console.log("=== ENTERED 50m CONDITION ===");
-                const currentTransactionId =
-                  useProximityStore.getState().transactionId;
+                const currentTransactionId = initialTransactionId;
 
                 if (!currentTransactionId) {
                   console.error("Transaction ID is missing");
@@ -215,6 +216,7 @@ export default function MapModal({
 
                 if (!hasAlertedRef.current) {
                   Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
+                  useProximityStore.getState().updateState(currentRequestIdInTransactionId as string, "isNearDestination", isNear);
                   hasAlertedRef.current = true;
                 }
               } catch (error) {

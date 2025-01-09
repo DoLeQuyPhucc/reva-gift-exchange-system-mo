@@ -120,6 +120,9 @@ export interface Transaction {
   ratingComment?: string | null;
 
   isValidTime?: boolean;
+  isNearDestination?: boolean;
+  recipientHasArrived?: boolean;
+  isVerifyTransaction?: boolean;
 }
 
 export interface TransactionRatingType {
