@@ -22,42 +22,23 @@ import MediaUploadSection from "@/src/components/MediaUploadSection";
 import {
   Category,
   ConditionOption,
+  DayTimeFrame,
   ItemCondition,
   SubCategory,
+  TIME_SLOTS,
 } from "@/src/shared/type";
 
 import useCategories from "@/src/hooks/useCategories";
 import useCreatePost from "@/src/hooks/useCreatePost";
 import { useCategoryStore } from "@/src/stores/categoryStore";
 import Colors from "@/src/constants/Colors";
-import { NotificationData, useNotificationStore } from "@/src/stores/notificationStore";
+import {
+  NotificationData,
+  useNotificationStore,
+} from "@/src/stores/notificationStore";
 import { useAuthCheck } from "@/src/hooks/useAuth";
-
-interface CreatePostScreenProps {
-  route: RouteProp<RootStackParamList, "CreatePost">;
-  navigation: NavigationProp<RootStackParamList>;
-}
-
-type TimeSlot = {
-  label: string;
-  value: string;
-};
-
-export type DayTimeFrame = {
-  day: string;
-  startTime: string;
-  endTime: string;
-};
-
-const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
-  const hour = Math.floor(idx / 2) + 9;
-  const minute = idx % 2 === 0 ? "00" : "30";
-  const time = `${hour.toString().padStart(2, "0")}:${minute}`;
-  return {
-    label: time,
-    value: time,
-  };
-});
+import { usePostContext } from "@/src/context/PostContext";
+import { postService } from "@/src/services/postService";
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, "CreatePost">;
@@ -134,38 +115,60 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       return null;
     });
 
-  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
-  const [images, setImages] = useState<string[]>([]);
-  const [video, setVideo] = useState<string | null>(null);
-  const [condition, setCondition] = useState<ItemCondition | "">("");
-  const [isExchange, setIsExchange] = useState<boolean>(false);
-  const [isGift, setIsGift] = useState<boolean>(true);
-  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
-  const [isUploadingVideo, setIsUploadingVideo] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [showTitleHint, setShowTitleHint] = useState<boolean>(false);
-  const [isTermsAccepted, setIsTermsAccepted] = useState<boolean>(false);
-  const [showDescriptionHint, setShowDescriptionHint] =
-    useState<boolean>(false);
-  const [desiredCategoryId, setDesiredCategoryId] = useState<string>("");
-  const [desiredSubCategoryId, setDesiredSubCategoryId] = useState<
-    string | null
-  >(null);
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-
-  const [timePreference, setTimePreference] = useState<string>("all_day");
-  const [dayTimeFrames, setDayTimeFrames] = useState<DayTimeFrame[]>([]);
-  const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>("");
-  const [frameStartTime, setFrameStartTime] = useState<string>("09:00");
-  const [frameEndTime, setFrameEndTime] = useState<string>("21:00");
-
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-
-  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
+  const {
+    title,
+    description,
+    selectedAddressId,
+    images,
+    selectedImage,
+    video,
+    condition,
+    isExchange,
+    isGift,
+    timePreference,
+    dayTimeFrames,
+    desiredCategoryId,
+    desiredSubCategoryId,
+    isTermsAccepted,
+    isUploadingImage,
+    isUploadingVideo,
+    isLoading,
+    showTitleHint,
+    showDescriptionHint,
+    showSuccessAlert,
+    showConfirmAlert,
+    selectedDayForFrame,
+    frameStartTime,
+    frameEndTime,
+    showStartTimePicker,
+    showEndTimePicker,
+    setSelectedDayForFrame,
+    setFrameStartTime,
+    setFrameEndTime,
+    setShowStartTimePicker,
+    setShowEndTimePicker,
+    setTitle,
+    setDescription,
+    setSelectedAddressId,
+    setImages,
+    setSelectedImage,
+    setVideo,
+    setCondition,
+    setIsExchange,
+    setIsGift,
+    setTimePreference,
+    setDayTimeFrames,
+    setDesiredCategoryId,
+    setDesiredSubCategoryId,
+    setIsTermsAccepted,
+    setIsUploadingImage,
+    setIsUploadingVideo,
+    setIsLoading,
+    setShowTitleHint,
+    setShowDescriptionHint,
+    setShowSuccessAlert,
+    setShowConfirmAlert,
+  } = usePostContext();
 
   useEffect(() => {
     if (addressData.length > 0) {
@@ -353,186 +356,51 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     return true;
   };
 
-  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
-    try {
-      console.log("Starting upload process with URI:", uri);
-
-      // Create file object
-      const filename = uri.split("/").pop() || "photo.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image/jpeg";
-
-      console.log("File details:", {
-        filename,
-        type,
-      });
-
-      const formData = new FormData();
-
-      const fileData = {
-        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
-        name: filename,
-        type: type,
-      };
-
-      const CLOUDINARY_UPLOAD_PRESET = "gift_system";
-      const CLOUDINARY_URL =
-        "https://api.cloudinary.com/v1_1/dt4ianp80/image/upload";
-
-      console.log("FormData file object:", fileData);
-      formData.append("file", fileData as any);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-      console.log("Cloudinary URL:", CLOUDINARY_URL);
-      console.log("Upload preset:", CLOUDINARY_UPLOAD_PRESET);
-
-      const response = await fetch(CLOUDINARY_URL, {
-        method: "POST",
-        body: formData,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log("Response status:", response.status);
-
-      const responseData = await response.json();
-      console.log("Response data:", responseData);
-
-      if (!response.ok) {
-        throw new Error(
-          `Upload failed: ${response.status} - ${JSON.stringify(responseData)}`
-        );
-      }
-
-      return responseData.secure_url;
-    } catch (error: any) {
-      console.error("Detailed upload error:", {
-        message: error.message,
-        stack: error.stack,
-      });
-      throw error;
-    }
-  };
-
   const handleImageUpload = async () => {
     try {
       setIsUploadingImage(true);
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
+      const uri = await postService.pickImage();
 
-      if (!result.canceled) {
-        const uri = result.assets[0].uri;
-        setSelectedImage(uri);
+      if (!uri) return;
 
-        const imageUrl = await uploadImageToCloudinary(uri);
+      if (uri) {
+        const imageUrl = await postService.uploadImageToCloudinary(uri);
         setImages((prev) => [...prev, imageUrl]);
-        console.log("Image uploaded successfully:", imageUrl);
       }
     } catch (error) {
-      console.error("Image upload error:", error);
       Alert.alert("Upload Failed", "Please try again");
     } finally {
       setIsUploadingImage(false);
     }
   };
 
-  const uploadVideoToCloudinary = async (uri: string): Promise<string> => {
+  const handleCaptureImage = async () => {
     try {
-      console.log("Starting video upload process with URI:", uri);
+      setIsUploadingImage(true);
+      const uri = await postService.captureImage();
 
-      const filename = uri.split("/").pop() || "video.mp4";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `video/${match[1]}` : "video/mp4";
-
-      console.log("Video file details:", {
-        filename,
-        type,
-      });
-
-      const formData = new FormData();
-
-      const fileData = {
-        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
-        name: filename,
-        type: type,
-      };
-
-      const CLOUDINARY_UPLOAD_PRESET = "gift_system";
-      const CLOUDINARY_URL =
-        "https://api.cloudinary.com/v1_1/dt4ianp80/video/upload";
-
-      console.log("FormData video object:", fileData);
-      formData.append("file", fileData as any);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-      console.log("Sending video upload request to Cloudinary...");
-      console.log("Cloudinary URL:", CLOUDINARY_URL);
-
-      const response = await fetch(CLOUDINARY_URL, {
-        method: "POST",
-        body: formData,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log("Video upload response status:", response.status);
-
-      const responseData = await response.json();
-      console.log("Video upload response data:", responseData);
-
-      if (!response.ok) {
-        throw new Error(
-          `Video upload failed: ${response.status} - ${JSON.stringify(
-            responseData
-          )}`
-        );
+      if (uri) {
+        const imageUrl = await postService.uploadImageToCloudinary(uri);
+        setImages((prev) => [...prev, imageUrl]);
       }
-
-      return responseData.secure_url;
-    } catch (error: any) {
-      console.error("Detailed video upload error:", {
-        message: error.message,
-        stack: error.stack,
-      });
-      throw error;
+    } catch (error) {
+      Alert.alert("Error", "Failed to capture and upload image");
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
   const pickVideo = async () => {
     try {
-      console.log("Starting video picker...");
-
       setIsUploadingVideo(true);
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 1,
-        videoMaxDuration: 60,
-      });
+      const uri = await postService.pickVideo();
+      if (!uri) return;
 
-      console.log("Video picker result:", result);
+      const videoUrl = await postService.uploadVideoToCloudinary(uri);
 
-      if (!result.canceled) {
-        const uri = result.assets[0].uri;
-        console.log("Selected video URI:", uri);
-
-        const videoUrl = await uploadVideoToCloudinary(uri);
-        console.log("Video uploaded successfully to Cloudinary:", videoUrl);
-
-        setVideo(videoUrl);
-      }
+      setVideo(videoUrl);
     } catch (error) {
-      console.error("Error in video picking/upload process:", error);
       Alert.alert("Upload Failed", "Failed to upload video. Please try again");
     } finally {
       setIsUploadingVideo(false);
@@ -607,7 +475,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId,
-        desiredCategoryId: desiredSubCategoryId === "" ? null : desiredSubCategoryId,
+        desiredCategoryId:
+          desiredSubCategoryId === "" ? null : desiredSubCategoryId,
       };
 
       console.log("Form Data: ", postData);
@@ -909,6 +778,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             isLoading={isUploadingImage}
             isVideoLoading={isUploadingVideo}
             onPickImage={handleImageUpload}
+            onCaptureImage={handleCaptureImage}
             onPickVideo={pickVideo}
             onRemoveImage={removeImage}
             onRemoveVideo={removeVideo}

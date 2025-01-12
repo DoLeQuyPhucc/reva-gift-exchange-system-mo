@@ -22,12 +22,14 @@ interface MediaUploadSectionProps {
   isLoading?: boolean;
   isVideoLoading?: boolean;
   canUploadVideo?: boolean;
+  onCaptureImage: () => void;
 }
 
 const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
   images,
   video,
   onPickImage,
+  onCaptureImage,
   onPickVideo,
   onRemoveImage,
   onRemoveVideo,
@@ -71,11 +73,19 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
     }
 
     return (
-      <>
-        <Icon name="camera-alt" size={32} color="#f97314" />
-        <Text style={styles.uploadText}>Thêm hình ảnh</Text>
-        <Text style={styles.imageCount}>{images.length}/5</Text>
-      </>
+      <View style={styles.uploadOptions}>
+        <TouchableOpacity style={styles.uploadOption} onPress={onPickImage}>
+          <Icon name="photo-library" size={32} color="#f97314" />
+          <Text style={styles.uploadText}>Chọn từ thư viện</Text>
+        </TouchableOpacity>
+
+        <View style={styles.separator} />
+
+        <TouchableOpacity style={styles.uploadOption} onPress={onCaptureImage}>
+          <Icon name="camera-alt" size={32} color="#f97314" />
+          <Text style={styles.uploadText}>Chụp ảnh</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -231,6 +241,24 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 8,
+  },
+  uploadOptions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 32,
+  },
+  uploadOption: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  separator: {
+    width: 1,
+    height: "80%",
+    backgroundColor: "#ddd",
+    marginHorizontal: 16,
   },
   removeButton: {
     position: "absolute",

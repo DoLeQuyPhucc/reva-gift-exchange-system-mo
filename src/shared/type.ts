@@ -226,3 +226,24 @@ export interface DayTimeRange {
   endHour: number;
   endMinute: number;
 }
+
+type TimeSlot = {
+  label: string;
+  value: string;
+};
+
+export type DayTimeFrame = {
+  day: string;
+  startTime: string;
+  endTime: string;
+};
+
+export const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
+  const hour = Math.floor(idx / 2) + 9;
+  const minute = idx % 2 === 0 ? "00" : "30";
+  const time = `${hour.toString().padStart(2, "0")}:${minute}`;
+  return {
+    label: time,
+    value: time,
+  };
+});

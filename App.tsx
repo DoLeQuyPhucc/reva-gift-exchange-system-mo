@@ -8,6 +8,7 @@ import Toast from "react-native-toast-message";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { useNotificationStore } from "@/src/stores/notificationStore";
 import { useAuthStore } from "@/src/stores/authStore";
+import { PostProvider } from "./src/context/PostContext";
 
 const STRIPE_KEY =
   "pk_test_51QG1BCFZYtuiwMkRanQqBx1ybBgNqkztXRBPBda7ETS0kE5o5rJmnzxx94u3EZg8GMlLOXMBZK7K23P9zlZKDVXo00gWFlfPc0";
@@ -33,9 +34,9 @@ export default function App() {
   }
 
   return (
-    <StripeProvider publishableKey={STRIPE_KEY}>
+    <PostProvider>
       <Navigation />
       <Toast />
-    </StripeProvider>
+    </PostProvider>
   );
 }
