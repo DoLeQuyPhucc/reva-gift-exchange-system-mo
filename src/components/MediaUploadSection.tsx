@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import Video from "react-native-video";
+import { Modal, TouchableWithoutFeedback } from "react-native";
 
 interface MediaUploadSectionProps {
   images: string[];
@@ -39,26 +39,70 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
 }) => {
   const screenWidth = Dimensions.get("window").width;
   const boxSize = (screenWidth - 48 - 32) / 5;
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+
+  const renderImageOptionsModal = () => (
+    <Modal
+      visible={showOptionsModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowOptionsModal(false)}
+    >
+      <TouchableWithoutFeedback onPress={() => setShowOptionsModal(false)}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => {
+                  setShowOptionsModal(false);
+                  onCaptureImage();
+                }}
+              >
+                <Icon name="camera-alt" size={24} color="#f97314" />
+                <Text style={styles.modalOptionText}>Chụp ảnh</Text>
+              </TouchableOpacity>
+
+              <View style={styles.modalSeparator} />
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => {
+                  setShowOptionsModal(false);
+                  onPickImage();
+                }}
+              >
+                <Icon name="photo-library" size={24} color="#f97314" />
+                <Text style={styles.modalOptionText}>Chọn từ thư viện</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
 
   const renderUploadBox = () => {
     if (isLoading) {
       return (
-        <View style={styles.uploadContent}>
-          <ActivityIndicator
-            size="small"
-            color="#f97314"
-            style={styles.spinner}
-          />
-          <Text style={[styles.uploadText, { marginTop: 8 }]}>Đang tải...</Text>
+        <View style={[styles.uploadBox, { width: boxSize, height: boxSize }]}>
+          <ActivityIndicator size="small" color="#f97314" />
+          <Text style={styles.uploadText}>Đang tải...</Text>
         </View>
       );
     }
 
     return (
-      <View style={styles.uploadContent}>
-        <Icon name="add" size={32} color="#f97314" />
-        <Text style={styles.imageCount}>{images.length}/5</Text>
-      </View>
+      <>
+        <TouchableOpacity
+          style={[styles.uploadBox, { width: boxSize, height: boxSize }]}
+          onPress={() => setShowOptionsModal(true)}
+        >
+          <Icon name="add" size={24} color="#f97314" />
+          <Text style={styles.imageCount}>{images.length}/5</Text>
+        </TouchableOpacity>
+        {renderImageOptionsModal()}
+      </>
     );
   };
 
@@ -329,6 +373,32 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    marginLeft: 15,
+    color: "#333",
+  },
+  modalSeparator: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginVertical: 5,
   },
 });
 

@@ -992,7 +992,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             styles.publishButton,
             !isTermsAccepted && styles.disabledButton,
           ]}
-          onPress={handleSubmit}
+          onPress={handleSubmitConfirm}
           disabled={!isTermsAccepted || isLoading}
         >
           {isLoading ? (
@@ -1007,7 +1007,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       <CustomAlert
         visible={showConfirmAlert}
         title="Xác nhận"
-        message="Bạn có chắc chắn muốn đăng bài này?"
+        message="Bạn có chắc chắn muốn đăng sản phẩm này?"
         onConfirm={handleSubmit}
         onCancel={() => setShowConfirmAlert(false)}
         showCancelButton={true}
