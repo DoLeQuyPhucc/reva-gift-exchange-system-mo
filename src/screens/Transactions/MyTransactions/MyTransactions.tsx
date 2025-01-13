@@ -10,10 +10,12 @@ import {
   Image,
   RefreshControl,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import * as ImagePicker from "expo-image-picker";
 import {
   LocationMap,
   Transaction,
@@ -47,6 +49,7 @@ import {
   useNotificationStore,
 } from "@/src/stores/notificationStore";
 import MapModal from "@/src/components/Map/MapModal";
+import MediaUploadSection from "@/src/components/MediaUploadSection";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -66,6 +69,9 @@ const MyTransactions = () => {
   const [showMapModal, setShowMapModal] = useState(false);
   const [isRatingModalVisible, setIsRatingModalVisible] = useState(false);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [moreImages, setMoreImages] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [location, setLocation] = useState<LocationMap>({
     latitude: 0,
     longitude: 0,
@@ -92,6 +98,16 @@ const MyTransactions = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [alertData, setAlertData] = useState<{
+    title: string;
+    message: string;
+    submessage: string | null;
+  }>({
+    title: "",
+    message: "",
+    submessage: null,
+  });
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
 
   const { hashMap, initializeTransaction } = useProximityStore();
 
@@ -108,7 +124,12 @@ const MyTransactions = () => {
 
   useEffect(() => {
     fetchTransactions(1);
-  }, [isConfirm, requestId, JSON.stringify(filterHashMap(hashMap)), showMapModal]);
+  }, [
+    isConfirm,
+    requestId,
+    JSON.stringify(filterHashMap(hashMap)),
+    showMapModal,
+  ]);
 
   useEffect(() => {
     if (selectedTransaction?.status === "In_Progress") {
@@ -252,6 +273,104 @@ const MyTransactions = () => {
       return "requester";
     }
     return "";
+  };
+
+  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
+    try {
+      console.log("Starting upload process with URI:", uri);
+
+      // Create file object
+      const filename = uri.split("/").pop() || "photo.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : "image/jpeg";
+
+      console.log("File details:", {
+        filename,
+        type,
+      });
+
+      const formData = new FormData();
+
+      const fileData = {
+        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
+        name: filename,
+        type: type,
+      };
+
+      const CLOUDINARY_UPLOAD_PRESET = "gift_system";
+      const CLOUDINARY_URL =
+        "https://api.cloudinary.com/v1_1/dt4ianp80/image/upload";
+
+      formData.append("file", fileData as any);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      const response = await fetch(CLOUDINARY_URL, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Get detailed error message if available
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          `Upload failed: ${response.status} - ${JSON.stringify(responseData)}`
+        );
+      }
+
+      return responseData.secure_url;
+    } catch (error: any) {
+      console.error("Detailed upload error:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
+  };
+
+  const handleImageUpload = async () => {
+    try {
+      setIsUploadingImage(true);
+      // setSelectedUserItem(null);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const uri = result.assets[0].uri;
+        setSelectedImage(uri);
+
+        const imageUrl = await uploadImageToCloudinary(uri);
+        setMoreImages((prev) => [...prev, imageUrl]);
+        setAlertData({
+          title: "Thành công",
+          message: "Tải hình ảnh lên thành công!",
+          submessage: null,
+        });
+        setShowAlertDialog(true);
+      }
+    } catch (error) {
+      setAlertData({
+        title: "Thất bại",
+        message: "Tải hình ảnh lên thất bại! Vui lòng thử lại.",
+        submessage: null,
+      });
+      setShowAlertDialog(true);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = moreImages.filter((_, idx) => idx !== index);
+    setMoreImages(newImages);
   };
 
   const handleVerification = async (transaction: Transaction) => {
@@ -857,7 +976,7 @@ const MyTransactions = () => {
                 )}
 
                 {/* tới giờ thì mới hiện, nên KHÔNG có dấu ! nha */}
-                {transaction.isValidTime && (
+                {!transaction.isValidTime && (
                   <>
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (
@@ -974,7 +1093,7 @@ const MyTransactions = () => {
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "charitarian" && (
                         <>
-                          {!transaction.isVerifyTransaction ? (
+                          {transaction.isVerifyTransaction ? (
                             <>
                               <TouchableOpacity
                                 style={[
@@ -1176,6 +1295,23 @@ const MyTransactions = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Xác nhận giao dịch</Text>
+            <View style={styles.modalDescriptionContainer}>
+              <Text style={styles.modalDescriptionV2}>
+                Chụp hình ảnh để xác nhận giao dịch
+              </Text>
+              <MediaUploadSection
+                images={moreImages}
+                video={""}
+                selectedImage={selectedImage}
+                isLoading={isUploadingImage}
+                onPickImage={handleImageUpload}
+                onPickVideo={() => {}}
+                onRemoveImage={removeImage}
+                onRemoveVideo={() => {}}
+                canUploadVideo={false}
+                maxNumberOfImages={3}
+              />
+            </View>
 
             <View style={styles.modalButtonContainer}>
               <View style={styles.topButtonRow}>
@@ -1214,6 +1350,24 @@ const MyTransactions = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Từ chối giao dịch</Text>
+
+            <View style={styles.modalDescriptionContainer}>
+              <Text style={styles.modalDescriptionV2}>
+                Chụp hình ảnh để từ chối giao dịch
+              </Text>
+              <MediaUploadSection
+                images={moreImages}
+                video={""}
+                selectedImage={selectedImage}
+                isLoading={isUploadingImage}
+                onPickImage={handleImageUpload}
+                onPickVideo={() => {}}
+                onRemoveImage={removeImage}
+                onRemoveVideo={() => {}}
+                canUploadVideo={false}
+                maxNumberOfImages={3}
+              />
+            </View>
 
             <Text style={styles.modalDescription}>
               Vui lòng nhập lý do từ chối:
@@ -1575,7 +1729,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalButtonContainer: {
-    marginTop: 16,
     width: "100%",
   },
   topButtonRow: {
@@ -1700,6 +1853,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontWeight: "bold",
     textAlign: "left",
+  },
+  modalDescriptionContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalDescriptionV2: {
+    fontSize: 16,
+    marginBottom: 16,
   },
   rejectMessage: {
     backgroundColor: "#ffe3e3",

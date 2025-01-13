@@ -1299,7 +1299,7 @@ export default function ProductDetailScreen() {
                     onRemoveImage={removeImage}
                     onRemoveVideo={() => {}}
                     canUploadVideo={false}
-                  /> */}
+                  /> 
                   <TouchableOpacity onPress={() => handleWannaRequest()}>
                     <Text style={styles.requestText}>
                       Tôi muốn xin món đồ này.

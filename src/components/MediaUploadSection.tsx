@@ -22,6 +22,7 @@ interface MediaUploadSectionProps {
   isLoading?: boolean;
   isVideoLoading?: boolean;
   canUploadVideo?: boolean;
+  maxNumberOfImages?: number;
   onCaptureImage: () => void;
 }
 
@@ -36,9 +37,10 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
   isLoading = false,
   isVideoLoading = false,
   canUploadVideo = true,
+  maxNumberOfImages = 5,
 }) => {
   const screenWidth = Dimensions.get("window").width;
-  const boxSize = (screenWidth - 48 - 32) / 5;
+  const boxSize = (screenWidth - 48 - 32) / maxNumberOfImages;
   const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   const renderImageOptionsModal = () => (
@@ -99,7 +101,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
           onPress={() => setShowOptionsModal(true)}
         >
           <Icon name="add" size={24} color="#f97314" />
-          <Text style={styles.imageCount}>{images.length}/5</Text>
+          <Text style={styles.imageCount}>{images.length}/{maxNumberOfImages}</Text>
         </TouchableOpacity>
         {renderImageOptionsModal()}
       </>
@@ -203,7 +205,7 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
               <TouchableOpacity
                 style={[styles.uploadBox, { width: boxSize, height: boxSize }]}
                 onPress={onPickImage}
-                disabled={images.length >= 5 || isLoading}
+                disabled={images.length >= maxNumberOfImages || isLoading}
               >
                 {renderUploadBox()}
               </TouchableOpacity>
