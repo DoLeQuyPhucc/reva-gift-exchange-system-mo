@@ -50,6 +50,7 @@ import {
 } from "@/src/stores/notificationStore";
 import MapModal from "@/src/components/Map/MapModal";
 import MediaUploadSection from "@/src/components/MediaUploadSection";
+import { postService } from "@/src/services/postService";
 
 type MyTransactionsScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -72,6 +73,7 @@ const MyTransactions = () => {
   const [moreImages, setMoreImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [location, setLocation] = useState<LocationMap>({
     latitude: 0,
     longitude: 0,
@@ -335,34 +337,32 @@ const MyTransactions = () => {
   const handleImageUpload = async () => {
     try {
       setIsUploadingImage(true);
-      // setSelectedUserItem(null);
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
+      const uri = await postService.pickImage();
 
-      if (!result.canceled) {
-        const uri = result.assets[0].uri;
-        setSelectedImage(uri);
+      if (!uri) return;
 
-        const imageUrl = await uploadImageToCloudinary(uri);
-        setMoreImages((prev) => [...prev, imageUrl]);
-        setAlertData({
-          title: "Thành công",
-          message: "Tải hình ảnh lên thành công!",
-          submessage: null,
-        });
-        setShowAlertDialog(true);
+      if (uri) {
+        const imageUrl = await postService.uploadImageToCloudinary(uri);
+        setImages((prev) => [...prev, imageUrl]);
       }
     } catch (error) {
-      setAlertData({
-        title: "Thất bại",
-        message: "Tải hình ảnh lên thất bại! Vui lòng thử lại.",
-        submessage: null,
-      });
-      setShowAlertDialog(true);
+      Alert.alert("Upload Failed", "Please try again");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleCaptureImage = async () => {
+    try {
+      setIsUploadingImage(true);
+      const uri = await postService.captureImage();
+
+      if (uri) {
+        const imageUrl = await postService.uploadImageToCloudinary(uri);
+        setImages((prev) => [...prev, imageUrl]);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to capture and upload image");
     } finally {
       setIsUploadingImage(false);
     }
@@ -370,7 +370,7 @@ const MyTransactions = () => {
 
   const removeImage = (index: number) => {
     const newImages = moreImages.filter((_, idx) => idx !== index);
-    setMoreImages(newImages);
+    setImages(newImages);
   };
 
   const handleVerification = async (transaction: Transaction) => {
@@ -987,12 +987,12 @@ const MyTransactions = () => {
                                 style={[
                                   styles.verifyButton,
                                   {
-                                    opacity: !transaction.isNearDestination
+                                    opacity: !transaction.arrivedAtDestination
                                       ? 0.5
                                       : 1,
                                   },
                                 ]}
-                                disabled={!transaction.isNearDestination}
+                                disabled={!transaction.arrivedAtDestination}
                                 onPress={() => {
                                   setSelectedTransaction(transaction);
                                   setShowModal(true);
@@ -1000,7 +1000,7 @@ const MyTransactions = () => {
                                 }}
                               >
                                 <Text style={styles.verifyButtonText}>
-                                  {transaction.isNearDestination
+                                  {transaction.arrivedAtDestination
                                     ? "Xem mã định danh"
                                     : "Bạn phải đến gần điểm hẹn hơn (<50m) để xem mã định danh"}
                                 </Text>
@@ -1093,18 +1093,18 @@ const MyTransactions = () => {
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "charitarian" && (
                         <>
-                          {transaction.isVerifyTransaction ? (
+                          {!transaction.isVerifyTransaction ? (
                             <>
                               <TouchableOpacity
                                 style={[
                                   styles.verifyButton,
                                   {
-                                    opacity: !transaction.recipientHasArrived
+                                    opacity: !transaction.arrivedAtDestination
                                       ? 0.5
                                       : 1,
                                   },
                                 ]}
-                                disabled={!transaction.recipientHasArrived}
+                                disabled={!transaction.arrivedAtDestination}
                                 onPress={() => {
                                   navigation.navigate("QRScanner");
                                 }}
@@ -1300,11 +1300,13 @@ const MyTransactions = () => {
                 Chụp hình ảnh để xác nhận giao dịch
               </Text>
               <MediaUploadSection
-                images={moreImages}
+                images={images}
                 video={""}
                 selectedImage={selectedImage}
                 isLoading={isUploadingImage}
+                isVideoLoading={false}
                 onPickImage={handleImageUpload}
+                onCaptureImage={handleCaptureImage}
                 onPickVideo={() => {}}
                 onRemoveImage={removeImage}
                 onRemoveVideo={() => {}}
@@ -1356,11 +1358,13 @@ const MyTransactions = () => {
                 Chụp hình ảnh để từ chối giao dịch
               </Text>
               <MediaUploadSection
-                images={moreImages}
+                images={images}
                 video={""}
                 selectedImage={selectedImage}
                 isLoading={isUploadingImage}
+                isVideoLoading={false}
                 onPickImage={handleImageUpload}
+                onCaptureImage={handleCaptureImage}
                 onPickVideo={() => {}}
                 onRemoveImage={removeImage}
                 onRemoveVideo={() => {}}

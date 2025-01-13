@@ -1418,7 +1418,8 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 50,
+    marginTop: 16,
+    marginBottom: 30,
   },
   listItem: {
     backgroundColor: "#fff",

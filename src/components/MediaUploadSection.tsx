@@ -101,7 +101,9 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
           onPress={() => setShowOptionsModal(true)}
         >
           <Icon name="add" size={24} color="#f97314" />
-          <Text style={styles.imageCount}>{images.length}/{maxNumberOfImages}</Text>
+          <Text style={styles.imageCount}>
+            {images.length}/{maxNumberOfImages}
+          </Text>
         </TouchableOpacity>
         {renderImageOptionsModal()}
       </>
@@ -202,13 +204,18 @@ const MediaUploadSection: React.FC<MediaUploadSectionProps> = ({
             </TouchableOpacity>
           ) : (
             <>
-              <TouchableOpacity
-                style={[styles.uploadBox, { width: boxSize, height: boxSize }]}
-                onPress={onPickImage}
-                disabled={images.length >= maxNumberOfImages || isLoading}
-              >
-                {renderUploadBox()}
-              </TouchableOpacity>
+              {images.length < maxNumberOfImages && (
+                <TouchableOpacity
+                  style={[
+                    styles.uploadBox,
+                    { width: boxSize, height: boxSize },
+                  ]}
+                  onPress={onPickImage}
+                  disabled={images.length >= maxNumberOfImages}
+                >
+                  {renderUploadBox()}
+                </TouchableOpacity>
+              )}
 
               {images.map((uri, index) => (
                 <View

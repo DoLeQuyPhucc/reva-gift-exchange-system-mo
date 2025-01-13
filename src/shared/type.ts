@@ -124,9 +124,12 @@ export interface Transaction {
   ratingComment?: string | null;
 
   isValidTime?: boolean;
-  isNearDestination?: boolean;
-  recipientHasArrived?: boolean;
-  isVerifyTransaction?: boolean;
+  // isNearDestination?: boolean;
+  // recipientHasArrived?: boolean;
+  isVerifyTransaction: boolean;
+
+  transactionImages: string[];
+  arrivedAtDestination: boolean;
 }
 
 export interface TransactionRatingType {
@@ -238,12 +241,14 @@ export type DayTimeFrame = {
   endTime: string;
 };
 
-export const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map((_, idx) => {
-  const hour = Math.floor(idx / 2) + 9;
-  const minute = idx % 2 === 0 ? "00" : "30";
-  const time = `${hour.toString().padStart(2, "0")}:${minute}`;
-  return {
-    label: time,
-    value: time,
-  };
-});
+export const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map(
+  (_, idx) => {
+    const hour = Math.floor(idx / 2) + 9;
+    const minute = idx % 2 === 0 ? "00" : "30";
+    const time = `${hour.toString().padStart(2, "0")}:${minute}`;
+    return {
+      label: time,
+      value: time,
+    };
+  }
+);
