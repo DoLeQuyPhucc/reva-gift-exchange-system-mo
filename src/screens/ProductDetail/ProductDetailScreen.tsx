@@ -1304,11 +1304,11 @@ export default function ProductDetailScreen() {
                     <Text style={styles.requestText}>
                       Tôi muốn xin món đồ này.
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </>
               )}
 
-              {!isTrue ? (
+              {/* {!isTrue ? (
                 <TouchableOpacity onPress={() => handleWannaExchange()}>
                   <Text
                     style={[styles.requestText, styles.marginTop_16_Botttom_12]}
@@ -1318,7 +1318,7 @@ export default function ProductDetailScreen() {
                 </TouchableOpacity>
               ) : (
                 <></>
-              )}
+              )} */}
               {(product.isGift || userItems.length > 0) && (
                 <>
                   <Text style={styles.modalDescription}>
