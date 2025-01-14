@@ -8,6 +8,7 @@ import {
 
 interface PostContextType {
   // Form states
+  isFirstRender: boolean;
   title: string;
   description: string;
   selectedCategory: Category | null;
@@ -42,6 +43,7 @@ interface PostContextType {
   showEndTimePicker: boolean;
 
   // Setters
+  setIsFirstRender: (isFirstRender: boolean) => void;
   setTitle: (title: string) => void;
   setDescription: (desc: string) => void;
   setSelectedCategory: (category: Category | null) => void;
@@ -83,6 +85,8 @@ const PostContext = createContext<PostContextType | undefined>(undefined);
 export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const [isFirstRender, setIsFirstRender] = useState(true);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
@@ -124,6 +128,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <PostContext.Provider
       value={{
+        isFirstRender,
         title,
         description,
         selectedCategory,
@@ -157,6 +162,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         setFrameEndTime,
         setShowStartTimePicker,
         setShowEndTimePicker,
+        setIsFirstRender,
         setTitle,
         setDescription,
         setSelectedCategory,

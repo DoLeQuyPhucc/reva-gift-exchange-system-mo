@@ -12,7 +12,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Checkbox, RadioButton } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
-import { RouteProp, NavigationProp } from "@react-navigation/native";
+import {
+  RouteProp,
+  NavigationProp,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import * as ImagePicker from "expo-image-picker";
 import { CustomAlert } from "@/src/components/CustomAlert";
@@ -116,6 +120,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     });
 
   const {
+    isFirstRender,
     title,
     description,
     selectedAddressId,
@@ -147,6 +152,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     setFrameEndTime,
     setShowStartTimePicker,
     setShowEndTimePicker,
+    setIsFirstRender,
     setTitle,
     setDescription,
     setSelectedAddressId,
@@ -169,6 +175,43 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     setShowSuccessAlert,
     setShowConfirmAlert,
   } = usePostContext();
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setImages([]);
+    setVideo("");
+    setCondition("");
+    setIsExchange(false);
+    setIsGift(false);
+    setTimePreference("allDay");
+    setDayTimeFrames([]);
+    setDesiredCategoryId("");
+    setDesiredSubCategoryId("");
+    setIsTermsAccepted(false);
+    setSelectedAddressId("");
+    setSelectedImage(null);
+    setIsUploadingImage(false);
+    setIsUploadingVideo(false);
+    setIsLoading(false);
+    setShowTitleHint(false);
+    setShowDescriptionHint(false);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isFirstRender) {
+        // Only reset if not first render
+        resetForm();
+      } else {
+        setIsFirstRender(false);
+      }
+
+      return () => {
+        // Cleanup
+      };
+    }, [isFirstRender])
+  );
 
   useEffect(() => {
     if (addressData.length > 0) {
