@@ -111,25 +111,13 @@ const MyTransactions = () => {
   });
   const [showAlertDialog, setShowAlertDialog] = useState(false);
 
-  const { hashMap, initializeTransaction } = useProximityStore();
-
   const PAGE_SIZE = 10;
-
-  const filterHashMap = (hashMap: Record<string, any>) => {
-    const filteredHashMap: Record<string, any> = {};
-    for (const key in hashMap) {
-      const { isNearDestination, ...rest } = hashMap[key];
-      filteredHashMap[key] = rest;
-    }
-    return filteredHashMap;
-  };
 
   useEffect(() => {
     fetchTransactions(1);
   }, [
     isConfirm,
     requestId,
-    JSON.stringify(filterHashMap(hashMap)),
     showMapModal,
   ]);
 
@@ -184,21 +172,21 @@ const MyTransactions = () => {
           response.map(async (transaction: Transaction) => {
             let updatedTransaction = { ...transaction };
 
-            initializeTransaction(updatedTransaction.requestId);
+            // initializeTransaction(updatedTransaction.requestId);
 
-            // Pass transactionId to MapModal
-            useProximityStore
-              .getState()
-              .setRequestIdInTransaction(transaction.requestId);
+            // // Pass transactionId to MapModal
+            // useProximityStore
+            //   .getState()
+            //   .setRequestIdInTransaction(transaction.requestId);
 
-            const currentHashMap = useProximityStore.getState().hashMap;
-            const currentFields = currentHashMap[transaction.requestId] || {
-              isNearDestination: false,
-              recipientHasArrived: false,
-              isVerifyTransaction: false,
-            };
+            // const currentHashMap = useProximityStore.getState().hashMap;
+            // const currentFields = currentHashMap[transaction.requestId] || {
+            //   isNearDestination: false,
+            //   recipientHasArrived: false,
+            //   isVerifyTransaction: false,
+            // };
 
-            updatedTransaction = { ...updatedTransaction, ...currentFields };
+            // updatedTransaction = { ...updatedTransaction, ...currentFields };
 
             try {
               const isValidTime = await axiosInstance.get(
@@ -981,7 +969,7 @@ const MyTransactions = () => {
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "requester" && (
                         <>
-                          {!transaction.isVerifyTransaction ? (
+                          {!transaction.isVerifiedTransaction ? (
                             <>
                               <TouchableOpacity
                                 style={[
@@ -1052,12 +1040,12 @@ const MyTransactions = () => {
                               style={[
                                 styles.verifyButton,
                                 {
-                                  opacity: transaction.isVerifyTransaction
+                                  opacity: transaction.isVerifiedTransaction
                                     ? 0.5
                                     : 1,
                                 },
                               ]}
-                              disabled={transaction.isVerifyTransaction}
+                              disabled={transaction.isVerifiedTransaction}
                               onPress={() => {
                                 setSelectedTransaction(transaction);
                                 setShowModal(true);
@@ -1093,7 +1081,7 @@ const MyTransactions = () => {
                     {transaction.status === "In_Progress" &&
                       checkRole(transaction) === "charitarian" && (
                         <>
-                          {!transaction.isVerifyTransaction ? (
+                          {!transaction.isVerifiedTransaction ? (
                             <>
                               <TouchableOpacity
                                 style={[

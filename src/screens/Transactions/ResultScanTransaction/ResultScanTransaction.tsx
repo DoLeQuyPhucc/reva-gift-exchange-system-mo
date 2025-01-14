@@ -143,21 +143,25 @@ export default function ResultScanTransaction() {
   };
   
   const handleVerification_v2 = async (transaction: Transaction) => {
-    const dataNoti: NotificationData = {
-      title: "Xác thực giao dịch",
-      message: "Giao dịch đã được xác thực",
-      entity: "Transaction",
-      entityId: transaction.requestId,
-      type: "success"
-    };
+    const res = await axiosInstance.put(`transaction/${transaction.id}/verifytransaction?status=true`);
 
-    sendNotification(transaction.charitarian.id, dataNoti);
-
-    sendNotification(transaction.requester.id, dataNoti);
-
-    setShowConfirmModal(false);
-
-    navigation.navigate("MyTransactions", { requestId: transaction.requestId });
+    if (res.data.isSuccess === true) {
+      const dataNoti: NotificationData = {
+        title: "Xác thực giao dịch",
+        message: "Giao dịch đã được xác thực",
+        entity: "Transaction",
+        entityId: transaction.requestId,
+        type: "success"
+      };
+  
+      sendNotification(transaction.charitarian.id, dataNoti);
+  
+      sendNotification(transaction.requester.id, dataNoti);
+  
+      setShowConfirmModal(false);
+  
+      navigation.navigate("MyTransactions", { requestId: transaction.requestId });
+    }
   };
 
   const handleVerification = async (transactionId: string) => {

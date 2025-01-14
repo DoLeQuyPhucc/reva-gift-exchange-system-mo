@@ -126,7 +126,7 @@ export interface Transaction {
   isValidTime?: boolean;
   // isNearDestination?: boolean;
   // recipientHasArrived?: boolean;
-  isVerifyTransaction: boolean;
+  isVerifiedTransaction: boolean;
 
   transactionImages: string[];
   arrivedAtDestination: boolean;

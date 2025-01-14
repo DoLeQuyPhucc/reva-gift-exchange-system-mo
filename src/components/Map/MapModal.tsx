@@ -154,7 +154,7 @@ export default function MapModal({
   useEffect(() => {
     if (initialTransactionId) {
       transactionIdRef.current = initialTransactionId;
-      useProximityStore.getState().initializeTransaction(initialTransactionId);
+      // useProximityStore.getState().initializeTransaction(initialTransactionId);
     }
   }, [initialTransactionId]);
 
@@ -177,8 +177,8 @@ export default function MapModal({
         async (newLocation) => {
           setCurrentLocation(newLocation);
 
-          const currentRequestIdInTransactionId =
-          useProximityStore.getState().requestIdInTransaction;
+          // const currentRequestIdInTransactionId =
+          // useProximityStore.getState().requestIdInTransaction;
 
           const distance = calculateDistance(
             newLocation.coords.latitude,
@@ -214,9 +214,12 @@ export default function MapModal({
                 lastApiCallTime.current = Date.now();
                 lastKnownDistance.current = distance;
 
-                if (!hasAlertedRef.current) {
+
+                const resArrived = await axiosInstance.put( `/transaction/${currentTransactionId}/arrivedatdestination?status=true`);
+
+                if (!hasAlertedRef.current && resArrived.data.isSuccess === true) {
                   Alert.alert("Thông báo", "Bạn đã có thể xem mã định danh!");
-                  useProximityStore.getState().updateState(currentRequestIdInTransactionId as string, "isNearDestination", isNear);
+                  // useProximityStore.getState().updateState(currentRequestIdInTransactionId as string, "isNearDestination", isNear);
                   hasAlertedRef.current = true;
                 }
               } catch (error) {

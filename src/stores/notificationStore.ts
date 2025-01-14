@@ -91,23 +91,23 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           entityId: parsedNotification.entityId,
         };
 
-        if (notificationObj.message === "Người nhận đã đến khu vực của bạn") {
-          useProximityStore
-            .getState()
-            .initializeTransaction(notificationObj.entityId);
-          useProximityStore
-            .getState()
-            .updateState(notificationObj.entityId, "recipientHasArrived", true);
-        }
+        // if (notificationObj.message === "Người nhận đã đến khu vực của bạn") {
+        //   useProximityStore
+        //     .getState()
+        //     .initializeTransaction(notificationObj.entityId);
+        //   useProximityStore
+        //     .getState()
+        //     .updateState(notificationObj.entityId, "recipientHasArrived", true);
+        // }
 
-        if (notificationObj.message === "Giao dịch đã được xác thực") {
-          useProximityStore
-            .getState()
-            .initializeTransaction(notificationObj.entityId);
-          useProximityStore
-            .getState()
-            .updateState(notificationObj.entityId, "isVerifyTransaction", true);
-        }
+        // if (notificationObj.message === "Giao dịch đã được xác thực") {
+        //   useProximityStore
+        //     .getState()
+        //     .initializeTransaction(notificationObj.entityId);
+        //   useProximityStore
+        //     .getState()
+        //     .updateState(notificationObj.entityId, "isVerifyTransaction", true);
+        // }
 
         if (notificationObj.title === "OTP") {
           const arr = notificationObj.message.split(" ");
