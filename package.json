@@ -29,7 +29,6 @@
     "@stripe/stripe-react-native": "0.38.6",
     "@types/react-native-push-notification": "^8.1.4",
     "@ui-kitten/components": "^5.3.1",
-    "@zegocloud/zego-uikit-prebuilt-call-rn": "^6.2.3",
     "agora-react-native-rtm": "^1.5.1",
     "agora-rn-uikit": "^5.0.2",
     "axios": "^1.7.7",
