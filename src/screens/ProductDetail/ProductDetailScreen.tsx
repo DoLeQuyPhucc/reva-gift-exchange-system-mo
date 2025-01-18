@@ -36,6 +36,7 @@ import {
   API_GET_BUSY_TIME,
   API_GET_PRODUCT_BY_ID,
 } from "@env";
+import ImageCarousel from "@/src/components/ImageCarousel";
 
 type TimeSlot = {
   id: string;
@@ -1040,19 +1041,33 @@ export default function ProductDetailScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.imageContainer}>
+      <ImageCarousel images={product.images} />
+      {/* <View style={styles.imageContainer}>
         <Image source={{ uri: product.images[0] }} style={styles.image} />
-      </View>
+      </View> */}
 
       <View style={styles.infoContainer}>
         <Text style={styles.title}>{product.name}</Text>
 
         <View style={styles.badgeContainer}>
           <View style={[styles.badge, { backgroundColor: Colors.orange500 }]}>
-            <Text style={styles.badgeText}>{`${product.category.parentName}, `} {product.category.name}</Text>
+            <Text style={styles.badgeText}>
+              {`${product.category.parentName}, `} {product.category.name}
+            </Text>
           </View>
-          <View style={[styles.badge, { backgroundColor: "#fff", borderColor: Colors.orange500, borderWidth: 1}]}>
-            <Text style={[styles.badgeText, {color: Colors.orange500 }]}>{product.condition === "Used" ? "Đã sử dụng" : "Mới"}</Text>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: "#fff",
+                borderColor: Colors.orange500,
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <Text style={[styles.badgeText, { color: Colors.orange500 }]}>
+              {product.condition === "Used" ? "Đã sử dụng" : "Mới"}
+            </Text>
           </View>
           {(() => {
             switch (product.status) {
@@ -1126,7 +1141,9 @@ export default function ProductDetailScreen() {
         <Text style={styles.description}>{product.description}</Text>
 
         {product.status === "Rejected" && (
-          <Text style={styles.rejectMessage}>Lý do từ chối: {product.rejectMessage}</Text>
+          <Text style={styles.rejectMessage}>
+            Lý do từ chối: {product.rejectMessage}
+          </Text>
         )}
 
         <View style={styles.detailsContainer}>
@@ -1162,7 +1179,11 @@ export default function ProductDetailScreen() {
             <View style={styles.detailItem}>
               <Icon name="compare-arrows" size={16} />
               <Text style={styles.detailText}>
-                Mong muốn trao đổi với: {product.desiredCategory?.parentName !== null ? `${product.desiredCategory?.parentName}, ` : ''} {product.desiredCategory?.name}
+                Mong muốn trao đổi với:{" "}
+                {product.desiredCategory?.parentName !== null
+                  ? `${product.desiredCategory?.parentName}, `
+                  : ""}{" "}
+                {product.desiredCategory?.name}
               </Text>
             </View>
           )}
@@ -1463,8 +1484,13 @@ export default function ProductDetailScreen() {
                         setDate={setSelectedDate}
                         allowedDays={daysOnly}
                         timeRanges={timeRanges}
-                        onClose={() => {setShowDatePicker(false)}}
-                        onConfirm={() => {setShowDatePicker(false); setShowHourModal(true)}}
+                        onClose={() => {
+                          setShowDatePicker(false);
+                        }}
+                        onConfirm={() => {
+                          setShowDatePicker(false);
+                          setShowHourModal(true);
+                        }}
                       />
                       {/* {showDatePicker && (
                         <DateTimePickerCustom
@@ -1483,7 +1509,15 @@ export default function ProductDetailScreen() {
                             style={styles.timeInput}
                             onPress={() => setShowHourModal(true)}
                           >
-                            <Text style={[styles.timeInputText, { color: selectedHour === null ? "#c4c4c4" : "#000" }]}>
+                            <Text
+                              style={[
+                                styles.timeInputText,
+                                {
+                                  color:
+                                    selectedHour === null ? "#c4c4c4" : "#000",
+                                },
+                              ]}
+                            >
                               {selectedHour !== null
                                 ? selectedHour.toString().padStart(2, "0")
                                 : "Giờ"}
@@ -1502,8 +1536,16 @@ export default function ProductDetailScreen() {
                               setShowMinuteModal(true);
                             }}
                           >
-                          <Text style={[styles.timeInputText, { color: selectedHour === null ? "#c4c4c4" : "#000" }]}>
-                            {selectedMinute !== null
+                            <Text
+                              style={[
+                                styles.timeInputText,
+                                {
+                                  color:
+                                    selectedHour === null ? "#c4c4c4" : "#000",
+                                },
+                              ]}
+                            >
+                              {selectedMinute !== null
                                 ? selectedMinute.toString().padStart(2, "0")
                                 : "Phút"}
                             </Text>

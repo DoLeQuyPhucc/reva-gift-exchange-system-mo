@@ -427,7 +427,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         setImages((prev) => [...prev, imageUrl]);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to capture and upload image");
+      Alert.alert("Error", `Failed to capture and upload image ${error}`);
     } finally {
       setIsUploadingImage(false);
     }

@@ -16,8 +16,72 @@ interface PostData {
 }
 
 export const postService = {
+  compressImageWithTinyPNG: async (uri: string): Promise<string> => {
+    try {
+      const filename = uri.split("/").pop() || "photo.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : "image/jpeg";
+
+      const formData = new FormData();
+      const fileData = {
+        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
+        name: filename,
+        type: type,
+      };
+
+      formData.append("file", fileData as any);
+
+      const btoa = (input: string) => {
+        return global.btoa(input);
+      };
+
+      const readFileAsBinary = async (uri: string) => {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return blob;
+      };
+
+      const imageBinary = await readFileAsBinary(uri);
+
+      const response = await fetch("https://api.tinify.com/shrink", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(
+            "api:4css0Z389Kn8m1VrDsmjsmBY8RGcRpt9"
+          )}`,
+          "Content-Type": "image/jpeg", // or "image/png" depending on your image
+        },
+        body: imageBinary, // Send the raw binary data
+      });
+
+      if (!response.ok) {
+        throw new Error(`TinyPNG compression failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Download the compressed image
+      const compressedImageResponse = await fetch(data.output.url);
+      const blob = await compressedImageResponse.blob();
+
+      // Convert blob to base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Image compression error:", error);
+      throw error;
+    }
+  },
+
   uploadImageToCloudinary: async (uri: string): Promise<string> => {
     try {
+      const compressedImageUri = await postService.compressImageWithTinyPNG(
+        uri
+      );
       // Create file object
       const filename = uri.split("/").pop() || "photo.jpg";
       const match = /\.(\w+)$/.exec(filename);
@@ -26,7 +90,7 @@ export const postService = {
       const formData = new FormData();
 
       const fileData = {
-        uri: Platform.OS === "ios" ? uri.replace("file://", "") : uri,
+        uri: compressedImageUri,
         name: filename,
         type: type,
       };
