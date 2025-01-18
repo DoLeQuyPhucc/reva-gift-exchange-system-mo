@@ -1,4 +1,4 @@
-import { DayTimeFrame } from "@/src/shared/type";
+import { DayTimeFrame } from "@/src/screens/CreatePost/CreatePostScreen";
 import { Category, Product, SubCategory, User } from "@/src/shared/type";
 import { SearchMode } from "@/src/utils/search";
 
@@ -75,7 +75,6 @@ export type RootStackParamList = {
     addressId: string;
     onSubmitPost: (postData: any) => Promise<boolean>;
   };
-  CampaignDetail: { campaignId: string };
 };
 
 export type BottomTabParamList = {

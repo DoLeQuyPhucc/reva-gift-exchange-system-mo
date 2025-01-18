@@ -16,15 +16,21 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import { useNavigation } from "@/src/hooks/useNavigation";
-import { Product, CampaignResponse, Campaign } from "@/src/shared/type";
+import { Product } from "@/src/shared/type";
 import { useAuthCheck } from "@/src/hooks/useAuth";
-import { API_GET_ALL_PRODUCT, API_GET_CAMPAIGN } from "@env";
-import { CampaignCarousel } from "@/src/components/CampaignCarousel";
+import { API_GET_ALL_PRODUCT } from "@env";
 
+type SearchMode = "default" | "need" | "have";
 interface SortOption {
   value: "createdAt" | "name" | "condition";
   label: string;
 }
+
+const sortOptions: SortOption[] = [
+  { value: "createdAt", label: "Mới nhất" },
+  { value: "name", label: "Tên" },
+  { value: "condition", label: "Tình trạng" },
+];
 
 const { width } = Dimensions.get("window");
 
@@ -34,14 +40,15 @@ const HomeScreen: React.FC = () => {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+  const [searchMode, setSearchMode] = useState<SearchMode>("default");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [sortBy, setSortBy] = useState<"name" | "condition" | "createdAt">(
     "createdAt"
   );
+  const [showSortModal, setShowSortModal] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
   const [sizeIndex] = useState(10);
   const [hasMore, setHasMore] = useState(true);
@@ -60,7 +67,7 @@ const HomeScreen: React.FC = () => {
       );
 
       const productsData = response.data.data.data;
-      const totalPages = response.data.data.totalPage;
+      const totalPages = response.data.data.totalPage; // Assuming API returns total pages
 
       if (loadMore) {
         setProducts((prev) => [...prev, ...productsData]);
@@ -82,26 +89,6 @@ const HomeScreen: React.FC = () => {
       setIsLoadingMore(false);
     }
   };
-
-  const fetchCampaigns = async () => {
-    try {
-      setLoadingCampaigns(true);
-      const response = await axiosInstance.get(
-        `${API_GET_CAMPAIGN}/list?pageIndex=1&pageSize=10`
-      );
-      const campaignData = response.data as CampaignResponse;
-      setCampaigns(campaignData.data.data);
-    } catch (error) {
-      console.error("Error fetching campaigns:", error);
-    } finally {
-      setLoadingCampaigns(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
   // Initial fetch on mount
   useEffect(() => {
     fetchProducts();
@@ -190,6 +177,18 @@ const HomeScreen: React.FC = () => {
             </View>
           )}
         </View>
+
+        {/* Save/Wishlist button */}
+        {/* <TouchableOpacity 
+          style={styles.wishlistButton}
+          onPress={() => handleWishlist(product.id)}
+        >
+          <Icon 
+            name={isWishlisted ? "favorite" : "favorite-border"} 
+            size={24} 
+            color={Colors.orange500}
+          />
+        </TouchableOpacity> */}
       </View>
 
       <View style={styles.cardContent}>
@@ -226,10 +225,116 @@ const HomeScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  const renderSortModal = () => (
+    <Modal
+      visible={showSortModal}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowSortModal(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowSortModal(false)}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Sắp xếp theo</Text>
+          {sortOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={styles.sortOption}
+              onPress={() => {
+                setSortBy(option.value);
+                setShowSortModal(false);
+              }}
+            >
+              <Text
+                style={[
+                  styles.sortOptionText,
+                  sortBy === option.value && styles.sortOptionTextSelected,
+                ]}
+              >
+                {option.label}
+              </Text>
+              {sortBy === option.value && (
+                <Icon name="check" size={20} color="#000" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   const renderHeader = () => (
     <View style={styles.header}>
       {renderSearchContainer()}
-      <CampaignCarousel campaigns={campaigns} />
+      <View style={styles.filterHeader}>
+        <View style={styles.filterTitleContainer}>
+          <Icon name="filter-alt" size={20} />
+          <Text style={styles.filterTitle}>Bộ lọc</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => setShowSortModal(true)}
+        >
+          <View style={styles.sortButtonContent}>
+            <Icon name="sort" size={20} />
+            <Text style={styles.sortButtonText}>
+              {sortOptions.find((option) => option.value === sortBy)?.label}
+            </Text>
+            <Icon name="arrow-drop-down" size={20} />
+          </View>
+        </TouchableOpacity>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+      >
+        <TouchableOpacity
+          style={[
+            styles.categoryButton,
+            selectedCategory === "" && styles.selectedCategoryButton,
+          ]}
+          onPress={() => setSelectedCategory("")}
+        >
+          <Text
+            style={[
+              styles.categoryButtonText,
+              selectedCategory === "" && styles.selectedCategoryButtonText,
+            ]}
+          >
+            Tất cả
+          </Text>
+        </TouchableOpacity>
+        {categories.map((category) => (
+          <TouchableOpacity
+            key={category}
+            style={[
+              styles.categoryButton,
+              selectedCategory === category && styles.selectedCategoryButton,
+            ]}
+            onPress={() => setSelectedCategory(category)}
+          >
+            <Text
+              style={[
+                styles.categoryButtonText,
+                selectedCategory === category &&
+                  styles.selectedCategoryButtonText,
+              ]}
+            >
+              {category}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/*
+        <Text style={styles.resultCount}>
+          Hiển thị {filteredProducts.length} sản phẩm
+        </Text>
+      */}
     </View>
   );
 
@@ -278,6 +383,7 @@ const HomeScreen: React.FC = () => {
           </View>
         )}
       />
+      {renderSortModal()}
     </TouchableOpacity>
   );
 };
