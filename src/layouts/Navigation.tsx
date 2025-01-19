@@ -8,10 +8,8 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "@/src/hooks/useColorScheme";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomBottomTab, { TabBarProps } from "./BottomBar";
 import { Ionicons } from "@expo/vector-icons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RootStackParamList } from "./types/navigationTypes";
 
 // Fonts
@@ -26,21 +24,22 @@ import NotificationsScreen from "@/screens/Notifications/Notifications";
 import FavoritesScreen from "@/screens/Favorites/FavoritesScreen";
 import ProductDetailScreen from "@/screens/ProductDetail/ProductDetailScreen";
 import CreatePostScreen from "@/screens/CreatePost/CreatePostScreen";
-import MyProducts from "../screens/MyProducts/MyProducts";
-import MyTransactions from "../screens/Transactions/MyTransactions/MyTransactions";
-import ProfileDetailScreen from "../screens/ProfileDetail/ProfileDetailScreen";
-import OTPScreen from "../screens/OTP/OTPScreen";
-import MyRequestsScreen from "../screens/Request/MyRequests/MyRequests";
-import RequestSubActionScreen from "../screens/Request/RequestSubAction/RequestSubAction";
-import SearchScreen from "../screens/Search/SearchScreen";
-import SearchResultsScreen from "../screens/Search/SearchResultsScreen";
-import QRScanner from "../components/QRScanner";
-import ResultScanTransaction from "../screens/Transactions/ResultScanTransaction/ResultScanTransaction";
-import CharitarianRequestItem from "../screens/Request/CharitarianRequestItem/CharitarianRequestItem";
-import PreviewPostScreen from "../screens/PreviewPost/PreviewPostScreen";
-import { ButtonMoreActionHeader } from "../components/ButtonMoreActionHeader";
-import { setNavigationRef } from "../stores/notificationStore";
-import RequestDetail from "../screens/Request/RequestDetail/RequestDetail";
+import MyProducts from "@/screens/MyProducts/MyProducts";
+import MyTransactions from "@/screens/Transactions/MyTransactions/MyTransactions";
+import ProfileDetailScreen from "@/screens/ProfileDetail/ProfileDetailScreen";
+import OTPScreen from "@/screens/OTP/OTPScreen";
+import MyRequestsScreen from "@/screens/Request/MyRequests/MyRequests";
+import RequestSubActionScreen from "@/screens/Request/RequestSubAction/RequestSubAction";
+import SearchScreen from "@/screens/Search/SearchScreen";
+import SearchResultsScreen from "@/screens/Search/SearchResultsScreen";
+import QRScanner from "@/components/QRScanner";
+import ResultScanTransaction from "@/screens/Transactions/ResultScanTransaction/ResultScanTransaction";
+import CharitarianRequestItem from "@/screens/Request/CharitarianRequestItem/CharitarianRequestItem";
+import PreviewPostScreen from "@/screens/PreviewPost/PreviewPostScreen";
+import { ButtonMoreActionHeader } from "@/components/ButtonMoreActionHeader";
+import { setNavigationRef } from "@/stores/notificationStore";
+import RequestDetail from "@/screens/Request/RequestDetail/RequestDetail";
+import CampaignDetail from "@/screens/Campaign/CampaignDetail";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -107,7 +106,8 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer ref={(ref) => setNavigationRef(ref)}
+    <NavigationContainer
+      ref={(ref) => setNavigationRef(ref)}
       theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
       <Stack.Navigator
@@ -153,7 +153,11 @@ export default function Navigation() {
         <Stack.Screen
           name="SearchResultsScreen"
           component={SearchResultsScreen}
-          options={{ headerShown: true, title: "Kết quả tìm kiếm", headerRight: () =>  <ButtonMoreActionHeader propNav="Home" /> }}
+          options={{
+            headerShown: true,
+            title: "Kết quả tìm kiếm",
+            headerRight: () => <ButtonMoreActionHeader propNav="Home" />,
+          }}
         />
         <Stack.Screen
           name="PreviewPost"
@@ -163,37 +167,65 @@ export default function Navigation() {
         <Stack.Screen
           name="ProductDetail"
           component={ProductDetailScreen}
-          options={{ headerShown: true, title: "Chi tiết sản phẩm", headerRight: () =>  <ButtonMoreActionHeader propNav="Home" /> }}
+          options={{
+            headerShown: true,
+            title: "Chi tiết sản phẩm",
+            headerRight: () => <ButtonMoreActionHeader propNav="Home" />,
+          }}
         />
         <Stack.Screen
           name="ProfileDetail"
           component={ProfileDetailScreen}
-          options={{ headerShown: true, title: "Thông tin cá nhân", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            headerShown: true,
+            title: "Thông tin cá nhân",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="MyProducts"
           component={MyProducts}
-          options={{ headerShown: true, title: "Sản phẩm của tôi", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            headerShown: true,
+            title: "Sản phẩm của tôi",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="MyRequests"
           component={MyRequestsScreen}
-          options={{ headerShown: true, title: "Quản lí các yêu cầu của tôi", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            headerShown: true,
+            title: "Quản lí các yêu cầu của tôi",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="RequestSubAction"
           component={RequestSubActionScreen}
-          options={{ headerShown: true, title: "Quản lí các yêu cầu của tôi", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            headerShown: true,
+            title: "Quản lí các yêu cầu của tôi",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="MyTransactions"
           component={MyTransactions}
-          options={{ headerShown: true, title: "Quản lí giao dịch của tôi", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            headerShown: true,
+            title: "Quản lí giao dịch của tôi",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="ResultScanTransaction"
           component={ResultScanTransaction}
-          options={{ title: "Kết quả quét QR", headerShown: true, headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            title: "Kết quả quét QR",
+            headerShown: true,
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="QRScanner"
@@ -203,14 +235,28 @@ export default function Navigation() {
         <Stack.Screen
           name="RequestDetail"
           component={RequestDetail}
-          options={{ headerShown: true, title: "Chi tiết yêu cầu", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" /> }}
+          options={{
+            headerShown: true,
+            title: "Chi tiết yêu cầu",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
         />
         <Stack.Screen
           name="CharitarianRequestItem"
           component={CharitarianRequestItem}
           options={{
             headerShown: true,
-            title: "Quản lí sản phẩm được gửi yêu cầu", headerRight: () =>  <ButtonMoreActionHeader propNav="Profile" />
+            title: "Quản lí sản phẩm được gửi yêu cầu",
+            headerRight: () => <ButtonMoreActionHeader propNav="Profile" />,
+          }}
+        />
+        <Stack.Screen
+          name="CampaignDetail"
+          component={CampaignDetail}
+          options={{
+            headerShown: true,
+            title: "Chi tiết chiến dịch",
+            headerRight: () => <ButtonMoreActionHeader propNav="Home" />,
           }}
         />
       </Stack.Navigator>

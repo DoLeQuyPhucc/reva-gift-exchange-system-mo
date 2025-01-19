@@ -33,6 +33,30 @@ const gray700 = "#374151";
 const gray800 = "#1f2937";
 const gray900 = "#111827";
 
+const green = "#10B981";
+const green50 = "#ECFDF5";
+const green100 = "#D1FAE5";
+const green200 = "#A7F3D0";
+const green300 = "#6EE7B7";
+const green400 = "#34D399";
+const green500 = "#10B981";
+const green600 = "#059669";
+const green700 = "#047857";
+const green800 = "#065F46";
+const green900 = "#064E3B";
+
+const red = "#EF4444";
+const red50 = "#FEF2F2";
+const red100 = "#FEE2E2";
+const red200 = "#FECACA";
+const red300 = "#FCA5A5";
+const red400 = "#F87171";
+const red500 = "#EF4444";
+const red600 = "#DC2626";
+const red700 = "#B91C1C";
+const red800 = "#991B1B";
+const red900 = "#7F1D1D";
+
 const blue500 = "#0ea5e9";
 const purple500 = "#a855f7";
 
@@ -85,5 +109,27 @@ export default {
   gray800: gray800,
   gray900: gray900,
   blue500: blue500,
+  green: green,
+  green50: green50,
+  green100: green100,
+  green200: green200,
+  green300: green300,
+  green400: green400,
+  green500: green500,
+  green600: green600,
+  green700: green700,
+  green800: green800,
+  green900: green900,
+  red: red,
+  red50: red50,
+  red100: red100,
+  red200: red200,
+  red300: red300,
+  red400: red400,
+  red500: red500,
+  red600: red600,
+  red700: red700,
+  red800: red800,
+  red900: red900,
   purple500: purple500,
 };

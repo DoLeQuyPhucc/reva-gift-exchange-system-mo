@@ -41,4 +41,5 @@ declare module "@env" {
   export const API_REJECT_TRANSACTION: string;
   export const API_CREATE_REPORT: string;
   export const API_GET_QR_CODE: string;
+  export const API_GET_CAMPAIGN: string;
 }

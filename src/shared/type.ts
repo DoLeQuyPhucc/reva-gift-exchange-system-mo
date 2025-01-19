@@ -252,3 +252,42 @@ export const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map(
     };
   }
 );
+
+export interface Campaign {
+  id: string;
+  name: string;
+  bannerPicture: string;
+  startDate: string;
+  endDate: string;
+}
+export interface CampaignResponse {
+  isSuccess: boolean;
+  code: number;
+  data: {
+    totalItems: number;
+    pageSize: number;
+    currentPage: number;
+    data: Campaign[];
+    totalPage: number;
+  };
+  message: string;
+}
+export interface CategoryCampaign {
+  id: string;
+  parentId: string;
+  parentName: string;
+  name: string;
+}
+export interface CampaignDetail {
+  id: string;
+  name: string;
+  description: string;
+  bannerPicture: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string | null;
+  images: string[];
+  categories: CategoryCampaign[];
+}

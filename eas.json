@@ -9,6 +9,7 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug",
+        "resourceClass": "medium",
         "withoutCredentials": true
       },
       "env": {
@@ -34,6 +35,9 @@
       "distribution": "internal"
     },
     "production": {
+      "android": {
+        "resourceClass": "medium"
+      },
       "autoIncrement": true
     }
   },
