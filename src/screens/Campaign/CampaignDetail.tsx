@@ -10,21 +10,23 @@ import {
   ActivityIndicator,
   StatusBar,
   FlatList,
+  Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@/src/hooks/useNavigation";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
-import { CampaignDetail as ICampaignDetail } from "@/src/shared/type";
+import { CampaignDetail as ICampaignDetail, Product } from "@/src/shared/type";
 import { API_GET_CAMPAIGN } from "@env";
+import { formatDate_HHmm_DD_MM_YYYY } from "@/src/shared/formatDate";
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = width * 0.75; // Maintain 4:3 aspect ratio
 
 enum CampaignStatus {
   PLANNED = "Planned",
-  CANCELLED = "Cancelled",
+  CANCELLED = "Canceled",
   ONGOING = "Ongoing",
   COMPLETED = "Completed",
 }
@@ -44,6 +46,10 @@ const CampaignDetail: React.FC = () => {
   const [campaign, setCampaign] = useState<ICampaignDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showListItemsDialog, setShowListItemsDialog] = useState(false);
+  const [listCategories, setListCategories] = useState<string[]>([]);
+  const [listItems, setListItems] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCampaignDetail();
@@ -63,16 +69,20 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const fetchItems = async (stringCate: string) => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get(
+        `items/category/current-user?${stringCate}&pageIndex=1&sizeIndex=10`
+      );
+      console.log(response.data.data.data);
+      setListItems(response.data.data.data);
+    } catch (error) {
+      console.error("Error fetching campaign detail:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const getStatusTranslation = (status: string) => {
     return STATUS_TRANSLATIONS[status as CampaignStatus] || status;
@@ -90,6 +100,28 @@ const CampaignDetail: React.FC = () => {
         return Colors.gray500;
     }
   };
+
+  const handleShowListItemsDialog = async (campaign: ICampaignDetail) => {
+  
+    // Lấy danh sách category IDs
+    const listCateId = campaign.categories.map((category) => category.id);
+  
+    const stringCate = listCateId.map((id) => `categoryIds=${id}`).join('&');
+
+    await fetchItems(stringCate);
+  
+    // Lưu danh sách ID (nếu cần)
+    setListCategories(listCateId);
+      
+    setShowListItemsDialog(true);
+  };
+  
+  const handlePressProduct = (productId: string) => {
+    setSelectedProduct((prevSelected) => 
+      prevSelected === productId ? null : productId
+    );
+  };
+  
 
   const renderImageCounter = () => {
     if (!campaign?.images || campaign.images.length <= 1) return null;
@@ -172,7 +204,7 @@ const CampaignDetail: React.FC = () => {
               <View style={styles.timeTextContainer}>
                 <Text style={styles.timeLabel}>Bắt đầu</Text>
                 <Text style={styles.timeValue}>
-                  {formatDate(campaign.startDate)}
+                  {formatDate_HHmm_DD_MM_YYYY(campaign.startDate)}
                 </Text>
               </View>
             </View>
@@ -182,7 +214,7 @@ const CampaignDetail: React.FC = () => {
               <View style={styles.timeTextContainer}>
                 <Text style={styles.timeLabel}>Kết thúc</Text>
                 <Text style={styles.timeValue}>
-                  {formatDate(campaign.endDate)}
+                  {formatDate_HHmm_DD_MM_YYYY(campaign.endDate)}
                 </Text>
               </View>
             </View>
@@ -198,7 +230,7 @@ const CampaignDetail: React.FC = () => {
 
           {/* Categories Section */}
           <View style={styles.categoriesSection}>
-            <Text style={styles.sectionTitle}>Danh mục sản phẩm</Text>
+            <Text style={styles.sectionTitle}>Danh mục cần quyên góp</Text>
             <View style={styles.categoriesList}>
               {campaign.categories.map((category) => (
                 <View key={category.id} style={styles.categoryCard}>
@@ -212,19 +244,47 @@ const CampaignDetail: React.FC = () => {
             </View>
           </View>
 
-          {/* Footer Info */}
-          <View style={styles.footerSection}>
-            <Text style={styles.footerText}>
-              Ngày tạo: {formatDate(campaign.createdAt)}
-            </Text>
-            {campaign.updatedAt && (
-              <Text style={styles.footerText}>
-                Cập nhật lần cuối: {formatDate(campaign.updatedAt)}
-              </Text>
-            )}
-          </View>
+          {campaign.status !== "Ongoing" && (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.requestButton]}
+                onPress={() => handleShowListItemsDialog(campaign)}
+              >
+                <Text style={styles.buttonText}>Tham gia chiến dịch</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      <Modal visible={showListItemsDialog} animationType="slide" transparent={true}>
+      <View style={styles.centeredView}>
+        <View style={styles.modalView}>
+          <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+            <View style={styles.footerSection}>
+              <TouchableOpacity onPress={() => setShowListItemsDialog(false)}>
+                <Text style={styles.footerText}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.orange500} />
+              </View>
+            )}
+
+            {listItems.map((product) => (
+              <TouchableOpacity key={product.id} style={product.id === selectedProduct ? styles.selectedProductSection : styles.currentProductSection} onPress={() => {handlePressProduct(product.id)}}>
+                <Image source={{ uri: product?.images[0] }} style={styles.currentProductImage} />
+                <View style={styles.currentProductInfo}>
+                  <Text style={styles.currentProductName}>{product?.name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
     </View>
   );
 };
@@ -233,6 +293,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.gray50,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: "white",
+    borderTopRightRadius: 24,
+    borderTopLeftRadius: 24,
+    height: "90%",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalScrollView: {
+    flex: 1,
+    padding: 24,
   },
   loadingContainer: {
     flex: 1,
@@ -277,6 +358,7 @@ const styles = StyleSheet.create({
   mainContent: {
     padding: 16,
     gap: 24,
+    paddingBottom: 56,
   },
   headerSection: {
     gap: 12,
@@ -333,7 +415,7 @@ const styles = StyleSheet.create({
   descriptionSection: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 20,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -347,7 +429,7 @@ const styles = StyleSheet.create({
     color: Colors.gray700,
   },
   categoriesSection: {
-    gap: 12,
+    // gap: 12,
   },
   categoriesList: {
     gap: 8,
@@ -385,6 +467,59 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 13,
     color: Colors.gray600,
+  },
+  buttonContainer: {
+    flexDirection: "column",
+    gap: 12,
+  },
+  button: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  requestButton: {
+    backgroundColor: Colors.orange500,
+    color: "white",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  currentProductSection: {
+    flexDirection: "row",
+    padding: 12,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+  },
+  selectedProductSection: {
+    flexDirection: "row",
+    padding: 12,
+    backgroundColor: "#f5f5f5",
+    borderColor: Colors.orange500,
+    borderWidth: 2,
+    borderRadius: 8,
+  },
+  currentProductImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  currentProductInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: "center",
+  },
+  currentProductName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
   },
 });
 
