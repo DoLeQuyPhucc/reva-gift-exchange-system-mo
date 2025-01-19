@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import axiosInstance from "../api/axiosInstance";
 
 interface PostData {
   name: string;
@@ -260,6 +261,18 @@ export const postService = {
       return await response.json();
     } catch (error) {
       console.error("Submit post error:", error);
+      throw error;
+    }
+  },
+
+  getCampaignsByCategory: async (categoryId: string): Promise<any> => {
+    try {
+      const response = await axiosInstance.get(
+        `campaign/category?categories=${categoryId}`
+      );
+      return response.data.data.data;
+    } catch (error) {
+      console.error("Get categories error:", error);
       throw error;
     }
   },

@@ -24,6 +24,7 @@ import { Dropdown } from "react-native-element-dropdown";
 
 import MediaUploadSection from "@/src/components/MediaUploadSection";
 import {
+  Campaign,
   Category,
   ConditionOption,
   DayTimeFrame,
@@ -138,6 +139,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     isUploadingImage,
     isUploadingVideo,
     isLoading,
+    campaigns,
+    setCampaigns,
     showTitleHint,
     showDescriptionHint,
     showSuccessAlert,
@@ -230,6 +233,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
   useEffect(() => {
     if (selectedCategory) {
+      fetchCampaigns();
       getSubCategories(selectedCategory.id);
     }
   }, [selectedCategory]);
@@ -256,6 +260,15 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     { label: "Thứ 7", value: "sat" },
     { label: "Chủ nhật", value: "sun" },
   ];
+
+  const fetchCampaigns = async () => {
+    try {
+      const response = await postService.getCampaignsByCategory(selectedCategory?.id as string);
+      setCampaigns(response);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+    }
+  }
 
   const handleAddTimeFrame = () => {
     if (!selectedDayForFrame) {
@@ -932,6 +945,13 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
             </Text>
           )}
         </View>
+
+        {/* Campaign Section */}
+        {images.length > 0 && title && description && campaigns.length > 0 && (
+          <>
+          <Text>fdasfasd</Text>
+          </>
+        )}
 
         {/* Time Availability Section */}
         <View style={styles.section}>

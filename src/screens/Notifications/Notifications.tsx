@@ -169,6 +169,8 @@ export default function NotificationsScreen() {
       if (response.data.isSuccess) {
         const { data, totalItems } = response.data.data;
 
+        console.log("data", data);
+
         if (page === 1) {
           setNotifications(data);
         } else {
@@ -281,6 +283,11 @@ export default function NotificationsScreen() {
           case "Transaction":
             navigation.navigate("MyTransactions", {
               requestId: notificationObj.entityId,
+            });
+            break;
+          case "Campaign":
+            navigation.navigate("CampaignDetail", {
+              campaignId: notificationObj.entityId,
             });
             break;
         }

@@ -4,6 +4,7 @@ import {
   SubCategory,
   ItemCondition,
   DayTimeFrame,
+  Campaign,
 } from "@/src/shared/type";
 
 interface PostContextType {
@@ -25,6 +26,7 @@ interface PostContextType {
   desiredCategoryId: string;
   desiredSubCategoryId: string | null;
   isTermsAccepted: boolean;
+  campaigns: Campaign[];
 
   // UI states
   isUploadingImage: boolean;
@@ -62,6 +64,7 @@ interface PostContextType {
   setDesiredCategoryId: (id: string) => void;
   setDesiredSubCategoryId: (id: string | null) => void;
   setIsTermsAccepted: (accepted: boolean) => void;
+  setCampaigns: (campaign: Campaign[]) => void;
 
   // UI setters
   setIsUploadingImage: (loading: boolean) => void;
@@ -117,6 +120,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   const [showDescriptionHint, setShowDescriptionHint] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[]>(null);
 
   // Time picker specific states
   const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>("");
@@ -148,6 +152,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         isUploadingImage,
         isUploadingVideo,
         isLoading,
+        campaigns,
+        setCampaigns,
         showTitleHint,
         showDescriptionHint,
         showSuccessAlert,

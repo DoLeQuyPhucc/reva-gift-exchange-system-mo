@@ -11,15 +11,23 @@ import {
   StatusBar,
   FlatList,
   Modal,
+  Pressable,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@/src/hooks/useNavigation";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
-import { CampaignDetail as ICampaignDetail, Product } from "@/src/shared/type";
+import {
+  Category,
+  CategoryCampaign,
+  CampaignDetail as ICampaignDetail,
+  Product,
+} from "@/src/shared/type";
 import { API_GET_CAMPAIGN } from "@env";
 import { formatDate_HHmm_DD_MM_YYYY } from "@/src/shared/formatDate";
+import { CustomAlert } from "@/src/components/CustomAlert";
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = width * 0.75; // Maintain 4:3 aspect ratio
@@ -27,7 +35,7 @@ const IMAGE_HEIGHT = width * 0.75; // Maintain 4:3 aspect ratio
 enum CampaignStatus {
   PLANNED = "Planned",
   CANCELLED = "Canceled",
-  ONGOING = "Ongoing",
+  ONGOING = "On_Going",
   COMPLETED = "Completed",
 }
 
@@ -37,6 +45,13 @@ const STATUS_TRANSLATIONS = {
   [CampaignStatus.ONGOING]: "Đang diễn ra",
   [CampaignStatus.COMPLETED]: "Đã hoàn tất",
 } as const;
+
+const STATUS_COLORS: { [key: string]: string } = {
+  [CampaignStatus.PLANNED]: Colors.orange500,
+  [CampaignStatus.CANCELLED]: Colors.lightRed,
+  [CampaignStatus.ONGOING]: Colors.blue500,
+  [CampaignStatus.COMPLETED]: Colors.lightGreen,
+};
 
 const CampaignDetail: React.FC = () => {
   const navigation = useNavigation();
@@ -50,6 +65,16 @@ const CampaignDetail: React.FC = () => {
   const [listCategories, setListCategories] = useState<string[]>([]);
   const [listItems, setListItems] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+    const [showAlertDialog, setShowAlertDialog] = useState(false);
+    const [alertData, setAlertData] = useState<{
+      title: string;
+      message: string;
+      submessage: string | null;
+    }>({
+      title: "",
+      message: "",
+      submessage: null,
+    });
 
   useEffect(() => {
     fetchCampaignDetail();
@@ -75,53 +100,80 @@ const CampaignDetail: React.FC = () => {
       const response = await axiosInstance.get(
         `items/category/current-user?${stringCate}&pageIndex=1&sizeIndex=10`
       );
-      console.log(response.data.data.data);
       setListItems(response.data.data.data);
     } catch (error) {
       console.error("Error fetching campaign detail:", error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const getStatusTranslation = (status: string) => {
     return STATUS_TRANSLATIONS[status as CampaignStatus] || status;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case CampaignStatus.PLANNED:
-        return Colors.blue500;
-      case CampaignStatus.ONGOING:
-        return Colors.green500;
-      case CampaignStatus.CANCELLED:
-        return Colors.red500;
-      default:
-        return Colors.gray500;
-    }
-  };
-
   const handleShowListItemsDialog = async (campaign: ICampaignDetail) => {
-  
     // Lấy danh sách category IDs
     const listCateId = campaign.categories.map((category) => category.id);
-  
-    const stringCate = listCateId.map((id) => `categoryIds=${id}`).join('&');
+
+    const stringCate = listCateId.map((id) => `categoryIds=${id}`).join("&");
+    console.log(stringCate);
 
     await fetchItems(stringCate);
-  
+
     // Lưu danh sách ID (nếu cần)
     setListCategories(listCateId);
-      
+
     setShowListItemsDialog(true);
   };
-  
+
+  const handleCancel = () => {
+    setShowListItemsDialog(false);
+    setSelectedProduct(null);
+  };
+
+  const handleConfirm = async () => {
+    try {
+      setShowListItemsDialog(false);
+
+      const response = await axiosInstance.post(`${API_GET_CAMPAIGN}/add-item?itemId=${selectedProduct}&campaignId=${campaign?.id}`);
+
+      if (response.data.isSuccess) {
+        // Reset form
+        setAlertData({
+          title: "Thành công",
+          message: `Chúng tôi sẽ gửi thông báo đến trong thời gian sớm nhất.`,
+          submessage: null,
+        });
+        setShowAlertDialog(true);
+      }
+    } catch (error) {
+      setAlertData({
+        title: "Thất bại",
+        message:
+          error instanceof Error ? error.message : "Bạn không thể tạo yêu cầu",
+        submessage: null,
+      });
+      setShowAlertDialog(true);
+    }
+
+
+    console.log(selectedProduct);
+    setShowListItemsDialog(false);
+    setSelectedProduct(null);
+  };
+
   const handlePressProduct = (productId: string) => {
-    setSelectedProduct((prevSelected) => 
+    setSelectedProduct((prevSelected) =>
       prevSelected === productId ? null : productId
     );
   };
-  
+
+  const renderTextListCategories = () => {
+    return campaign?.categories
+      .map((category: CategoryCampaign) => `${category.name}`)
+      .join(", ");
+  };
 
   const renderImageCounter = () => {
     if (!campaign?.images || campaign.images.length <= 1) return null;
@@ -186,16 +238,30 @@ const CampaignDetail: React.FC = () => {
           <View style={styles.headerSection}>
             <Text style={styles.campaignName}>{campaign.name}</Text>
             <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(campaign.status) },
-              ]}
-            >
-              <Text style={styles.statusText}>
-                {getStatusTranslation(campaign.status)}
-              </Text>
-            </View>
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: `${STATUS_COLORS[campaign.status]}15` },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.statusDot,
+                          { backgroundColor: STATUS_COLORS[campaign.status] },
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: STATUS_COLORS[campaign.status] },
+                        ]}
+                      >
+                        {getStatusTranslation(campaign.status)}
+                      </Text>
+                    </View>
+            
           </View>
+
+          
 
           {/* Time Section */}
           <View style={styles.timeCard}>
@@ -234,10 +300,6 @@ const CampaignDetail: React.FC = () => {
             <View style={styles.categoriesList}>
               {campaign.categories.map((category) => (
                 <View key={category.id} style={styles.categoryCard}>
-                  <Text style={styles.parentCategory}>
-                    {category.parentName}
-                  </Text>
-                  <Icon name="chevron-right" size={16} color={Colors.gray500} />
                   <Text style={styles.childCategory}>{category.name}</Text>
                 </View>
               ))}
@@ -257,34 +319,115 @@ const CampaignDetail: React.FC = () => {
         </View>
       </ScrollView>
 
-      <Modal visible={showListItemsDialog} animationType="slide" transparent={true}>
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-            <View style={styles.footerSection}>
-              <TouchableOpacity onPress={() => setShowListItemsDialog(false)}>
-                <Text style={styles.footerText}>Đóng</Text>
-              </TouchableOpacity>
-            </View>
-
-            {loading && (
+      <Modal
+        visible={showListItemsDialog}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.orange500} />
               </View>
-            )}
+            ) : (
+              <>
+                <ScrollView
+                  style={styles.modalScrollView}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View>
+                    <Text style={styles.modalHeader}>
+                      Cảm ơn bạn đã muốn quyên góp, chiến dịch của chúng tôi
+                      đang nhận các món đồ thuộc danh mục:{" "}
+                      {renderTextListCategories()}
+                    </Text>
+                  </View>
 
-            {listItems.map((product) => (
-              <TouchableOpacity key={product.id} style={product.id === selectedProduct ? styles.selectedProductSection : styles.currentProductSection} onPress={() => {handlePressProduct(product.id)}}>
-                <Image source={{ uri: product?.images[0] }} style={styles.currentProductImage} />
-                <View style={styles.currentProductInfo}>
-                  <Text style={styles.currentProductName}>{product?.name}</Text>
+                  <View>
+                    <Text style={styles.sectionTitle}>
+                      Danh sách sản phẩm của bạn
+                    </Text>
+                  </View>
+
+                  {/* List Items */}
+                  {listItems.length === 0 && (
+                    <View style={styles.errorContainer}>
+                      <Icon name="error-outline" size={48} color={Colors.red500} />
+                      <Text style={styles.errorText}>
+                        Bạn không có sản phẩm nào phù hợp
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.modalContent}>
+                    {listItems.map((product) => (
+                      <TouchableOpacity
+                        key={product.id}
+                        style={
+                          product.id === selectedProduct
+                            ? styles.selectedProductSection
+                            : styles.currentProductSection
+                        }
+                        onPress={() => {
+                          handlePressProduct(product.id);
+                        }}
+                      >
+                        <Image
+                          source={{ uri: product?.images[0] }}
+                          style={styles.currentProductImage}
+                        />
+                        <View style={styles.currentProductInfo}>
+                          <Text style={styles.currentProductName}>
+                            {product?.name}
+                          </Text>
+                          <Text style={styles.currentProductCategory}>
+                            {product?.category.parentName},{" "}
+                            {product?.category.name}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                {/* Fixed Button Container */}
+                <View style={styles.fixedButtonContainer}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={handleCancel}
+                  >
+                    <Text style={styles.buttonText}>Hủy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.button,
+                      styles.confirmButton,
+                      selectedProduct === null && styles.disabledButton,
+                      // (product.isGift
+                      //   ? selectedTimeSlots.length === 0
+                      //   : (!selectedUserItem && moreImages.length === 0) ||
+                      //     selectedTimeSlots.length === 0) && styles.disabledButton,
+                    ]}
+                    onPress={handleConfirm}
+                    disabled={selectedProduct === null}
+                  >
+                    <Text style={styles.buttonText}>Xác nhận</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+              </>
+            )}
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+      <CustomAlert
+              visible={showAlertDialog}
+              title={alertData.title}
+              message={alertData.message}
+              submessage={alertData.submessage}
+              onConfirm={() => setShowAlertDialog(false)}
+              onCancel={() => setShowAlertDialog(false)}
+            />
     </View>
   );
 };
@@ -314,6 +457,15 @@ const styles = StyleSheet.create({
   modalScrollView: {
     flex: 1,
     padding: 24,
+  },
+  modalContent: {
+    gap: 16,
+  },
+  modalHeader: {
+    fontSize: 14,
+    fontStyle: "italic",
+    color: Colors.gray900,
+    marginBottom: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -358,7 +510,6 @@ const styles = StyleSheet.create({
   mainContent: {
     padding: 16,
     gap: 24,
-    paddingBottom: 56,
   },
   headerSection: {
     gap: 12,
@@ -369,9 +520,11 @@ const styles = StyleSheet.create({
     color: Colors.gray900,
   },
   statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    flexDirection: "row",
+    alignSelf: 'flex-start',
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
   },
   statusText: {
@@ -520,6 +673,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
+  },
+  currentProductCategory: {
+    fontSize: 14,
+    color: Colors.gray600,
+  },
+  fixedButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 16,
+    paddingBottom: Platform.OS === "ios" ? 34 : 16, // Account for iPhone notch
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    backgroundColor: "white",
+  },
+  cancelButton: {
+    width: "48%",
+    backgroundColor: Colors.lightRed,
+  },
+  confirmButton: {
+    width: "48%",
+    backgroundColor: Colors.orange600,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
   },
 });
 
