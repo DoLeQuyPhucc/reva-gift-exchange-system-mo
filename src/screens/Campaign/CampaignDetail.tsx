@@ -77,10 +77,14 @@ const CampaignDetail: React.FC = () => {
     title: string;
     message: string;
     submessage: string | null;
+    onConfirm: () => void;
+    onCancel: () => void;
   }>({
     title: "",
     message: "",
     submessage: null,
+    onConfirm: () => {},
+    onCancel: () => {},
   });
 
   const PAGE_SIZE = 5;
@@ -171,34 +175,92 @@ const CampaignDetail: React.FC = () => {
     setSelectedProduct(null);
   };
 
-  const handleConfirm = async () => {
+  const checkItemInRequest = async (itemId: string) => {
     try {
-      setShowListItemsDialog(false);
-
       const response = await axiosInstance.post(
-        `${API_GET_CAMPAIGN}/add-item?itemId=${selectedProduct}&campaignId=${campaign?.id}`
+        `items/campaign/check-request?itemId=${itemId}`
+      );
+
+      if (response.data.isSuccess) {
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error("Error checking item in request:", error);
+      return false;
+    }
+  };
+
+  const handleApproveIntoCampaign = async (itemId: string) => {
+    try {
+      const response = await axiosInstance.post(
+        `${API_GET_CAMPAIGN}/add-item?itemId=${itemId}&campaignId=${campaign?.id}`
       );
 
       if (response.data.isSuccess) {
         // Reset form
+        setShowAlertDialog(true);
         setAlertData({
           title: "Thành công",
           message: `Chúng tôi sẽ gửi thông báo đến trong thời gian sớm nhất.`,
           submessage: null,
+          onConfirm: () => {
+            setShowAlertDialog(false);
+          },
+          onCancel: () => {
+            setShowAlertDialog(false);
+          },
         });
-        setShowAlertDialog(true);
       }
     } catch (error) {
+      setShowAlertDialog(true);
       setAlertData({
         title: "Thất bại",
         message:
           error instanceof Error ? error.message : "Bạn không thể tạo yêu cầu",
         submessage: null,
+        onConfirm: () => setShowAlertDialog(false),
+        onCancel: () => setShowAlertDialog(false),
       });
-      setShowAlertDialog(true);
     }
+  };
 
-    console.log(selectedProduct);
+  const handleCancelRelatedRequest = async (itemId: string) => {
+    try {
+      const response = await axiosInstance.post(
+        `items/campaign/check-request?itemId=${itemId}`
+      );
+
+      if (response.data.isSuccess) {
+        handleApproveIntoCampaign(itemId);
+      }
+    } catch (error) {
+      console.error("Error checking item in request:", error);
+      return false;
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!selectedProduct) return;
+    const checked = await checkItemInRequest(selectedProduct);
+
+    if (!checked) {
+      setShowListItemsDialog(false);
+      setShowAlertDialog(true);
+      setAlertData({
+        title: "Thất bại",
+        message:
+          "Bạn sản phầm này của bạn đang nằm trong giao dịch đang được thực hiện, nếu bạn xác muốn tham gia chiến dịch này, bạn sẽ bị hủy các giao dịch hiện tại.",
+        submessage: "Bạn có muốn tiếp tục không?",
+        onConfirm: () => {
+          handleCancelRelatedRequest(selectedProduct);
+        },
+        onCancel: () => {
+          setShowAlertDialog(false), setShowListItemsDialog(true);
+        },
+      });
+    } else {
+      handleApproveIntoCampaign(selectedProduct);
+    }
     setShowListItemsDialog(false);
     setSelectedProduct(null);
   };
@@ -487,8 +549,9 @@ const CampaignDetail: React.FC = () => {
         title={alertData.title}
         message={alertData.message}
         submessage={alertData.submessage}
-        onConfirm={() => setShowAlertDialog(false)}
-        onCancel={() => setShowAlertDialog(false)}
+        onConfirm={alertData.onConfirm}
+        onCancel={alertData.onCancel}
+        showCancelButton={true}
       />
     </View>
   );
