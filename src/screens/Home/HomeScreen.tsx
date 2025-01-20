@@ -229,7 +229,7 @@ const HomeScreen: React.FC = () => {
   const renderHeader = () => (
     <View style={styles.header}>
       {renderSearchContainer()}
-      <CampaignCarousel campaigns={campaigns} />
+      {/* <CampaignCarousel campaigns={campaigns} /> */}
     </View>
   );
 

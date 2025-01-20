@@ -1,4 +1,4 @@
-import { DayTimeFrame } from "@/src/shared/type";
+import { Campaign, DayTimeFrame } from "@/src/shared/type";
 import { Category, Product, SubCategory, User } from "@/src/shared/type";
 import { SearchMode } from "@/src/utils/search";
 
@@ -68,6 +68,7 @@ export type RootStackParamList = {
     isExchange: boolean;
     isGift: boolean;
     timePreference: string;
+    campaign: Campaign | null;
     dayTimeFrames: DayTimeFrame[];
     address: string;
     desiredCategory?: Category;
@@ -83,7 +84,7 @@ export type BottomTabParamList = {
   Home: undefined;
   Orders: undefined;
   Profile: undefined;
-  Favorites: undefined;
+  Campaign: undefined;
   Blogs: undefined;
   Products: undefined;
   Cart: undefined;

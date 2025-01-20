@@ -40,6 +40,7 @@ import { ButtonMoreActionHeader } from "@/components/ButtonMoreActionHeader";
 import { setNavigationRef } from "@/stores/notificationStore";
 import RequestDetail from "@/screens/Request/RequestDetail/RequestDetail";
 import CampaignDetail from "@/screens/Campaign/CampaignDetail";
+import CampaignScreen from "../screens/Campaign/CampaignScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -54,12 +55,12 @@ const tabBarProps: TabBarProps[] = [
     },
   },
   {
-    route: "Favorites",
-    component: FavoritesScreen,
-    tabBarLabel: "Yêu thích",
+    route: "Campaign",
+    component: CampaignScreen,
+    tabBarLabel: "Chiến dịch",
     tabBarIconProps: {
       iconType: Ionicons,
-      iconName: "favorite",
+      iconName: "campaign",
     },
   },
   {

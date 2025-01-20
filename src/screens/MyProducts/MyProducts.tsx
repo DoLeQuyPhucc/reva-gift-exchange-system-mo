@@ -226,9 +226,7 @@ const MyProducts = () => {
   const getActiveProducts = () => {
     switch (activeTab) {
       case "approved":
-        return [
-          ...products.approved,
-        ];
+        return [...products.approved];
       case "pending":
         return products.pending;
       case "outOfDate":
@@ -365,13 +363,13 @@ const MyProducts = () => {
     ));
   };
 
-    if (loading) {
-      return (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.orange500} />
-        </View>
-      );
-    }
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.orange500} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -424,26 +422,26 @@ const MyProducts = () => {
 
       <ScrollView
         style={styles.tabContent}
-                showsVerticalScrollIndicator={false}
-                // contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={handleRefresh}
-                    tintColor="#007AFF"
-                  />
-                }
-                onScroll={({ nativeEvent }) => {
-                  const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-                  const isCloseToBottom =
-                    layoutMeasurement.height + contentOffset.y >=
-                    contentSize.height - 1000;
-        
-                  if (isCloseToBottom) {
-                    handleLoadMore();
-                  }
-                }}
-                scrollEventThrottle={400}
+        showsVerticalScrollIndicator={false}
+        // contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isCloseToBottom =
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - 1000;
+
+          if (isCloseToBottom) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={400}
       >
         {filteredProducts.length > 0 ? (
           <>

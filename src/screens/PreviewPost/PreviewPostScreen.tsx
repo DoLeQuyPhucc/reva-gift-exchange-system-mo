@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { CustomAlert } from "@/src/components/CustomAlert";
 import { RootStackParamList } from "@/src/layouts/types/navigationTypes";
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 
 type PreviewPostNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -40,6 +41,7 @@ const PreviewPostScreen: React.FC<PreviewPostScreenProps> = ({
 
   const screenWidth = Dimensions.get("window").width;
   const imageWidth = screenWidth - 32;
+  const [currentRoute, setCurrentRoute] = useState<string | null>(null);
 
   const {
     title,
@@ -58,6 +60,7 @@ const PreviewPostScreen: React.FC<PreviewPostScreenProps> = ({
     desiredSubCategory,
     addressId,
     onSubmitPost,
+    campaign,
   } = route.params;
 
   const renderIconWithLabel = (
@@ -133,6 +136,7 @@ const PreviewPostScreen: React.FC<PreviewPostScreenProps> = ({
         video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: addressId,
+        campaignId: campaign?.id || null,
         desiredCategoryId: desiredCategory?.id || null,
       };
 
@@ -284,6 +288,43 @@ const PreviewPostScreen: React.FC<PreviewPostScreenProps> = ({
             </View>
           )}
         </View>
+
+        {campaign && (
+          <View style={styles.infoCard}>
+            <Text style={styles.sectionTitle}>
+              Bạn muốn quyên góp món đồ cho chiến dịch:
+            </Text>
+            <View
+              style={[styles.campaignCard]}
+              key={campaign.id}
+              // onPress={() => setSelectedCampaign(campaign)}
+            >
+              <View style={styles.campaignImageContainer}>
+                <Image
+                  source={{ uri: campaign.bannerPicture }}
+                  style={styles.campaignImage}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={styles.campaignInfo}>
+                <Text style={styles.campaignName} numberOfLines={1}>
+                  {campaign.name}
+                </Text>
+                <Text style={styles.campaignDescription} numberOfLines={1}>
+                  {campaign.description}
+                </Text>
+                <View style={styles.campaignFooter}>
+                  <View style={styles.dateContainer}>
+                    <Text style={styles.dateText} numberOfLines={1}>
+                      {formatDate_DD_MM_YYYY(campaign.startDate)} -{" "}
+                      {formatDate_DD_MM_YYYY(campaign.endDate)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Enhanced Time Availability */}
         <View style={styles.infoCard}>
@@ -544,6 +585,65 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 24,
     color: Colors.gray800,
+  },
+  campaignCard: {
+    flexDirection: "row", // Hiển thị các phần tử trong card theo hàng ngang
+    backgroundColor: "white",
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectedCampaignCard: {
+    borderColor: Colors.orange500,
+    borderWidth: 1,
+  },
+  campaignImageContainer: {
+    flex: 4, // Chiếm 40% chiều rộng
+  },
+  campaignImage: {
+    width: "100%",
+  },
+  campaignInfo: {
+    flex: 6, // Chiếm 60% chiều rộng
+    padding: 12,
+    justifyContent: "space-between", // Dàn đều các thành phần
+  },
+  campaignName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.gray800,
+    marginBottom: 4,
+  },
+  campaignDescription: {
+    fontSize: 14,
+    color: Colors.gray600,
+    marginBottom: 12,
+  },
+  campaignFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: Colors.gray600,
+    marginRight: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: Colors.gray700,
   },
 });
 

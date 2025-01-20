@@ -13,10 +13,10 @@ import {
   Modal,
   Pressable,
   Platform,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useNavigation } from "@react-navigation/native";
-import { useRoute } from "@/src/hooks/useNavigation";
+import { useNavigation, useRoute } from "@/src/hooks/useNavigation";
 import axiosInstance from "@/src/api/axiosInstance";
 import Colors from "@/src/constants/Colors";
 import {
@@ -28,6 +28,7 @@ import {
 import { API_GET_CAMPAIGN } from "@env";
 import { formatDate_HHmm_DD_MM_YYYY } from "@/src/shared/formatDate";
 import { CustomAlert } from "@/src/components/CustomAlert";
+import { useAuthCheck } from "@/src/hooks/useAuth";
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = width * 0.75; // Maintain 4:3 aspect ratio
@@ -55,6 +56,7 @@ const STATUS_COLORS: { [key: string]: string } = {
 
 const CampaignDetail: React.FC = () => {
   const navigation = useNavigation();
+  const { isAuthenticated, userData } = useAuthCheck();
   const route = useRoute<"CampaignDetail">();
   const { campaignId } = route.params;
 
@@ -65,16 +67,23 @@ const CampaignDetail: React.FC = () => {
   const [listCategories, setListCategories] = useState<string[]>([]);
   const [listItems, setListItems] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-    const [showAlertDialog, setShowAlertDialog] = useState(false);
-    const [alertData, setAlertData] = useState<{
-      title: string;
-      message: string;
-      submessage: string | null;
-    }>({
-      title: "",
-      message: "",
-      submessage: null,
-    });
+  const [stringCategory, setStringCategory] = useState<string>("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [alertData, setAlertData] = useState<{
+    title: string;
+    message: string;
+    submessage: string | null;
+  }>({
+    title: "",
+    message: "",
+    submessage: null,
+  });
+
+  const PAGE_SIZE = 5;
 
   useEffect(() => {
     fetchCampaignDetail();
@@ -94,15 +103,40 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const fetchItems = async (stringCate: string) => {
+  const handleLoadMore = () => {
+    if (!isLoading && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      fetchItems(currentPage + 1, true, stringCategory);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchItems(1, false, stringCategory);
+    setRefreshing(false);
+  };
+
+  const fetchItems = async (
+    page: number,
+    loadmore = false,
+    stringCate: string
+  ) => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(
-        `items/category/current-user?${stringCate}&pageIndex=1&sizeIndex=10`
+        `items/category/current-user?${
+          stringCate === "" ? "" : stringCate + "&"
+        }pageIndex=${page}&sizeIndex=${PAGE_SIZE}`
       );
-      setListItems(response.data.data.data);
+      const responseData = response.data.data;
+      setTotalPages(responseData.totalPage);
+      if (loadmore) {
+        setListItems((prev) => [...prev, ...responseData.data]);
+      } else {
+        setListItems(responseData.data);
+      }
     } catch (error) {
-      console.error("Error fetching campaign detail:", error);
+      console.error("Error fetching list items:", error);
     } finally {
       setLoading(false);
     }
@@ -113,13 +147,18 @@ const CampaignDetail: React.FC = () => {
   };
 
   const handleShowListItemsDialog = async (campaign: ICampaignDetail) => {
+    if (!isAuthenticated) {
+      navigation.navigate("LoginScreen");
+      return;
+    }
+
     // Lấy danh sách category IDs
     const listCateId = campaign.categories.map((category) => category.id);
 
     const stringCate = listCateId.map((id) => `categoryIds=${id}`).join("&");
-    console.log(stringCate);
+    setStringCategory(stringCate);
 
-    await fetchItems(stringCate);
+    await fetchItems(1, false, stringCate);
 
     // Lưu danh sách ID (nếu cần)
     setListCategories(listCateId);
@@ -136,7 +175,9 @@ const CampaignDetail: React.FC = () => {
     try {
       setShowListItemsDialog(false);
 
-      const response = await axiosInstance.post(`${API_GET_CAMPAIGN}/add-item?itemId=${selectedProduct}&campaignId=${campaign?.id}`);
+      const response = await axiosInstance.post(
+        `${API_GET_CAMPAIGN}/add-item?itemId=${selectedProduct}&campaignId=${campaign?.id}`
+      );
 
       if (response.data.isSuccess) {
         // Reset form
@@ -156,7 +197,6 @@ const CampaignDetail: React.FC = () => {
       });
       setShowAlertDialog(true);
     }
-
 
     console.log(selectedProduct);
     setShowListItemsDialog(false);
@@ -238,30 +278,27 @@ const CampaignDetail: React.FC = () => {
           <View style={styles.headerSection}>
             <Text style={styles.campaignName}>{campaign.name}</Text>
             <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: `${STATUS_COLORS[campaign.status]}15` },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.statusDot,
-                          { backgroundColor: STATUS_COLORS[campaign.status] },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.statusText,
-                          { color: STATUS_COLORS[campaign.status] },
-                        ]}
-                      >
-                        {getStatusTranslation(campaign.status)}
-                      </Text>
-                    </View>
-            
+              style={[
+                styles.statusBadge,
+                { backgroundColor: `${STATUS_COLORS[campaign.status]}15` },
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: STATUS_COLORS[campaign.status] },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: STATUS_COLORS[campaign.status] },
+                ]}
+              >
+                {getStatusTranslation(campaign.status)}
+              </Text>
+            </View>
           </View>
-
-          
 
           {/* Time Section */}
           <View style={styles.timeCard}>
@@ -326,6 +363,8 @@ const CampaignDetail: React.FC = () => {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Chọn sản phẩm quyên góp</Text>
+
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.orange500} />
@@ -335,6 +374,25 @@ const CampaignDetail: React.FC = () => {
                 <ScrollView
                   style={styles.modalScrollView}
                   showsVerticalScrollIndicator={false}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={handleRefresh}
+                      tintColor="#007AFF"
+                    />
+                  }
+                  onScroll={({ nativeEvent }) => {
+                    const { layoutMeasurement, contentOffset, contentSize } =
+                      nativeEvent;
+                    const isCloseToBottom =
+                      layoutMeasurement.height + contentOffset.y >=
+                      contentSize.height - 1000;
+
+                    if (isCloseToBottom) {
+                      handleLoadMore();
+                    }
+                  }}
+                  scrollEventThrottle={400}
                 >
                   <View>
                     <Text style={styles.modalHeader}>
@@ -353,7 +411,11 @@ const CampaignDetail: React.FC = () => {
                   {/* List Items */}
                   {listItems.length === 0 && (
                     <View style={styles.errorContainer}>
-                      <Icon name="error-outline" size={48} color={Colors.red500} />
+                      <Icon
+                        name="error-outline"
+                        size={48}
+                        color={Colors.red500}
+                      />
                       <Text style={styles.errorText}>
                         Bạn không có sản phẩm nào phù hợp
                       </Text>
@@ -421,13 +483,13 @@ const CampaignDetail: React.FC = () => {
         </View>
       </Modal>
       <CustomAlert
-              visible={showAlertDialog}
-              title={alertData.title}
-              message={alertData.message}
-              submessage={alertData.submessage}
-              onConfirm={() => setShowAlertDialog(false)}
-              onCancel={() => setShowAlertDialog(false)}
-            />
+        visible={showAlertDialog}
+        title={alertData.title}
+        message={alertData.message}
+        submessage={alertData.submessage}
+        onConfirm={() => setShowAlertDialog(false)}
+        onCancel={() => setShowAlertDialog(false)}
+      />
     </View>
   );
 };
@@ -454,9 +516,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.gray900,
+    paddingTop: 24,
+    paddingBottom: 0,
+    textAlign: "center",
+  },
   modalScrollView: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
+    marginTop: 16,
   },
   modalContent: {
     gap: 16,
@@ -521,7 +592,7 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     flexDirection: "row",
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,

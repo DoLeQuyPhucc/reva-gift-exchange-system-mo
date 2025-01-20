@@ -27,6 +27,7 @@ interface PostContextType {
   desiredSubCategoryId: string | null;
   isTermsAccepted: boolean;
   campaigns: Campaign[];
+  selectedCampaign: Campaign | null;
 
   // UI states
   isUploadingImage: boolean;
@@ -65,6 +66,7 @@ interface PostContextType {
   setDesiredSubCategoryId: (id: string | null) => void;
   setIsTermsAccepted: (accepted: boolean) => void;
   setCampaigns: (campaign: Campaign[]) => void;
+  setSelectedCampaign: (campaign: Campaign | null) => void;
 
   // UI setters
   setIsUploadingImage: (loading: boolean) => void;
@@ -120,7 +122,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   const [showDescriptionHint, setShowDescriptionHint] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
   // Time picker specific states
   const [selectedDayForFrame, setSelectedDayForFrame] = useState<string>("");
@@ -154,6 +157,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading,
         campaigns,
         setCampaigns,
+        selectedCampaign,
+        setSelectedCampaign,
         showTitleHint,
         showDescriptionHint,
         showSuccessAlert,

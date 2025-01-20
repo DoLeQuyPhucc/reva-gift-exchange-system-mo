@@ -8,9 +8,11 @@ import {
   TextInput,
   Platform,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Checkbox, RadioButton } from "react-native-paper";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { Picker } from "@react-native-picker/picker";
 import {
   RouteProp,
@@ -44,6 +46,7 @@ import {
 import { useAuthCheck } from "@/src/hooks/useAuth";
 import { usePostContext } from "@/src/context/PostContext";
 import { postService } from "@/src/services/postService";
+import { formatDate, formatDate_DD_MM_YYYY } from "@/src/shared/formatDate";
 
 interface CreatePostScreenProps {
   route: RouteProp<RootStackParamList, "CreatePost">;
@@ -88,6 +91,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
   const { addressData, loading, submitPost } = useCreatePost();
   const setCategoryStore = useCategoryStore((state) => state.setCategory);
   const setSubCategoryStore = useCategoryStore((state) => state.setSubCategory);
+  const [isFromPreview, setIsFromPreview] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     () => {
@@ -141,6 +145,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     isLoading,
     campaigns,
     setCampaigns,
+    selectedCampaign,
+    setSelectedCampaign,
     showTitleHint,
     showDescriptionHint,
     showSuccessAlert,
@@ -199,13 +205,16 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
     setIsLoading(false);
     setShowTitleHint(false);
     setShowDescriptionHint(false);
+    setSelectedCampaign(null);
   };
 
   useFocusEffect(
     React.useCallback(() => {
       if (!isFirstRender) {
-        // Only reset if not first render
-        resetForm();
+        if (!isFromPreview) {
+          resetForm();
+          setIsFromPreview(false);
+        }
       } else {
         setIsFirstRender(false);
       }
@@ -213,7 +222,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       return () => {
         // Cleanup
       };
-    }, [isFirstRender])
+    }, [isFirstRender, isFromPreview])
   );
 
   useEffect(() => {
@@ -263,12 +272,14 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
 
   const fetchCampaigns = async () => {
     try {
-      const response = await postService.getCampaignsByCategory(selectedCategory?.id as string);
+      const response = await postService.getCampaignsByCategory(
+        selectedCategory?.id as string
+      );
       setCampaigns(response);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
     }
-  }
+  };
 
   const handleAddTimeFrame = () => {
     if (!selectedDayForFrame) {
@@ -487,6 +498,8 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       (addr) => addr.addressId === selectedAddressId
     );
 
+    setIsFromPreview(true);
+
     navigation.navigate("PreviewPost", {
       title,
       description,
@@ -499,6 +512,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       isGift,
       timePreference,
       dayTimeFrames,
+      campaign: selectedCampaign,
       address: selectedAddress?.address || "No address provided",
       desiredCategory: categories.find((cat) => cat.id === desiredCategoryId),
       desiredSubCategory: subCategories.find(
@@ -531,6 +545,7 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         video,
         availableTime: getAvailableTimeString(timePreference),
         addressId: selectedAddressId,
+        campaignId: selectedCampaign ? selectedCampaign.id : null,
         desiredCategoryId:
           desiredSubCategoryId === "" ? null : desiredSubCategoryId,
       };
@@ -947,11 +962,78 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
         </View>
 
         {/* Campaign Section */}
-        {images.length > 0 && title && description && campaigns.length > 0 && (
-          <>
-          <Text>fdasfasd</Text>
-          </>
-        )}
+        {!isExchange &&
+          condition &&
+          images.length > 0 &&
+          title.trim() !== "" &&
+          description.trim() !== "" &&
+          campaigns.length > 0 && (
+            <>
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>CHIẾN DỊCH THIỆN NGUYỆN</Text>
+                  {/* <TouchableOpacity
+                    style={styles.viewMoreButton}
+                    // onPress={() => navigation.navigate("Campaigns")}
+                  >
+                    <Text style={styles.viewMoreButtonText}>Xem thêm</Text>
+
+                    <Icon
+                      name="arrow-right-alt"
+                      size={12}
+                      color={Colors.gray500}
+                    />
+                  </TouchableOpacity> */}
+                </View>
+                <View style={styles.campaignList}>
+                  <Text style={styles.sectionSub}>
+                    Sản phẩm của bạn phù hợp với một số chiến dịch sau, hãy tham
+                    gia với chúng tôi để có thể giúp đỡ những mảnh đời khó khăn hơn bạn:
+                  </Text>
+                  {campaigns.map((campaign) => (
+                    <TouchableOpacity
+                      style={[
+                        styles.campaignCard,
+                        selectedCampaign?.id === campaign.id &&
+                          styles.selectedCampaignCard,
+                      ]}
+                      key={campaign.id}
+                      onPress={() => setSelectedCampaign(campaign)}
+                    >
+                      <View style={styles.campaignImageContainer}>
+                        <Image
+                          source={{ uri: campaign.bannerPicture }}
+                          style={styles.campaignImage}
+                          resizeMode="cover"
+                        />
+                      </View>
+                      <View style={styles.campaignInfo}>
+                        <Text style={styles.campaignName} numberOfLines={1}>
+                          {campaign.name}
+                        </Text>
+                        <Text
+                          style={styles.campaignDescription}
+                          numberOfLines={1}
+                        >
+                          {campaign.description}
+                        </Text>
+                        <View style={styles.campaignFooter}>
+                          <View style={styles.dateContainer}>
+                            <Text style={styles.dateText} numberOfLines={1}>
+                              {formatDate_DD_MM_YYYY(campaign.startDate)} -{" "}
+                              {formatDate_DD_MM_YYYY(campaign.endDate)}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* you code here */}
+              </View>
+            </>
+          )}
 
         {/* Time Availability Section */}
         <View style={styles.section}>
@@ -1042,7 +1124,11 @@ const CreatePostScreen: React.FC<CreatePostScreenProps> = ({
       {/* Footer Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.footerButton, styles.previewButton]}
+          style={[
+            styles.footerButton,
+            styles.previewButton,
+            !isTermsAccepted && styles.disabledButton,
+          ]}
           onPress={handlePreview}
           disabled={!isTermsAccepted}
         >
@@ -1115,14 +1201,34 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  viewMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginBottom: 12,
+  },
+  viewMoreButtonText: {
+    fontSize: 12,
+    color: Colors.gray500,
+  },
   section: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 12,
+  },
+  sectionSub: {
+    color: Colors.gray500,
+    fontSize: 14,
     marginBottom: 12,
   },
   pickerContainer: {
@@ -1175,8 +1281,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   addressContainer: {
-    backgroundColor: "#f5f5f5",
-    padding: 12,
+    paddingHorizontal: 12,
     borderRadius: 8,
     marginTop: 8,
   },
@@ -1237,7 +1342,7 @@ const styles = StyleSheet.create({
   },
   selectedAddressCard: {
     borderColor: Colors.orange500,
-    backgroundColor: Colors.orange50,
+    // backgroundColor: Colors.orange50,
   },
   addressRadioContainer: {
     flexDirection: "row",
@@ -1653,6 +1758,105 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
+  },
+  //campaign
+  campaignSection: {
+    marginTop: 8,
+  },
+  campaignHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  campaignHeaderIcon: {
+    marginRight: 8,
+    color: Colors.orange500,
+  },
+  campaignHeaderText: {
+    fontSize: 14,
+    color: Colors.gray700,
+    flex: 1,
+  },
+  campaignList: {
+    gap: 16,
+  },
+  campaignCard: {
+    flexDirection: "row", // Hiển thị các phần tử trong card theo hàng ngang
+    backgroundColor: "white",
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    padding: 10,
+  },
+  selectedCampaignCard: {
+    borderColor: Colors.orange500,
+    borderWidth: 1,
+  },
+  campaignImageContainer: {
+    flex: 4, // Chiếm 40% chiều rộng
+  },
+  campaignImage: {
+    width: '100%',
+    height: 100,
+    objectFit: 'cover',
+    borderRadius: 8,
+  },
+  campaignInfo: {
+    flex: 6, // Chiếm 60% chiều rộng
+    padding: 12,
+    justifyContent: "space-between", // Dàn đều các thành phần
+  },
+  campaignName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.gray800,
+    marginBottom: 4,
+  },
+  campaignDescription: {
+    fontSize: 14,
+    color: Colors.gray600,
+    marginBottom: 12,
+  },
+  campaignFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: Colors.gray600,
+    marginRight: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: Colors.gray700,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  plannedBadge: {
+    backgroundColor: Colors.blue500,
+  },
+  ongoingBadge: {
+    backgroundColor: Colors.green500,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
 

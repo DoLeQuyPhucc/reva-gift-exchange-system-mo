@@ -1223,7 +1223,7 @@ export default function ProductDetailScreen() {
 
       <Modal
         visible={showRequestDialog}
-        animationType="slide"
+        // animationType="slide"
         transparent={true}
       >
         <View style={styles.centeredView}>

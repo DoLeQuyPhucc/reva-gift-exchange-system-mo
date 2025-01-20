@@ -256,6 +256,8 @@ export const TIME_SLOTS: TimeSlot[] = Array.from({ length: 25 }).map(
 export interface Campaign {
   id: string;
   name: string;
+  description: string;
+  status: string;
   bannerPicture: string;
   startDate: string;
   endDate: string;
