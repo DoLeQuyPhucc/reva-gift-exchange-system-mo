@@ -22,8 +22,107 @@ import { useAuthStore } from "@/src/stores/authStore";
 import { useNotificationStore } from "../stores/notificationStore";
 import { useProximityStore } from "../stores/proximityStore";
 
+import { Portal, Provider } from "react-native-paper";
+
 const Tab = createBottomTabNavigator<BottomTabParamList>();
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const CategoryModal = ({
+  visible,
+  onClose,
+  categories,
+  onSelectCategory,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  categories: Category[];
+  onSelectCategory: (category: Category) => void;
+}) => (
+  <Modal
+    visible={visible}
+    transparent={true}
+    animationType="slide"
+    onRequestClose={onClose}
+  >
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <View style={styles.modalHeader}>
+          <View style={styles.modalIndicator} />
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Icon name="close" size={24} color={Colors.gray600} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.modalTitle}>Chọn danh mục</Text>
+
+        <View style={styles.categoriesList}>
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              style={styles.categoryItem}
+              onPress={() => onSelectCategory(category)}
+            >
+              <Text style={styles.categoryText}>{category.name}</Text>
+              <Icon name="chevron-right" size={24} color={Colors.gray400} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </View>
+  </Modal>
+);
+
+const SubCategoryModal = ({
+  visible,
+  onClose,
+  selectedCategory,
+  subCategories,
+  onSelectSubCategory,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  selectedCategory: Category | null;
+  subCategories: SubCategory[];
+  onSelectSubCategory: (subCategory: SubCategory) => void;
+}) => (
+  <Modal
+    visible={visible}
+    transparent={true}
+    animationType="slide"
+    onRequestClose={onClose}
+  >
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <View style={styles.modalHeader}>
+          <View style={styles.modalIndicator} />
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Icon name="close" size={24} color={Colors.gray600} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.modalTitle}>
+          {selectedCategory?.name
+            ? `Danh mục ${selectedCategory.name}`
+            : "Chọn danh mục phụ"}
+        </Text>
+
+        <View style={styles.categoriesList}>
+          {subCategories.map((subCategory) => (
+            <TouchableOpacity
+              key={subCategory.id}
+              style={styles.categoryItem}
+              onPress={() => onSelectSubCategory(subCategory)}
+            >
+              <Text style={styles.categoryText}>{subCategory.name}</Text>
+              <Icon name="chevron-right" size={24} color={Colors.gray400} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </View>
+  </Modal>
+);
 
 export interface TabBarProps {
   route: keyof BottomTabParamList;
@@ -60,6 +159,13 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
       fetchInitialNotifications(1, 10);
     }
   }, [isAuthenticated]);
+
+  const handleCategorySelect = async (category: Category) => {
+    setSelectedCategory(category);
+    await getSubCategories(category.id);
+    setModalVisible(false);
+    setSubCategoryModalVisible(true);
+  };
 
   const showModal = () => {
     if (!isAuthenticated) {
@@ -101,36 +207,6 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
     }).start();
   };
 
-  const hideModal = () => {
-    Animated.timing(slideAnim, {
-      toValue: SCREEN_HEIGHT,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setModalVisible(false);
-    });
-  };
-
-  const showSubCategoryModal = async (category: Category) => {
-    setSelectedCategory(category);
-    await getSubCategories(category.id);
-
-    Animated.timing(slideAnim, {
-      toValue: SCREEN_HEIGHT,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setModalVisible(false);
-      setSubCategoryModalVisible(true);
-      Animated.spring(subCategorySlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 50,
-        friction: 8,
-      }).start();
-    });
-  };
-
   const hideSubCategoryModal = () => {
     Animated.timing(subCategorySlideAnim, {
       toValue: SCREEN_HEIGHT,
@@ -153,156 +229,148 @@ const CustomBottomTab: React.FC<{ tabs: TabBarProps[] }> = ({ tabs }) => {
     }
   };
 
-  const CategoryModal = () => (
-    <Modal
-      animationType="none"
-      transparent={true}
-      visible={modalVisible}
-      onRequestClose={hideModal}
-    >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={hideModal}
-        >
-          <Animated.View
-            style={[
-              styles.modalContent,
-              {
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <View style={styles.modalIndicator} />
-            </View>
-            <Text style={styles.modalTitle}>Chọn danh mục</Text>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={styles.categoryItem}
-                onPress={() => showSubCategoryModal(category)}
-              >
-                <Text style={styles.categoryText}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
-    </Modal>
-  );
-
-  const SubCategoryModal = () => (
-    <Modal
-      animationType="none"
-      transparent={true}
-      visible={subCategoryModalVisible}
-      onRequestClose={hideSubCategoryModal}
-    >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={hideSubCategoryModal}
-        >
-          <Animated.View
-            style={[
-              styles.modalContent,
-              {
-                transform: [{ translateY: subCategorySlideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <View style={styles.modalIndicator} />
-            </View>
-            <Text style={styles.modalTitle}>
-              Chọn danh mục phụ cho {selectedCategory?.name}
-            </Text>
-            {subCategories.map((subCategory) => (
-              <TouchableOpacity
-                key={subCategory.id}
-                style={styles.categoryItem}
-                onPress={() => handleSubCategorySelect(subCategory)}
-              >
-                <Text style={styles.categoryText}>{subCategory.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
-    </Modal>
-  );
-
   return (
-    <View style={{ flex: 1 }}>
-      <Tab.Navigator
-        initialRouteName={tabs[0].route}
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: Colors.orange600,
-          tabBarInactiveTintColor: "gray",
-          tabBarStyle: {
-            borderTopRightRadius: 20,
-            borderTopLeftRadius: 20,
-            height: 70,
-            backgroundColor: "white",
-          },
-        }}
-      >
-        {tabs.map((tabProps: TabBarProps, idx) => (
-          <Tab.Screen
-            key={idx}
-            name={tabProps.route}
-            component={tabProps.component}
-            options={{
-              tabBarLabel: tabProps.tabBarLabel,
-              tabBarIcon: ({ color, size }) => 
-                tabProps.route === "Profile" && isAuthenticated && isVerifyOTP ? (
-                  <Image
-                    source={{
-                      uri: userData?.profilePicture,
-                    }}
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                    }}
-                  />
-                ) : (
-                  <Icon
-                    name={tabProps.tabBarIconProps.iconName}
-                    color={color}
-                    size={20}
-                  />
-                ),
-              tabBarBadge:
-                tabProps.route === "Notifications" && unreadCount > 0
-                  ? unreadCount
-                  : undefined,
-              tabBarBadgeStyle: {
-                backgroundColor: Colors.orange600,
-                fontSize: 12,
-              },
-            }}
-          />
-        ))}
-      </Tab.Navigator>
+    <Provider>
+      <View style={{ flex: 1 }}>
+        <Tab.Navigator
+          initialRouteName={tabs[0].route}
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: Colors.orange600,
+            tabBarInactiveTintColor: "gray",
+            tabBarStyle: {
+              borderTopRightRadius: 20,
+              borderTopLeftRadius: 20,
+              height: 70,
+              backgroundColor: "white",
+            },
+          }}
+        >
+          {tabs.map((tabProps: TabBarProps, idx) => (
+            <Tab.Screen
+              key={idx}
+              name={tabProps.route}
+              component={tabProps.component}
+              options={{
+                tabBarLabel: tabProps.tabBarLabel,
+                tabBarIcon: ({ color, size }) =>
+                  tabProps.route === "Profile" &&
+                  isAuthenticated &&
+                  isVerifyOTP ? (
+                    <Image
+                      source={{
+                        uri: userData?.profilePicture,
+                      }}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                      }}
+                    />
+                  ) : (
+                    <Icon
+                      name={tabProps.tabBarIconProps.iconName}
+                      color={color}
+                      size={20}
+                    />
+                  ),
+                tabBarBadge:
+                  tabProps.route === "Notifications" && unreadCount > 0
+                    ? unreadCount
+                    : undefined,
+                tabBarBadgeStyle: {
+                  backgroundColor: Colors.orange600,
+                  fontSize: 12,
+                },
+              }}
+            />
+          ))}
+        </Tab.Navigator>
 
-      <View style={styles.fabContainer}>
-        <TouchableOpacity style={styles.fab} onPress={showModal}>
-          <Icon name="add" size={20} color="white" />
-        </TouchableOpacity>
+        <View style={styles.fabContainer}>
+          <TouchableOpacity style={styles.fab} onPress={showModal}>
+            <Icon name="add" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <CategoryModal />
-      <SubCategoryModal />
-    </View>
+      <Portal>
+        <CategoryModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          categories={categories}
+          onSelectCategory={handleCategorySelect}
+        />
+
+        <SubCategoryModal
+          visible={subCategoryModalVisible}
+          onClose={() => setSubCategoryModalVisible(false)}
+          selectedCategory={selectedCategory}
+          subCategories={subCategories}
+          onSelectSubCategory={handleSubCategorySelect}
+        />
+      </Portal>
+    </Provider>
   );
 };
 
 const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    minHeight: SCREEN_HEIGHT * 0.3,
+    maxHeight: SCREEN_HEIGHT * 0.7,
+    width: SCREEN_WIDTH,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray200,
+  },
+  modalIndicator: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.gray300,
+    borderRadius: 2,
+  },
+  closeButton: {
+    position: "absolute",
+    right: 16,
+    padding: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.gray900,
+    textAlign: "center",
+    marginVertical: 16,
+  },
+  categoriesList: {
+    paddingHorizontal: 16,
+  },
+  categoryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray200,
+  },
+  categoryText: {
+    fontSize: 16,
+    color: Colors.gray800,
+    flex: 1,
+  },
   fabContainer: {
     position: "absolute",
     alignSelf: "center",
@@ -324,45 +392,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    maxHeight: SCREEN_HEIGHT * 0.7,
-  },
-  modalHeader: {
-    alignItems: "center",
-    paddingVertical: 15,
-  },
-  modalIndicator: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#DEDEDE",
-    borderRadius: 2,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: Colors.orange600,
-  },
-  categoryItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  categoryText: {
-    fontSize: 16,
-    color: "#333",
   },
 });
 
