@@ -45,6 +45,7 @@ const STATUS_COLORS: { [key: string]: string } = {
   Hold_On: Colors.gray600,
   Completed: Colors.lightGreen,
   Not_Completed: Colors.lightRed,
+  Canceled: Colors.gray600,
 };
 
 const STATUS_LABELS = {
@@ -54,6 +55,7 @@ const STATUS_LABELS = {
   Hold_On: "Tạm hoãn",
   Completed: "Đã hoàn thành",
   Not_Completed: "Không thành công",
+  Canceled: "Đã huỷ",
 };
 
 type MyRequestsScreenRouteProp = RouteProp<RootStackParamList, "MyRequests">;
@@ -588,6 +590,8 @@ export default function MyRequestsScreen() {
                         ? "pause-circle-filled"
                         : request.status === "Completed"
                         ? "verified"
+                        : request.status === "Canceled"
+                        ? "cancel"
                         : "error"
                     }
                     size={20}
@@ -611,6 +615,8 @@ export default function MyRequestsScreen() {
                       "Giao dịch đã hoàn thành."}
                     {request.status === "Not_Completed" &&
                       "Giao dịch không thành công."}
+                      {request.status === "Canceled" &&
+                        "Giao dịch đã bị huỷ."}
                   </Text>
                 </View>
 

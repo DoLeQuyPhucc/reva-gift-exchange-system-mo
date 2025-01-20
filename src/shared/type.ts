@@ -68,7 +68,8 @@ export interface Request {
     | "Rejected"
     | "Hold_On"
     | "Completed"
-    | "Not_Completed";
+    | "Not_Completed"
+    | "Canceled";
   requestMessage: string | null;
   rejectMessage: string | null;
   note: string | null;

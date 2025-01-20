@@ -227,7 +227,7 @@ const CampaignDetail: React.FC = () => {
   const handleCancelRelatedRequest = async (itemId: string) => {
     try {
       const response = await axiosInstance.post(
-        `items/campaign/check-request?itemId=${itemId}`
+        `items/campaign/cancel-related-request-of-item?itemId=${itemId}`
       );
 
       if (response.data.isSuccess) {
