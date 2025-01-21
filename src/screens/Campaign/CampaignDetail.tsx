@@ -36,7 +36,7 @@ const IMAGE_HEIGHT = width * 0.75; // Maintain 4:3 aspect ratio
 enum CampaignStatus {
   PLANNED = "Planned",
   CANCELLED = "Canceled",
-  ONGOING = "On_Going",
+  ONGOING = "Ongoing",
   COMPLETED = "Completed",
 }
 
@@ -405,7 +405,7 @@ const CampaignDetail: React.FC = () => {
             </View>
           </View>
 
-          {campaign.status !== "Ongoing" && (
+          {campaign.status === "Ongoing" && (
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, styles.requestButton]}

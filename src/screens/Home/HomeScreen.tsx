@@ -90,7 +90,10 @@ const HomeScreen: React.FC = () => {
         `${API_GET_CAMPAIGN}/list?pageIndex=1&pageSize=10`
       );
       const campaignData = response.data as CampaignResponse;
-      setCampaigns(campaignData.data.data);
+      const filteredCampaigns = campaignData.data.data.filter(
+        (campaign: Campaign) => campaign.status === "Ongoing"
+      );
+      setCampaigns(filteredCampaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
     } finally {

@@ -44,7 +44,7 @@ const CampaignScreen = () => {
         const totalPages = response.data.data.totalPage;
 
         const filteredCampaigns = campaignData.filter(
-          (campaign: Campaign) => campaign.status === "On_Going"
+          (campaign: Campaign) => campaign.status === "Ongoing"
         );
 
         if (loadMore) {
@@ -133,7 +133,7 @@ const CampaignScreen = () => {
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
               <Icon name="block" size={50} />
-              <Text style={styles.emptyText}>Không có sản phẩm nào</Text>
+              <Text style={styles.emptyText}>Chưa có chiến dịch nào</Text>
             </View>
           )}
         />
